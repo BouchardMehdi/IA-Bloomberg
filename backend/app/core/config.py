@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     redis_url: str = "redis://localhost:6379/0"
     backend_cors_origins: str = "http://localhost:3000,http://localhost"
     ecb_collection_interval_minutes: int = Field(default=15, ge=1, le=1440)
+    fed_collection_interval_minutes: int = Field(default=15, ge=1, le=1440)
     scheduler_run_on_start: bool = True
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")

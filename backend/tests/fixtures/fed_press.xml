@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0">
+  <channel>
+    <title>FRB: Press Release - All Releases</title>
+    <link>https://www.federalreserve.gov/feeds/feeds.htm</link>
+    <description>All recent press releases from the Federal Reserve Board</description>
+    <language>en</language>
+    <item>
+      <title>Federal Reserve issues FOMC statement</title>
+      <link>https://www.federalreserve.gov/newsevents/pressreleases/monetary20260916a.htm?utm_source=rss</link>
+      <guid>https://www.federalreserve.gov/newsevents/pressreleases/monetary20260916a.htm</guid>
+      <description><![CDATA[The Federal Open Market Committee decided to maintain the target range.]]></description>
+      <category>Monetary Policy</category>
+      <pubDate>Wed, 16 Sep 2026 18:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>Federal Reserve Board announces approval of an application</title>
+      <link>/newsevents/pressreleases/orders20260915a.htm</link>
+      <guid>fed-example-2</guid>
+      <description><![CDATA[<p>The Board approved the application.</p>]]></description>
+      <category>Orders on Banking Applications</category>
+      <pubDate>Tue, 15 Sep 2026 20:30:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>Missing URL is ignored</title>
+      <description>This entry has no link.</description>
+    </item>
+  </channel>
+</rss>

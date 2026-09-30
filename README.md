@@ -1,6 +1,6 @@
 # Market AI
 
-Market AI transforme des sources économiques et financières en événements structurés, sourcés et persistants. Cette première étape installe uniquement le socle technique : API, interface web, base PostgreSQL avec pgvector, Redis, migrations et environnement Docker.
+Market AI transforme des sources économiques et financières en événements structurés, sourcés et persistants. Le socle technique comprend l'API, l'interface web, PostgreSQL avec pgvector, Redis, les migrations, l'environnement Docker et la collecte automatique de sources primaires.
 
 ## Prérequis
 
@@ -31,20 +31,22 @@ Les endpoints suivants servent à l'orchestration :
 - `GET /api/v1/articles` retourne les articles récents avec pagination.
 - `GET /api/v1/collection-runs` retourne l'historique des collectes.
 
-## Collecter les publications de la BCE
+## Collecter les publications des banques centrales
 
 Une fois la stack démarrée, lancer :
 
 ```bash
 docker compose exec backend python -m app.cli.collect_ecb
+docker compose exec backend python -m app.cli.collect_fed
 ```
 
-Le collector utilise le flux officiel des communiqués de la Banque centrale européenne. Il normalise les champs, retire les paramètres de suivi des URL, calcule un hash SHA-256 puis ignore les URL et contenus déjà enregistrés. La commande peut donc être relancée sans créer de doublons.
+Les collectors utilisent les flux officiels des communiqués de la Banque centrale européenne et de la Réserve fédérale américaine. Ils normalisent les champs, retirent les paramètres de suivi des URL, calculent un hash SHA-256 puis ignorent les URL et contenus déjà enregistrés. Les commandes peuvent donc être relancées sans créer de doublons.
 
-Le service `scheduler` exécute aussi cette collecte automatiquement toutes les 15 minutes. L'intervalle et l'exécution immédiate au démarrage se règlent dans `.env` :
+Le service `scheduler` exécute les deux collectes automatiquement, chacune dans sa propre boucle. Les intervalles et l'exécution immédiate au démarrage se règlent dans `.env` :
 
 ```dotenv
 ECB_COLLECTION_INTERVAL_MINUTES=15
+FED_COLLECTION_INTERVAL_MINUTES=15
 SCHEDULER_RUN_ON_START=true
 ```
 
@@ -82,4 +84,4 @@ Pour exécuter le backend hors Docker tout en gardant les services de données d
 
 Le principe structurant est **Article != Event** : plusieurs articles peuvent documenter le même événement. PostgreSQL reste la mémoire permanente et les futurs workers Ollama ne recevront jamais ses identifiants.
 
-Le pipeline BCE est collecté automatiquement et observable. Aucun modèle Ollama, rapport ou moteur de scoring n'est encore implémenté. La prochaine étape recommandée est d'ajouter une deuxième source primaire en réutilisant le même contrat de collecte.
+Les pipelines BCE et Fed sont collectés automatiquement et observables. Aucun modèle Ollama, rapport ou moteur de scoring n'est encore implémenté. La prochaine étape recommandée est d'ajouter une source réglementaire primaire, puis de commencer l'extraction d'événements structurés.

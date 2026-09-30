@@ -59,6 +59,7 @@ services:
       REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
       ECB_COLLECTION_INTERVAL_MINUTES: ${ECB_COLLECTION_INTERVAL_MINUTES:-15}
+      FED_COLLECTION_INTERVAL_MINUTES: ${FED_COLLECTION_INTERVAL_MINUTES:-15}
       SCHEDULER_RUN_ON_START: ${SCHEDULER_RUN_ON_START:-true}
     command: ["python", "-m", "app.scheduler.main"]
     init: true

@@ -12,3 +12,6 @@ def test_cors_origins_are_parsed() -> None:
 def test_collection_interval_must_be_positive() -> None:
     with pytest.raises(ValidationError):
         Settings(ecb_collection_interval_minutes=0)
+
+    with pytest.raises(ValidationError):
+        Settings(fed_collection_interval_minutes=0)
