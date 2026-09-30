@@ -51,6 +51,22 @@ services:
       retries: 10
     restart: unless-stopped
 
+  scheduler:
+    build:
+      context: ./backend
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://market_ai:change-me@postgres:5432/market_ai}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      ECB_COLLECTION_INTERVAL_MINUTES: ${ECB_COLLECTION_INTERVAL_MINUTES:-15}
+      SCHEDULER_RUN_ON_START: ${SCHEDULER_RUN_ON_START:-true}
+    command: ["python", "-m", "app.scheduler.main"]
+    init: true
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
   frontend:
     build:
       context: ./frontend

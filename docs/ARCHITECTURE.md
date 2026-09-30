@@ -10,7 +10,7 @@ Interface ← Rapports ← Classement ← PostgreSQL ← Article / Event
                               Workers via API limitée
 ```
 
-La fondation actuelle contient le frontend, l'API, PostgreSQL, Redis et Caddy. Les blocs de collecte et d'IA seront ajoutés progressivement.
+La fondation actuelle contient le frontend, l'API, PostgreSQL, Redis, Caddy et un scheduler léger. Le scheduler exécute les collectors dans un processus séparé et enregistre chaque tentative dans PostgreSQL. Les blocs d'IA seront ajoutés progressivement.
 
 ## Responsabilités
 
@@ -20,6 +20,7 @@ La fondation actuelle contient le frontend, l'API, PostgreSQL, Redis et Caddy. L
 - Redis servira de file de travail et de stockage éphémère.
 - Next.js fournit une interface responsive et deviendra une PWA.
 - Caddy fournit le point d'entrée HTTP et, sur le VPS, terminera HTTPS.
+- Le scheduler orchestre les collectes périodiques sans exposer de route publique de déclenchement.
 
 Les workers IA distants utiliseront ultérieurement des endpoints authentifiés pour réserver une tâche, publier un résultat et envoyer un heartbeat. Ils ne se connecteront jamais directement aux services de données.
 

@@ -1,6 +1,6 @@
 # Base de données
 
-PostgreSQL est la source de vérité. La migration initiale active pgvector et crée quatre tables : `sources`, `articles`, `events` et `event_articles`.
+PostgreSQL est la source de vérité. La migration initiale active pgvector et crée `sources`, `articles`, `events` et `event_articles`. La migration suivante ajoute `collection_runs` pour l'observabilité des collectors.
 
 ## Règles
 
@@ -10,6 +10,7 @@ PostgreSQL est la source de vérité. La migration initiale active pgvector et c
 - `event_articles` permet de rattacher plusieurs preuves à un événement.
 - Un événement conserve des scores de veille ; ces scores ne sont pas des recommandations d'investissement.
 - La suppression d'une source ne doit pas effacer silencieusement son historique.
+- Une collecte est créée avec le statut `running` avant l'appel réseau, puis passe à `success` ou `failed` avec sa durée et ses compteurs.
 
 Les sociétés, listings, marchés, watchlists et rapports seront ajoutés lorsque leur premier cas d'usage sera implémenté. Cela évite de figer prématurément un schéma inutilisé.
 

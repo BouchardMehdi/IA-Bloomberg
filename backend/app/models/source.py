@@ -17,3 +17,4 @@ class Source(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     enabled: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
     articles = relationship("Article", back_populates="source")
+    collection_runs = relationship("CollectionRun", back_populates="source")

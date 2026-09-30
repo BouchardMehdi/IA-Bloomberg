@@ -22,9 +22,29 @@ type ArticlePage = {
   offset: number;
 };
 
+type CollectionRun = {
+  id: string;
+  source_name: string;
+  trigger: "manual" | "scheduled";
+  status: "running" | "success" | "failed";
+  started_at: string;
+  finished_at: string | null;
+  duration_ms: number | null;
+  fetched_count: number;
+  inserted_count: number;
+  duplicate_count: number;
+  error_message: string | null;
+};
+
+type CollectionRunPage = {
+  items: CollectionRun[];
+  total: number;
+};
+
 export default function Home() {
   const [apiState, setApiState] = useState<ApiState>("checking");
   const [articles, setArticles] = useState<ArticlePage | null>(null);
+  const [latestRun, setLatestRun] = useState<CollectionRun | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -46,6 +66,17 @@ export default function Home() {
       .catch((error: unknown) => {
         if (error instanceof DOMException && error.name === "AbortError") return;
         setArticles(null);
+      });
+
+    fetch(`${apiUrl}/collection-runs?limit=1`, { signal: controller.signal })
+      .then((response) => {
+        if (!response.ok) throw new Error("Collection history unavailable");
+        return response.json() as Promise<CollectionRunPage>;
+      })
+      .then((page) => setLatestRun(page.items[0] ?? null))
+      .catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+        setLatestRun(null);
       });
 
     return () => controller.abort();
@@ -96,10 +127,44 @@ export default function Home() {
           </div>
           <aside className="rounded-2xl border border-signal/20 bg-signal/5 p-5">
             <p className="text-xs uppercase tracking-[0.2em] text-signal">État du système</p>
-            <p className="mt-3 font-display text-2xl text-white">Socle opérationnel</p>
-            <p className="mt-2 text-sm leading-6 text-slate-400">
-              Le pipeline BCE collecte, normalise et déduplique désormais les communiqués officiels.
-            </p>
+            <div className="mt-3 flex items-center gap-2">
+              <span
+                className={`h-2 w-2 rounded-full ${
+                  latestRun?.status === "failed"
+                    ? "bg-rose-400"
+                    : latestRun?.status === "running"
+                      ? "animate-pulse bg-amber-300"
+                      : "bg-emerald-400"
+                }`}
+              />
+              <p className="font-display text-2xl text-white">
+                {latestRun?.status === "failed"
+                  ? "Collecte en erreur"
+                  : latestRun?.status === "running"
+                    ? "Collecte en cours"
+                    : "Pipeline opérationnel"}
+              </p>
+            </div>
+            {latestRun ? (
+              <div className="mt-4 grid grid-cols-3 gap-3 border-t border-white/10 pt-4 text-center">
+                <div>
+                  <p className="font-display text-xl text-white">{latestRun.fetched_count}</p>
+                  <p className="text-[10px] uppercase tracking-wide text-slate-500">Lus</p>
+                </div>
+                <div>
+                  <p className="font-display text-xl text-white">{latestRun.inserted_count}</p>
+                  <p className="text-[10px] uppercase tracking-wide text-slate-500">Nouveaux</p>
+                </div>
+                <div>
+                  <p className="font-display text-xl text-white">{latestRun.duration_ms ?? "—"}</p>
+                  <p className="text-[10px] uppercase tracking-wide text-slate-500">ms</p>
+                </div>
+              </div>
+            ) : (
+              <p className="mt-2 text-sm leading-6 text-slate-400">
+                Le scheduler attend sa première exécution enregistrée.
+              </p>
+            )}
           </aside>
         </section>
 

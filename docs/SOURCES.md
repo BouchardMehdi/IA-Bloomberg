@@ -21,3 +21,5 @@ docker compose exec backend python -m app.cli.collect_ecb
 Le contenu RSS est testé à partir de `backend/tests/fixtures/ecb_press.xml`. Les tests ne dépendent donc pas du réseau. La déduplication exacte s'appuie sur deux contraintes PostgreSQL indépendantes : URL canonique et hash SHA-256 du titre et du contenu normalisés.
 
 Le déclenchement reste volontairement une commande interne. Aucun endpoint public ne permet de lancer un collector.
+
+Le service Docker `scheduler` lance aussi la collecte au démarrage puis selon `ECB_COLLECTION_INTERVAL_MINUTES`. Une erreur est journalisée et enregistrée dans `collection_runs`; elle n'arrête pas les exécutions suivantes.

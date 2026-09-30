@@ -29,6 +29,7 @@ Les endpoints suivants servent à l'orchestration :
 - `GET /api/v1/health/live` vérifie que le processus répond ;
 - `GET /api/v1/health/ready` vérifie PostgreSQL et Redis.
 - `GET /api/v1/articles` retourne les articles récents avec pagination.
+- `GET /api/v1/collection-runs` retourne l'historique des collectes.
 
 ## Collecter les publications de la BCE
 
@@ -39,6 +40,15 @@ docker compose exec backend python -m app.cli.collect_ecb
 ```
 
 Le collector utilise le flux officiel des communiqués de la Banque centrale européenne. Il normalise les champs, retire les paramètres de suivi des URL, calcule un hash SHA-256 puis ignore les URL et contenus déjà enregistrés. La commande peut donc être relancée sans créer de doublons.
+
+Le service `scheduler` exécute aussi cette collecte automatiquement toutes les 15 minutes. L'intervalle et l'exécution immédiate au démarrage se règlent dans `.env` :
+
+```dotenv
+ECB_COLLECTION_INTERVAL_MINUTES=15
+SCHEDULER_RUN_ON_START=true
+```
+
+Chaque tentative est enregistrée avant l'appel réseau puis terminée avec son statut, sa durée et ses compteurs. Un échec reste ainsi visible dans l'API et sur le dashboard.
 
 ## Développement local
 
@@ -72,4 +82,4 @@ Pour exécuter le backend hors Docker tout en gardant les services de données d
 
 Le principe structurant est **Article != Event** : plusieurs articles peuvent documenter le même événement. PostgreSQL reste la mémoire permanente et les futurs workers Ollama ne recevront jamais ses identifiants.
 
-Le premier pipeline BCE est disponible. Aucun modèle Ollama, rapport ou moteur de scoring n'est encore implémenté. La prochaine étape recommandée est de planifier automatiquement la collecte et d'enregistrer ses métriques d'exécution.
+Le pipeline BCE est collecté automatiquement et observable. Aucun modèle Ollama, rapport ou moteur de scoring n'est encore implémenté. La prochaine étape recommandée est d'ajouter une deuxième source primaire en réutilisant le même contrat de collecte.

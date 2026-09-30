@@ -13,10 +13,12 @@ async def collect() -> None:
     async with async_session_factory() as session:
         stats = await ArticleIngestionService(session).run(ECBPressCollector())
     logger.info(
-        "ECB collection completed: fetched=%s inserted=%s duplicates=%s",
+        "ECB collection completed: run_id=%s fetched=%s inserted=%s duplicates=%s duration_ms=%s",
+        stats.run_id,
         stats.fetched,
         stats.inserted,
         stats.duplicates,
+        stats.duration_ms,
     )
 
 
