@@ -70,6 +70,7 @@ class RSSCollector(BaseCollector):
     feed_url: str
     language: str | None = None
     request_timeout_seconds: float = 20.0
+    user_agent = "MarketAI/0.1 RSS collector"
 
     def __init__(self, client: httpx.AsyncClient | None = None) -> None:
         self._client = client
@@ -83,7 +84,7 @@ class RSSCollector(BaseCollector):
         async with httpx.AsyncClient(
             timeout=self.request_timeout_seconds,
             follow_redirects=True,
-            headers={"User-Agent": "MarketAI/0.1 RSS collector"},
+            headers={"User-Agent": self.user_agent},
         ) as client:
             response = await client.get(self.feed_url)
             response.raise_for_status()

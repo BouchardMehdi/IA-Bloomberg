@@ -39,4 +39,4 @@ docker compose run --rm frontend npm run build
 
 Avant une modification, lire ce fichier et la documentation concernée. Limiter chaque changement à une fonctionnalité cohérente, ajouter les tests utiles, exécuter les vérifications adaptées et mettre à jour la documentation si le comportement change.
 
-La phase actuelle comprend la fondation, les collectors RSS de la BCE et de la Fed, leur scheduler et l'historique des collectes. Les tests des collectors utilisent des fixtures locales et ne dépendent pas du réseau. Ne pas ajouter d'intégration Ollama ou de fonction de trading sans demande explicite.
+La phase actuelle comprend la fondation, les collectors RSS de la BCE, de la Fed et des dépôts SEC 8-K, leur scheduler, l'historique des collectes et la première extraction déterministe d'événements sourcés. Les tests des collectors utilisent des fixtures locales et ne dépendent pas du réseau. Ne pas ajouter d'intégration Ollama ou de fonction de trading sans demande explicite.

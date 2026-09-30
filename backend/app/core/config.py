@@ -13,6 +13,13 @@ class Settings(BaseSettings):
     backend_cors_origins: str = "http://localhost:3000,http://localhost"
     ecb_collection_interval_minutes: int = Field(default=15, ge=1, le=1440)
     fed_collection_interval_minutes: int = Field(default=15, ge=1, le=1440)
+    sec_collection_interval_minutes: int = Field(default=15, ge=1, le=1440)
+    sec_user_agent: str = Field(
+        default="MarketAI/0.1 contact@example.com",
+        min_length=10,
+        max_length=255,
+    )
+    event_extraction_interval_minutes: int = Field(default=1, ge=1, le=1440)
     scheduler_run_on_start: bool = True
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")

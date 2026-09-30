@@ -41,9 +41,29 @@ type CollectionRunPage = {
   total: number;
 };
 
+type MarketEvent = {
+  id: string;
+  event_type: "central_bank_announcement" | "regulatory_filing";
+  title: string;
+  description: string | null;
+  event_datetime: string | null;
+  status: string;
+  confidence_score: number | null;
+  country: string | null;
+  region: string | null;
+  source_name: string;
+  article_url: string;
+};
+
+type EventPage = {
+  items: MarketEvent[];
+  total: number;
+};
+
 export default function Home() {
   const [apiState, setApiState] = useState<ApiState>("checking");
   const [articles, setArticles] = useState<ArticlePage | null>(null);
+  const [events, setEvents] = useState<EventPage | null>(null);
   const [latestRun, setLatestRun] = useState<CollectionRun | null>(null);
 
   useEffect(() => {
@@ -79,17 +99,32 @@ export default function Home() {
         setLatestRun(null);
       });
 
+    fetch(`${apiUrl}/events?limit=5`, { signal: controller.signal })
+      .then((response) => {
+        if (!response.ok) throw new Error("Events unavailable");
+        return response.json() as Promise<EventPage>;
+      })
+      .then(setEvents)
+      .catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+        setEvents(null);
+      });
+
     return () => controller.abort();
   }, []);
 
   const pillars = [
     {
       label: "Sources",
-      value: articles && articles.total > 0 ? "1" : "0",
-      note: articles && articles.total > 0 ? "BCE active" : "BCE prête",
+      value: "3",
+      note: "BCE · Fed · SEC",
     },
     { label: "Articles", value: String(articles?.total ?? 0), note: "Entrées dédupliquées" },
-    { label: "Événements", value: "0", note: "Extraction à venir" },
+    {
+      label: "Événements",
+      value: String(events?.total ?? 0),
+      note: "Détectés et traçables",
+    },
   ];
 
   return (
@@ -187,9 +222,55 @@ export default function Home() {
           <div className="mb-6 flex items-end justify-between gap-4">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-signal">
-                Source primaire
+                Détection déterministe
               </p>
-              <h3 className="mt-2 font-display text-2xl text-white">Dernières publications BCE</h3>
+              <h3 className="mt-2 font-display text-2xl text-white">Derniers événements</h3>
+            </div>
+            <span className="text-xs text-slate-500">{events?.total ?? 0} événement(s)</span>
+          </div>
+
+          {events?.items.length ? (
+            <div className="grid gap-4 md:grid-cols-2">
+              {events.items.map((event) => (
+                <a
+                  key={event.id}
+                  href={event.article_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="rounded-2xl border border-white/10 bg-white/[0.025] p-5 transition hover:border-signal/30 hover:bg-white/[0.04]"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-xs font-medium text-signal">{event.source_name}</span>
+                    <span className="rounded-full bg-white/5 px-2 py-1 text-[10px] uppercase tracking-wider text-slate-500">
+                      {event.event_type === "regulatory_filing" ? "Dépôt 8-K" : "Banque centrale"}
+                    </span>
+                  </div>
+                  <h4 className="mt-4 font-display text-lg text-white">{event.title}</h4>
+                  <time className="mt-3 block text-xs text-slate-500">
+                    {event.event_datetime
+                      ? new Intl.DateTimeFormat("fr-FR", {
+                          dateStyle: "medium",
+                          timeStyle: "short",
+                        }).format(new Date(event.event_datetime))
+                      : "Date inconnue"}
+                  </time>
+                </a>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-dashed border-white/15 px-6 py-10 text-center text-sm text-slate-400">
+              Aucun événement extrait pour le moment.
+            </div>
+          )}
+        </section>
+
+        <section className="mt-16">
+          <div className="mb-6 flex items-end justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-signal">
+                Sources primaires
+              </p>
+              <h3 className="mt-2 font-display text-2xl text-white">Dernières publications</h3>
             </div>
             <span className="text-xs text-slate-500">{articles?.total ?? 0} article(s)</span>
           </div>

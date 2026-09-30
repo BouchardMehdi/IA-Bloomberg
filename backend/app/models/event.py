@@ -11,6 +11,7 @@ from app.models.common import TimestampMixin, UUIDPrimaryKeyMixin
 class Event(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     __tablename__ = "events"
 
+    deduplication_key: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
     event_type: Mapped[str] = mapped_column(String(100), nullable=False)
     title: Mapped[str] = mapped_column(String(1024), nullable=False)
     description: Mapped[str | None] = mapped_column(Text)

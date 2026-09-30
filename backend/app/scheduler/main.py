@@ -6,8 +6,10 @@ from collections.abc import Callable
 from app.collectors.base import BaseCollector
 from app.collectors.ecb import ECBPressCollector
 from app.collectors.fed import FedPressCollector
+from app.collectors.sec import SEC8KCollector
 from app.core.config import get_settings
 from app.db.session import async_session_factory
+from app.services.event_extraction import DeterministicEventExtractionService
 from app.services.ingestion import ArticleIngestionService
 
 logging.basicConfig(level=get_settings().log_level)
@@ -59,6 +61,29 @@ async def run_collector(
         await asyncio.sleep(delay)
 
 
+async def extract_events_once() -> None:
+    async with async_session_factory() as session:
+        extracted = await DeterministicEventExtractionService(session).process_pending()
+    logger.info("Deterministic event extraction completed: extracted=%s", extracted)
+
+
+async def run_event_extractor(interval_minutes: int, run_on_start: bool) -> None:
+    logger.info("Event extractor started: interval_minutes=%s", interval_minutes)
+    if not run_on_start:
+        await asyncio.sleep(interval_minutes * 60)
+
+    while True:
+        cycle_started = time.monotonic()
+        try:
+            await extract_events_once()
+        except Exception:
+            logger.exception("Deterministic event extraction failed")
+
+        delay = seconds_until_next_run(interval_minutes, time.monotonic() - cycle_started)
+        logger.info("Next event extraction in %.1f seconds", delay)
+        await asyncio.sleep(delay)
+
+
 async def serve() -> None:
     settings = get_settings()
     await asyncio.gather(
@@ -72,6 +97,16 @@ async def serve() -> None:
             "Fed",
             FedPressCollector,
             settings.fed_collection_interval_minutes,
+            settings.scheduler_run_on_start,
+        ),
+        run_collector(
+            "SEC 8-K",
+            lambda: SEC8KCollector(settings.sec_user_agent),
+            settings.sec_collection_interval_minutes,
+            settings.scheduler_run_on_start,
+        ),
+        run_event_extractor(
+            settings.event_extraction_interval_minutes,
             settings.scheduler_run_on_start,
         ),
     )

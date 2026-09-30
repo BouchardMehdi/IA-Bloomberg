@@ -39,3 +39,19 @@ docker compose exec backend python -m app.cli.collect_fed
 ```
 
 Le service `scheduler` lance ce collector dans une boucle indépendante selon `FED_COLLECTION_INTERVAL_MINUTES`. Une indisponibilité de la Fed ne bloque donc pas la collecte de la BCE, et inversement. La normalisation et la déduplication utilisent le même contrat que le collector BCE.
+
+## SEC EDGAR
+
+Le troisième collector surveille les rapports courants `8-K`, utilisés par les sociétés américaines pour publier des événements importants :
+
+```text
+https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=8-K&output=atom
+```
+
+Commande manuelle :
+
+```bash
+docker compose exec backend python -m app.cli.collect_sec
+```
+
+La SEC demande aux outils automatisés de déclarer leur identité et un contact. `SEC_USER_AGENT` doit donc être renseigné avec une adresse valide. Le scheduler effectue une requête selon `SEC_COLLECTION_INTERVAL_MINUTES`, très en dessous de la limite officielle de dix requêtes par seconde. Les tests utilisent `backend/tests/fixtures/sec_8k.xml` et n'appellent pas EDGAR.

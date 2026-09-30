@@ -10,7 +10,7 @@ Interface ← Rapports ← Classement ← PostgreSQL ← Article / Event
                               Workers via API limitée
 ```
 
-La fondation actuelle contient le frontend, l'API, PostgreSQL, Redis, Caddy et un scheduler léger. Le scheduler exécute les collectors dans un processus séparé et enregistre chaque tentative dans PostgreSQL. Les blocs d'IA seront ajoutés progressivement.
+La fondation actuelle contient le frontend, l'API, PostgreSQL, Redis, Caddy et un scheduler léger. Le scheduler exécute les collectors dans un processus séparé, enregistre chaque tentative dans PostgreSQL et lance la première extraction déterministe des événements. Les blocs d'IA seront ajoutés progressivement.
 
 ## Responsabilités
 

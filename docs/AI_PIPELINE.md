@@ -17,3 +17,9 @@ La sortie doit pouvoir contenir zéro, un ou plusieurs événements. Chaque date
 Les prompts seront versionnés dans `prompts/`. Les appels enregistreront la version du modèle, la version du prompt, la durée et le statut. Les futurs workers récupéreront leurs tâches via l'API et renverront uniquement des résultats structurés.
 
 Pour réduire la charge locale, les filtres déterministes et la déduplication exacte doivent précéder tout appel à Ollama.
+
+## Première passe déterministe
+
+Avant l'intégration d'un modèle, le scheduler crée un événement minimal pour chaque article primaire non traité. Les publications BCE et Fed deviennent des `central_bank_announcement`; les dépôts SEC deviennent des `regulatory_filing`. Chaque événement conserve une clé de déduplication, la date du document et un lien primaire vers l'article.
+
+Cette passe enregistre le fait vérifiable qu'une annonce ou un dépôt a été publié. L'extraction IA ultérieure pourra produire des événements métier plus précis et relier plusieurs articles au même fait sans supprimer cette provenance.
