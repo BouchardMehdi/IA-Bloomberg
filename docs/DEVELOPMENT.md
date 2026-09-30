@@ -29,3 +29,11 @@ npm run build
 - Utiliser UTC pour le stockage et convertir uniquement à l'affichage.
 - Ne jamais journaliser de secret ni le contenu intégral d'un article par défaut.
 - Ajouter un test lorsqu'il protège une règle métier ou un contrat d'API.
+
+## Tester un collector RSS
+
+Les tests utilisent des fichiers RSS enregistrés dans `backend/tests/fixtures`. Ils ne doivent jamais dépendre de la disponibilité d'un site externe. Après les tests déterministes, une collecte manuelle peut valider le flux réel :
+
+```bash
+docker compose exec backend python -m app.cli.collect_ecb
+```

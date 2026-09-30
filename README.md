@@ -28,6 +28,17 @@ Les endpoints suivants servent à l'orchestration :
 
 - `GET /api/v1/health/live` vérifie que le processus répond ;
 - `GET /api/v1/health/ready` vérifie PostgreSQL et Redis.
+- `GET /api/v1/articles` retourne les articles récents avec pagination.
+
+## Collecter les publications de la BCE
+
+Une fois la stack démarrée, lancer :
+
+```bash
+docker compose exec backend python -m app.cli.collect_ecb
+```
+
+Le collector utilise le flux officiel des communiqués de la Banque centrale européenne. Il normalise les champs, retire les paramètres de suivi des URL, calcule un hash SHA-256 puis ignore les URL et contenus déjà enregistrés. La commande peut donc être relancée sans créer de doublons.
 
 ## Développement local
 
@@ -61,4 +72,4 @@ Pour exécuter le backend hors Docker tout en gardant les services de données d
 
 Le principe structurant est **Article != Event** : plusieurs articles peuvent documenter le même événement. PostgreSQL reste la mémoire permanente et les futurs workers Ollama ne recevront jamais ses identifiants.
 
-La fondation est prête. Aucun collector, modèle Ollama, rapport ou moteur de scoring n'est encore implémenté. La prochaine étape recommandée est un premier collector de source primaire avec normalisation et déduplication exacte.
+Le premier pipeline BCE est disponible. Aucun modèle Ollama, rapport ou moteur de scoring n'est encore implémenté. La prochaine étape recommandée est de planifier automatiquement la collecte et d'enregistrer ses métriques d'exécution.

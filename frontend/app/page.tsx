@@ -4,14 +4,27 @@ import { useEffect, useState } from "react";
 
 type ApiState = "checking" | "online" | "offline";
 
-const pillars = [
-  { label: "Sources", value: "0", note: "Collecteurs à venir" },
-  { label: "Événements", value: "0", note: "Base prête" },
-  { label: "Rapports", value: "0", note: "Moteur à venir" },
-];
+type Article = {
+  id: string;
+  source_name: string;
+  url: string;
+  title: string;
+  content: string | null;
+  language: string | null;
+  published_at: string | null;
+  fetched_at: string;
+};
+
+type ArticlePage = {
+  items: Article[];
+  total: number;
+  limit: number;
+  offset: number;
+};
 
 export default function Home() {
   const [apiState, setApiState] = useState<ApiState>("checking");
+  const [articles, setArticles] = useState<ArticlePage | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -24,8 +37,29 @@ export default function Home() {
         setApiState("offline");
       });
 
+    fetch(`${apiUrl}/articles?limit=6`, { signal: controller.signal })
+      .then((response) => {
+        if (!response.ok) throw new Error("Articles unavailable");
+        return response.json() as Promise<ArticlePage>;
+      })
+      .then(setArticles)
+      .catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+        setArticles(null);
+      });
+
     return () => controller.abort();
   }, []);
+
+  const pillars = [
+    {
+      label: "Sources",
+      value: articles && articles.total > 0 ? "1" : "0",
+      note: articles && articles.total > 0 ? "BCE active" : "BCE prête",
+    },
+    { label: "Articles", value: String(articles?.total ?? 0), note: "Entrées dédupliquées" },
+    { label: "Événements", value: "0", note: "Extraction à venir" },
+  ];
 
   return (
     <main className="min-h-screen px-5 py-6 md:px-10 md:py-10">
@@ -64,7 +98,7 @@ export default function Home() {
             <p className="text-xs uppercase tracking-[0.2em] text-signal">État du système</p>
             <p className="mt-3 font-display text-2xl text-white">Socle opérationnel</p>
             <p className="mt-2 text-sm leading-6 text-slate-400">
-              API, stockage, cache et interface sont prêts à accueillir le premier pipeline de collecte.
+              Le pipeline BCE collecte, normalise et déduplique désormais les communiqués officiels.
             </p>
           </aside>
         </section>
@@ -82,6 +116,62 @@ export default function Home() {
               <p className="mt-2 text-sm text-slate-500">{item.note}</p>
             </article>
           ))}
+        </section>
+
+        <section className="mt-16">
+          <div className="mb-6 flex items-end justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-signal">
+                Source primaire
+              </p>
+              <h3 className="mt-2 font-display text-2xl text-white">Dernières publications BCE</h3>
+            </div>
+            <span className="text-xs text-slate-500">{articles?.total ?? 0} article(s)</span>
+          </div>
+
+          {articles?.items.length ? (
+            <div className="divide-y divide-white/10 rounded-2xl border border-white/10 bg-white/[0.025]">
+              {articles.items.map((article) => (
+                <a
+                  key={article.id}
+                  href={article.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="group grid gap-3 p-5 transition hover:bg-white/[0.04] md:grid-cols-[150px_1fr_24px] md:items-start"
+                >
+                  <div>
+                    <p className="text-xs font-medium text-signal">{article.source_name}</p>
+                    <time className="mt-1 block text-xs text-slate-500">
+                      {new Intl.DateTimeFormat("fr-FR", {
+                        dateStyle: "medium",
+                        timeStyle: "short",
+                      }).format(new Date(article.published_at ?? article.fetched_at))}
+                    </time>
+                  </div>
+                  <div>
+                    <h4 className="font-display text-lg text-white group-hover:text-signal">
+                      {article.title}
+                    </h4>
+                    {article.content ? (
+                      <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-400">
+                        {article.content}
+                      </p>
+                    ) : null}
+                  </div>
+                  <span aria-hidden className="text-slate-500 transition group-hover:translate-x-1 group-hover:text-signal">
+                    ↗
+                  </span>
+                </a>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-dashed border-white/15 px-6 py-10 text-center">
+              <p className="text-sm text-slate-400">Aucun article collecté pour le moment.</p>
+              <code className="mt-3 inline-block rounded bg-black/20 px-3 py-2 text-xs text-slate-500">
+                docker compose exec backend python -m app.cli.collect_ecb
+              </code>
+            </div>
+          )}
         </section>
 
         <footer className="mt-20 flex flex-col gap-2 border-t border-white/10 py-6 text-xs text-slate-500 sm:flex-row sm:justify-between">
