@@ -10,8 +10,12 @@ logger = logging.getLogger(__name__)
 
 async def extract() -> None:
     async with async_session_factory() as session:
-        extracted = await DeterministicEventExtractionService(session).process_pending()
-    logger.info("Deterministic event extraction completed: extracted=%s", extracted)
+        stats = await DeterministicEventExtractionService(session).process_pending()
+    logger.info(
+        "Deterministic event extraction completed: created=%s enriched=%s",
+        stats.created,
+        stats.enriched,
+    )
 
 
 if __name__ == "__main__":

@@ -68,6 +68,8 @@ docker compose exec backend python -m app.cli.extract_events
 
 Cette étape ne résume pas encore les faits contenus dans un document et ne remplace pas la future extraction IA. Elle fournit une file d'événements idempotente et consultable sur laquelle les enrichissements suivants pourront travailler.
 
+Les dépôts SEC sont ensuite enrichis avec le formulaire, le numéro d'accession lorsqu'il est disponible, le nom de la société et son CIK. Les sociétés sont conservées dans un registre dédié et reliées aux événements. Chaque enrichissement garde aussi un extrait justificatif issu de l'article primaire et la version de l'extracteur utilisé.
+
 ## Développement local
 
 Backend :
@@ -100,4 +102,4 @@ Pour exécuter le backend hors Docker tout en gardant les services de données d
 
 Le principe structurant est **Article != Event** : plusieurs articles peuvent documenter le même événement. PostgreSQL reste la mémoire permanente et les futurs workers Ollama ne recevront jamais ses identifiants.
 
-Les pipelines BCE, Fed et SEC sont collectés automatiquement et observables. Une première extraction déterministe crée des événements sourcés. Aucun modèle Ollama, rapport ou moteur de scoring avancé n'est encore implémenté ; la prochaine étape est l'enrichissement structuré des événements.
+Les pipelines BCE, Fed et SEC sont collectés automatiquement et observables. L'extraction déterministe crée des événements sourcés et identifie les sociétés déclarantes des dépôts SEC. Aucun modèle Ollama, rapport ou moteur de scoring avancé n'est encore implémenté ; la prochaine étape est l'extraction sémantique des faits contenus dans les documents.

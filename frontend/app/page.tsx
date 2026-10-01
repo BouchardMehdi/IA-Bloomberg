@@ -48,11 +48,21 @@ type MarketEvent = {
   description: string | null;
   event_datetime: string | null;
   status: string;
+  extraction_method: string | null;
+  extraction_version: string | null;
+  evidence_excerpt: string | null;
+  structured_data: Record<string, unknown> | null;
   confidence_score: number | null;
   country: string | null;
   region: string | null;
   source_name: string;
   article_url: string;
+  companies: Array<{
+    id: string;
+    cik: string;
+    name: string;
+    role: string;
+  }>;
 };
 
 type EventPage = {
@@ -246,6 +256,19 @@ export default function Home() {
                     </span>
                   </div>
                   <h4 className="mt-4 font-display text-lg text-white">{event.title}</h4>
+                  {event.companies.length ? (
+                    <p className="mt-2 text-sm text-slate-300">
+                      {event.companies.map((company) => company.name).join(", ")}
+                      <span className="ml-2 text-xs text-slate-500">
+                        CIK {event.companies[0].cik}
+                      </span>
+                    </p>
+                  ) : null}
+                  {event.evidence_excerpt ? (
+                    <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-400">
+                      {event.evidence_excerpt}
+                    </p>
+                  ) : null}
                   <time className="mt-3 block text-xs text-slate-500">
                     {event.event_datetime
                       ? new Intl.DateTimeFormat("fr-FR", {

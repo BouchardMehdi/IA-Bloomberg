@@ -63,8 +63,12 @@ async def run_collector(
 
 async def extract_events_once() -> None:
     async with async_session_factory() as session:
-        extracted = await DeterministicEventExtractionService(session).process_pending()
-    logger.info("Deterministic event extraction completed: extracted=%s", extracted)
+        stats = await DeterministicEventExtractionService(session).process_pending()
+    logger.info(
+        "Deterministic event extraction completed: created=%s enriched=%s",
+        stats.created,
+        stats.enriched,
+    )
 
 
 async def run_event_extractor(interval_minutes: int, run_on_start: bool) -> None:

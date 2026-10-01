@@ -2,6 +2,7 @@ import uuid
 from datetime import datetime
 
 from sqlalchemy import DateTime, Float, ForeignKey, String, Text, UniqueConstraint
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -18,6 +19,10 @@ class Event(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     event_datetime: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     event_time_type: Mapped[str | None] = mapped_column(String(50))
     status: Mapped[str] = mapped_column(String(50), default="detected", nullable=False)
+    extraction_method: Mapped[str | None] = mapped_column(String(50))
+    extraction_version: Mapped[str | None] = mapped_column(String(50))
+    evidence_excerpt: Mapped[str | None] = mapped_column(Text)
+    structured_data: Mapped[dict[str, object] | None] = mapped_column(JSONB)
     importance_score: Mapped[float | None] = mapped_column(Float)
     impact_score: Mapped[float | None] = mapped_column(Float)
     novelty_score: Mapped[float | None] = mapped_column(Float)
@@ -28,6 +33,7 @@ class Event(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     region: Mapped[str | None] = mapped_column(String(50))
 
     article_links = relationship("EventArticle", back_populates="event")
+    company_links = relationship("EventCompany", back_populates="event")
 
 
 class EventArticle(UUIDPrimaryKeyMixin, Base):

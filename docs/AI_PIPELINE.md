@@ -23,3 +23,5 @@ Pour réduire la charge locale, les filtres déterministes et la déduplication 
 Avant l'intégration d'un modèle, le scheduler crée un événement minimal pour chaque article primaire non traité. Les publications BCE et Fed deviennent des `central_bank_announcement`; les dépôts SEC deviennent des `regulatory_filing`. Chaque événement conserve une clé de déduplication, la date du document et un lien primaire vers l'article.
 
 Cette passe enregistre le fait vérifiable qu'une annonce ou un dépôt a été publié. L'extraction IA ultérieure pourra produire des événements métier plus précis et relier plusieurs articles au même fait sans supprimer cette provenance.
+
+Pour les dépôts SEC, l'extracteur déterministe récupère déjà le formulaire, le CIK, le nom du déclarant et le numéro d'accession disponible. Il crée ou actualise la société correspondante puis la relie à l'événement avec le rôle `subject`. Chaque résultat porte la version `deterministic-v1` et un extrait justificatif limité provenant du document source.

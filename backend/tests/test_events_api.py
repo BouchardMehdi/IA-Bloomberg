@@ -5,7 +5,7 @@ from fastapi.testclient import TestClient
 
 from app.api.routes.events import get_event_service
 from app.main import app
-from app.schemas.event import EventPage, EventRead
+from app.schemas.event import EventCompanyRead, EventPage, EventRead
 
 
 class StubEventService:
@@ -18,12 +18,28 @@ class StubEventService:
                     title="8-K - Example Corporation",
                     description="Filed: 2026-09-30",
                     event_datetime=datetime(2026, 9, 30, 20, 0, tzinfo=UTC),
-                    status="detected",
+                    status="enriched",
+                    extraction_method="deterministic",
+                    extraction_version="deterministic-v1",
+                    evidence_excerpt="Filed: 2026-09-30",
+                    structured_data={
+                        "form": "8-K",
+                        "company_name": "Example Corporation",
+                        "cik": "0001234567",
+                    },
                     confidence_score=1.0,
                     country="US",
                     region="NORTH_AMERICA",
                     source_name="SEC EDGAR 8-K",
                     article_url="https://www.sec.gov/example",
+                    companies=[
+                        EventCompanyRead(
+                            id=UUID("00000000-0000-0000-0000-000000000004"),
+                            cik="0001234567",
+                            name="Example Corporation",
+                            role="subject",
+                        )
+                    ],
                 )
             ],
             total=1,
@@ -47,6 +63,7 @@ def test_events_endpoint_returns_traceable_events() -> None:
     assert payload["total"] == 1
     assert payload["items"][0]["event_type"] == "regulatory_filing"
     assert payload["items"][0]["article_url"] == "https://www.sec.gov/example"
+    assert payload["items"][0]["companies"][0]["cik"] == "0001234567"
 
 
 def test_events_endpoint_validates_page_size() -> None:

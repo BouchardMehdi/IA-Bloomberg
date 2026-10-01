@@ -1,6 +1,6 @@
 # Base de données
 
-PostgreSQL est la source de vérité. La migration initiale active pgvector et crée `sources`, `articles`, `events` et `event_articles`. La migration suivante ajoute `collection_runs` pour l'observabilité des collectors. La troisième ajoute une clé stable de déduplication aux événements.
+PostgreSQL est la source de vérité. La migration initiale active pgvector et crée `sources`, `articles`, `events` et `event_articles`. La migration suivante ajoute `collection_runs` pour l'observabilité des collectors. La troisième ajoute une clé stable de déduplication aux événements. La quatrième ajoute l'enrichissement structuré, `companies` et la relation `event_companies`.
 
 ## Règles
 
@@ -9,11 +9,13 @@ PostgreSQL est la source de vérité. La migration initiale active pgvector et c
 - `articles.url` et `articles.content_hash` sont uniques pour bloquer les doublons exacts.
 - `event_articles` permet de rattacher plusieurs preuves à un événement.
 - `events.deduplication_key` empêche une nouvelle extraction de recréer le même événement.
+- `companies.cik` identifie de manière unique les déclarants SEC.
+- Un événement conserve la méthode et la version d'extraction, les données structurées et un extrait justificatif.
 - Un événement conserve des scores de veille ; ces scores ne sont pas des recommandations d'investissement.
 - La suppression d'une source ne doit pas effacer silencieusement son historique.
 - Une collecte est créée avec le statut `running` avant l'appel réseau, puis passe à `success` ou `failed` avec sa durée et ses compteurs.
 
-Les sociétés, listings, marchés, watchlists et rapports seront ajoutés lorsque leur premier cas d'usage sera implémenté. Cela évite de figer prématurément un schéma inutilisé.
+Les listings, marchés, watchlists et rapports seront ajoutés lorsque leur premier cas d'usage sera implémenté. Cela évite de figer prématurément un schéma inutilisé.
 
 ## Migrations
 

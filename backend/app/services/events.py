@@ -1,7 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.repositories.events import EventRepository
-from app.schemas.event import EventPage, EventRead
+from app.schemas.event import EventCompanyRead, EventPage, EventRead
 
 
 class EventService:
@@ -19,11 +19,24 @@ class EventService:
                     description=record.event.description,
                     event_datetime=record.event.event_datetime,
                     status=record.event.status,
+                    extraction_method=record.event.extraction_method,
+                    extraction_version=record.event.extraction_version,
+                    evidence_excerpt=record.event.evidence_excerpt,
+                    structured_data=record.event.structured_data,
                     confidence_score=record.event.confidence_score,
                     country=record.event.country,
                     region=record.event.region,
                     source_name=record.source_name,
                     article_url=record.article_url,
+                    companies=[
+                        EventCompanyRead(
+                            id=link.company.id,
+                            cik=link.company.cik,
+                            name=link.company.name,
+                            role=link.role,
+                        )
+                        for link in record.event.company_links
+                    ],
                 )
                 for record in records
             ],
