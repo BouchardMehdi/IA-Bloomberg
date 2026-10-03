@@ -9,8 +9,10 @@ from app.collectors.fed import FedPressCollector
 from app.collectors.sec import SEC8KCollector
 from app.core.config import get_settings
 from app.db.session import async_session_factory
+from app.semantic.ollama import OllamaSemanticClient
 from app.services.event_extraction import DeterministicEventExtractionService
 from app.services.ingestion import ArticleIngestionService
+from app.services.semantic_analysis import SemanticAnalysisService
 
 logging.basicConfig(level=get_settings().log_level)
 logger = logging.getLogger(__name__)
@@ -88,9 +90,45 @@ async def run_event_extractor(interval_minutes: int, run_on_start: bool) -> None
         await asyncio.sleep(delay)
 
 
+async def analyze_events_once(client: OllamaSemanticClient, batch_size: int) -> None:
+    async with async_session_factory() as session:
+        stats = await SemanticAnalysisService(session, client).process_pending(batch_size)
+    logger.info(
+        "Semantic analysis completed: succeeded=%s failed=%s",
+        stats.succeeded,
+        stats.failed,
+    )
+
+
+async def run_semantic_analyzer(
+    client: OllamaSemanticClient,
+    interval_minutes: int,
+    batch_size: int,
+    run_on_start: bool,
+) -> None:
+    logger.info(
+        "Semantic analyzer started: model=%s interval_minutes=%s batch_size=%s",
+        client.model,
+        interval_minutes,
+        batch_size,
+    )
+    if not run_on_start:
+        await asyncio.sleep(interval_minutes * 60)
+
+    while True:
+        cycle_started = time.monotonic()
+        try:
+            await analyze_events_once(client, batch_size)
+        except Exception:
+            logger.exception("Semantic analysis cycle failed")
+        delay = seconds_until_next_run(interval_minutes, time.monotonic() - cycle_started)
+        logger.info("Next semantic analysis in %.1f seconds", delay)
+        await asyncio.sleep(delay)
+
+
 async def serve() -> None:
     settings = get_settings()
-    await asyncio.gather(
+    tasks = [
         run_collector(
             "ECB",
             ECBPressCollector,
@@ -113,7 +151,19 @@ async def serve() -> None:
             settings.event_extraction_interval_minutes,
             settings.scheduler_run_on_start,
         ),
-    )
+    ]
+    if settings.ai_analysis_enabled:
+        tasks.append(
+            run_semantic_analyzer(
+                OllamaSemanticClient(settings.ollama_base_url, settings.ollama_model),
+                settings.ai_analysis_interval_minutes,
+                settings.ai_analysis_batch_size,
+                settings.scheduler_run_on_start,
+            )
+        )
+    else:
+        logger.info("Semantic analyzer disabled")
+    await asyncio.gather(*tasks)
 
 
 if __name__ == "__main__":

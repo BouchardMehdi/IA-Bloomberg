@@ -63,6 +63,18 @@ type MarketEvent = {
     name: string;
     role: string;
   }>;
+  semantic_analysis: {
+    model_name: string;
+    prompt_version: string;
+    duration_ms: number | null;
+    prompt_tokens: number | null;
+    completion_tokens: number | null;
+    result: {
+      summary?: string;
+      importance_score?: number;
+      urgency_score?: number;
+    };
+  } | null;
 };
 
 type EventPage = {
@@ -262,6 +274,11 @@ export default function Home() {
                       <span className="ml-2 text-xs text-slate-500">
                         CIK {event.companies[0].cik}
                       </span>
+                    </p>
+                  ) : null}
+                  {event.semantic_analysis?.result.summary ? (
+                    <p className="mt-3 text-sm leading-6 text-slate-300">
+                      {event.semantic_analysis.result.summary}
                     </p>
                   ) : null}
                   {event.evidence_excerpt ? (

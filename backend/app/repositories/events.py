@@ -186,7 +186,10 @@ class EventRepository:
     async def list_latest(self, limit: int, offset: int) -> tuple[list[EventRecord], int]:
         statement = (
             select(Event, Source.name, Article.url)
-            .options(selectinload(Event.company_links).joinedload(EventCompany.company))
+            .options(
+                selectinload(Event.company_links).joinedload(EventCompany.company),
+                selectinload(Event.analysis_runs),
+            )
             .join(EventArticle, EventArticle.event_id == Event.id)
             .join(Article, Article.id == EventArticle.article_id)
             .join(Source, Source.id == Article.source_id)

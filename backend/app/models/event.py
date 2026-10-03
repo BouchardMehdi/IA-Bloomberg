@@ -34,6 +34,11 @@ class Event(UUIDPrimaryKeyMixin, TimestampMixin, Base):
 
     article_links = relationship("EventArticle", back_populates="event")
     company_links = relationship("EventCompany", back_populates="event")
+    analysis_runs = relationship(
+        "AnalysisRun",
+        back_populates="event",
+        order_by="AnalysisRun.started_at.desc()",
+    )
 
 
 class EventArticle(UUIDPrimaryKeyMixin, Base):

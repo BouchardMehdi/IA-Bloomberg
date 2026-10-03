@@ -44,7 +44,7 @@ docker compose exec backend python -m app.cli.collect_sec
 
 Les collectors utilisent les flux officiels de la Banque centrale européenne, de la Réserve fédérale américaine et des dépôts `8-K` de la SEC. Ils normalisent les champs, retirent les paramètres de suivi des URL, calculent un hash SHA-256 puis ignorent les URL et contenus déjà enregistrés. Les commandes peuvent donc être relancées sans créer de doublons.
 
-Le service `scheduler` exécute les deux collectes automatiquement, chacune dans sa propre boucle. Les intervalles et l'exécution immédiate au démarrage se règlent dans `.env` :
+Le service `scheduler` exécute les trois collectes automatiquement, chacune dans sa propre boucle. Les intervalles et l'exécution immédiate au démarrage se règlent dans `.env` :
 
 ```dotenv
 ECB_COLLECTION_INTERVAL_MINUTES=15
@@ -69,6 +69,26 @@ docker compose exec backend python -m app.cli.extract_events
 Cette étape ne résume pas encore les faits contenus dans un document et ne remplace pas la future extraction IA. Elle fournit une file d'événements idempotente et consultable sur laquelle les enrichissements suivants pourront travailler.
 
 Les dépôts SEC sont ensuite enrichis avec le formulaire, le numéro d'accession lorsqu'il est disponible, le nom de la société et son CIK. Les sociétés sont conservées dans un registre dédié et reliées aux événements. Chaque enrichissement garde aussi un extrait justificatif issu de l'article primaire et la version de l'extracteur utilisé.
+
+## Activer l'analyse sémantique locale
+
+L'analyse sémantique utilise Ollama avec un JSON Schema strict, une température nulle et une validation Pydantic. Les citations produites par le modèle sont rejetées si elles ne figurent pas dans le texte source. Chaque tentative conserve son modèle, sa version de prompt, sa durée, ses compteurs de tokens, son résultat ou son erreur.
+
+Le modèle compact par défaut est `qwen3:4b-instruct`. L'analyse reste désactivée tant que le service et le modèle ne sont pas prêts :
+
+```bash
+docker compose --profile ai up -d ollama
+docker compose exec ollama ollama pull qwen3:4b-instruct
+```
+
+Renseigner ensuite `AI_ANALYSIS_ENABLED=true` dans `.env` et recréer le scheduler. Une analyse manuelle limitée peut être lancée avec :
+
+```bash
+docker compose --profile ai up -d backend scheduler ollama
+docker compose exec backend python -m app.cli.analyze_events --limit 3
+```
+
+Le résultat contient un résumé, une catégorie sémantique, les sociétés et actifs cités, les dates, les montants, les scores de sentiment, d'importance, d'urgence et de confiance, ainsi que les preuves textuelles.
 
 ## Développement local
 
@@ -102,4 +122,4 @@ Pour exécuter le backend hors Docker tout en gardant les services de données d
 
 Le principe structurant est **Article != Event** : plusieurs articles peuvent documenter le même événement. PostgreSQL reste la mémoire permanente et les futurs workers Ollama ne recevront jamais ses identifiants.
 
-Les pipelines BCE, Fed et SEC sont collectés automatiquement et observables. L'extraction déterministe crée des événements sourcés et identifie les sociétés déclarantes des dépôts SEC. Aucun modèle Ollama, rapport ou moteur de scoring avancé n'est encore implémenté ; la prochaine étape est l'extraction sémantique des faits contenus dans les documents.
+Les pipelines BCE, Fed et SEC sont collectés automatiquement et observables. L'extraction déterministe crée des événements sourcés et identifie les sociétés déclarantes des dépôts SEC. L'analyse sémantique Ollama est disponible de manière optionnelle et conserve ses preuves et métriques. La prochaine étape sera d'étendre le contenu collecté avant l'analyse et de regrouper les événements équivalents.

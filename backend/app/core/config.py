@@ -20,6 +20,11 @@ class Settings(BaseSettings):
         max_length=255,
     )
     event_extraction_interval_minutes: int = Field(default=1, ge=1, le=1440)
+    ai_analysis_enabled: bool = False
+    ai_analysis_interval_minutes: int = Field(default=5, ge=1, le=1440)
+    ai_analysis_batch_size: int = Field(default=3, ge=1, le=50)
+    ollama_base_url: str = "http://ollama:11434"
+    ollama_model: str = "qwen3:4b-instruct"
     scheduler_run_on_start: bool = True
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")

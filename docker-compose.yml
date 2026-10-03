@@ -36,6 +36,8 @@ services:
       REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
       BACKEND_CORS_ORIGINS: ${BACKEND_CORS_ORIGINS:-http://localhost:3000,http://localhost}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen3:4b-instruct}
     command: ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"]
     ports:
       - "8000:8000"
@@ -63,12 +65,26 @@ services:
       SEC_COLLECTION_INTERVAL_MINUTES: ${SEC_COLLECTION_INTERVAL_MINUTES:-15}
       SEC_USER_AGENT: ${SEC_USER_AGENT:-MarketAI/0.1 contact@example.com}
       EVENT_EXTRACTION_INTERVAL_MINUTES: ${EVENT_EXTRACTION_INTERVAL_MINUTES:-1}
+      AI_ANALYSIS_ENABLED: ${AI_ANALYSIS_ENABLED:-false}
+      AI_ANALYSIS_INTERVAL_MINUTES: ${AI_ANALYSIS_INTERVAL_MINUTES:-5}
+      AI_ANALYSIS_BATCH_SIZE: ${AI_ANALYSIS_BATCH_SIZE:-3}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen3:4b-instruct}
       SCHEDULER_RUN_ON_START: ${SCHEDULER_RUN_ON_START:-true}
     command: ["python", "-m", "app.scheduler.main"]
     init: true
     depends_on:
       backend:
         condition: service_healthy
+    restart: unless-stopped
+
+  ollama:
+    image: ollama/ollama:latest
+    profiles: ["ai"]
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
     restart: unless-stopped
 
   frontend:
@@ -104,3 +120,4 @@ volumes:
   redis_data:
   caddy_data:
   caddy_config:
+  ollama_data:

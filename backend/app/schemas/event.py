@@ -12,6 +12,15 @@ class EventCompanyRead(BaseModel):
     role: str
 
 
+class SemanticAnalysisRead(BaseModel):
+    model_name: str
+    prompt_version: str
+    duration_ms: int | None
+    prompt_tokens: int | None
+    completion_tokens: int | None
+    result: dict[str, Any]
+
+
 class EventRead(BaseModel):
     id: uuid.UUID
     event_type: str
@@ -29,6 +38,7 @@ class EventRead(BaseModel):
     source_name: str
     article_url: str
     companies: list[EventCompanyRead]
+    semantic_analysis: SemanticAnalysisRead | None = None
 
 
 class EventPage(BaseModel):

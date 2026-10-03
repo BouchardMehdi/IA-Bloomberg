@@ -21,3 +21,6 @@ def test_collection_interval_must_be_positive() -> None:
 
     with pytest.raises(ValidationError):
         Settings(event_extraction_interval_minutes=0)
+
+    with pytest.raises(ValidationError):
+        Settings(ai_analysis_batch_size=0)

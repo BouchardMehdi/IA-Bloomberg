@@ -1,6 +1,6 @@
 # Pipeline IA
 
-L'intégration IA n'est pas encore active. Son contrat prévu est le suivant :
+L'analyse IA locale est disponible en option. Le pipeline cible est le suivant :
 
 ```text
 Article normalisé
@@ -14,7 +14,7 @@ Article normalisé
 
 La sortie doit pouvoir contenir zéro, un ou plusieurs événements. Chaque date, montant ou déclaration importante conserve un extrait justificatif de la source. Une valeur absente reste inconnue ; le modèle ne doit pas la compléter par supposition.
 
-Les prompts seront versionnés dans `prompts/`. Les appels enregistreront la version du modèle, la version du prompt, la durée et le statut. Les futurs workers récupéreront leurs tâches via l'API et renverront uniquement des résultats structurés.
+Le prompt actuel est versionné dans `backend/app/semantic/prompt.py`. Les appels enregistrent le nom du modèle, la version du prompt, la durée et le statut. Les futurs workers récupéreront leurs tâches via l'API et renverront uniquement des résultats structurés.
 
 Pour réduire la charge locale, les filtres déterministes et la déduplication exacte doivent précéder tout appel à Ollama.
 
@@ -25,3 +25,9 @@ Avant l'intégration d'un modèle, le scheduler crée un événement minimal pou
 Cette passe enregistre le fait vérifiable qu'une annonce ou un dépôt a été publié. L'extraction IA ultérieure pourra produire des événements métier plus précis et relier plusieurs articles au même fait sans supprimer cette provenance.
 
 Pour les dépôts SEC, l'extracteur déterministe récupère déjà le formulaire, le CIK, le nom du déclarant et le numéro d'accession disponible. Il crée ou actualise la société correspondante puis la relie à l'événement avec le rôle `subject`. Chaque résultat porte la version `deterministic-v1` et un extrait justificatif limité provenant du document source.
+
+## Analyse sémantique locale
+
+Le client Ollama envoie le titre et le contenu autorisé avec le JSON Schema Pydantic de sortie. `semantic-v2` produit un résumé bref en français, un type d'événement, des sociétés, actifs, dates, montants, scores et preuves. La température est fixée à zéro. Toute citation qui ne peut pas être retrouvée dans la source normalisée invalide le résultat.
+
+`analysis_runs` journalise les succès et les échecs avec le modèle, la version du prompt, le hash d'entrée, la durée et les tokens. L'analyse est désactivée par défaut afin que la collecte reste disponible sans GPU ni modèle téléchargé.
