@@ -88,7 +88,16 @@ class SemanticAnalysisRepository:
                 and_(
                     completed_run.c.event_id == Event.id,
                     completed_run.c.model_name == model_name,
-                    completed_run.c.prompt_version == prompt_version,
+                    or_(
+                        completed_run.c.prompt_version == prompt_version,
+                        and_(
+                            # Add identity metadata to existing v5 facts without paying
+                            # for a complete document reanalysis after this upgrade.
+                            prompt_version == "semantic-v6-entities",
+                            completed_run.c.prompt_version == "semantic-v5-passages",
+                            completed_run.c.status == "success",
+                        ),
+                    ),
                     completed_run.c.input_hash == input_hash,
                     or_(
                         completed_run.c.status == "success",

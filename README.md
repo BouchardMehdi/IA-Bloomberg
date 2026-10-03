@@ -121,6 +121,41 @@ docker compose exec backend python -m tests.smoke_passage_pipeline
 
 Les événements correspondant au même numéro de dépôt SEC sont regroupés. Pour les autres publications, le regroupement exige un texte intégral identique d'au moins 500 caractères, la même source et la même date de publication ; un texte tronqué ne suffit pas. Les événements regroupés et leurs historiques restent en base, tandis que l'API expose l'événement conservé avec toutes ses sources. Des articles simplement proches par leur sujet restent distincts.
 
+## Identifier les sociétés et les titres
+
+Le scheduler synchronise une fois par jour le référentiel officiel SEC des noms, CIK,
+tickers et marchés, puis résout les identités toutes les minutes, par lots de 100.
+Le téléchargement est limité à 5 Mo et 60 secondes. En cas d'erreur, le dernier
+snapshot reste utilisable et une nouvelle vérification attend une heure.
+`ENTITY_REGISTRY_ENABLED=false` désactive uniquement la synchronisation réseau.
+
+```bash
+docker compose exec backend python -m app.cli.resolve_entities --sync --limit 1000
+```
+
+L'API `/api/v1/events` et l'interface exposent `entity_resolution` : identité,
+statut (`resolved`, `ambiguous`, `unresolved`, `unverified`), candidats, méthode et
+citation. Les noms sont comparés exactement après normalisation de la casse et de la
+ponctuation ; aucune correspondance approximative n'est validée automatiquement.
+Les variantes présentes dans les dépôts SEC sont associées par CIK. Un ticker doit
+être explicitement cité ; les cotations disponibles d'une société sont du contexte,
+pas une affirmation que chacun de ses titres est concerné par le fait.
+
+Les prochaines extractions peuvent préciser `subject`, `counterparty` ou `mention`,
+avec une citation contenant le nom. Ces rôles sont proposés par le modèle ; le
+contrôle vérifie la présence de la citation, sans garantir son interprétation.
+Le déclarant du document reste distinct (`source_subject`). Les anciennes analyses
+réussies `semantic-v5-passages` restent en cache pour le même texte, modèle et plan ;
+leurs sociétés sont résolues comme simples mentions sans nouvel appel IA.
+
+Les codes explicites USD, EUR, GBP, JPY, CHF, CAD, AUD et CNY sont reconnus. Un symbole
+`$` seul ne détermine pas une devise. Les obligations restent des mentions non
+résolues tant qu'un référentiel adapté n'est pas disponible. La SEC fournit des
+associations ticker/émetteur/marché, sans garantir ici la classe du titre. Le snapshot
+est daté par sa consultation ; sa date de publication et les cotations historiques
+restent inconnues. Le lien et la date du document justificatif restent conservés
+avec les sources de l'événement.
+
 ## Développement local
 
 Backend :
@@ -153,4 +188,4 @@ Pour exécuter le backend hors Docker tout en gardant les services de données d
 
 Le principe structurant est **Article != Event** : plusieurs articles peuvent documenter le même événement. PostgreSQL reste la mémoire permanente et les futurs workers Ollama ne recevront jamais ses identifiants.
 
-Les pipelines BCE, Fed et SEC collectent les flux puis le texte des documents officiels. L'extraction déterministe crée des événements sourcés et identifie les sociétés déclarantes des dépôts SEC. Le regroupement exact conserve toutes les sources ; l'analyse Ollama optionnelle garde ses preuves et métriques. La prochaine étape pourra étendre la couverture des documents, puis le rapprochement des faits décrit différemment par plusieurs sources.
+Les pipelines BCE, Fed et SEC collectent les flux puis le texte des documents officiels. L'extraction déterministe crée des publications sourcées ; Ollama peut produire plusieurs faits avec leurs preuves. Le regroupement exact conserve toutes les sources et le résolveur identifie les sociétés et les tickers explicites. La prochaine étape pourra utiliser ces identités pour des watchlists et des alertes ciblées.

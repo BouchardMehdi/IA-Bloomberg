@@ -41,10 +41,20 @@ class SemanticExtraction(BaseModel):
     evidence: list[EvidenceItem] = Field(min_length=1, max_length=3)
 
 
+class EntityMention(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True, extra="forbid")
+
+    name: str = Field(min_length=1, max_length=512)
+    kind: Literal["company", "equity", "bond", "currency"]
+    role: Literal["subject", "counterparty", "mention"]
+    quote: str = Field(min_length=3, max_length=500)
+
+
 class PassageFact(SemanticExtraction):
     model_config = ConfigDict(str_strip_whitespace=True, extra="forbid")
     summary: str = Field(min_length=10, max_length=600)
     evidence: list[EvidenceItem] = Field(min_length=1, max_length=1)
+    entity_mentions: list[EntityMention] = Field(default_factory=list, max_length=20)
 
 
 class PassageExtraction(BaseModel):

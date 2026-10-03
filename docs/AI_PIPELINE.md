@@ -28,6 +28,14 @@ Pour les dépôts SEC, l'extracteur déterministe récupère déjà le formulair
 
 ## Analyse sémantique locale
 
+Le prompt actuel est `semantic-v6-entities`. Il ajoute des `entity_mentions` avec nom
+copié, type, rôle (`subject`, `counterparty`, `mention`) et citation. La résolution
+des identités est déterministe et ne lance aucun appel supplémentaire au modèle.
+Les succès `semantic-v5-passages` pour le même document, modèle et plan restent en
+cache ; leurs entités sont traitées comme mentions. Les anciennes analyses partielles
+peuvent être reprises avec le nouveau prompt. Voir le README pour les limites des
+identifiants de titres et des rôles.
+
 `semantic-v5-passages` analyse un plan déterministe établi sur l'ensemble du texte conservé. Les passages respectent autant que possible les limites de phrase et de section ; leurs positions sont conservées. Les indices financiers priorisent les passages utiles et les mentions légales diminuent leur priorité. Le budget par défaut est de trois passages de 3 000 caractères, 9 000 caractères au total, hors titre et prompt. Après un échec définitif de récupération, l'extrait RSS reste utilisable.
 
 Chaque appel utilise un JSON Schema `PassageExtraction` contenant zéro à trois faits. Un passage sans fait peut produire une liste vide. Chaque fait conserve un résumé bref en français, son type, ses entités, dates, montants, scores et une citation. Une citation doit se retrouver dans le titre ou le passage effectivement transmis. Un passage invalide est rejeté intégralement. La température est nulle et la génération est limitée à 1 536 tokens par appel.

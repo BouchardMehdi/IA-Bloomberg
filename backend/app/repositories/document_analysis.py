@@ -14,6 +14,7 @@ from app.models.event import Event, EventArticle
 from app.repositories.semantic_analysis import AnalysisCandidate, SemanticAnalysisRepository
 from app.schemas.semantic_analysis import PassageExtraction, SemanticExtraction
 from app.semantic.passages import Passage, PassagePlan
+from app.semantic.prompt import PROMPT_VERSION
 
 
 @dataclass(frozen=True)
@@ -140,7 +141,7 @@ class DocumentAnalysisRepository(SemanticAnalysisRepository):
             event_time_type="published",
             status="analyzed",
             extraction_method="ollama",
-            extraction_version="semantic-v5-passages",
+            extraction_version=PROMPT_VERSION,
             evidence_excerpt=fact.evidence[0].quote,
             structured_data={
                 "fact": fact.model_dump(mode="json"),

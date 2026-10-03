@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { EntityDetails, type EntityResolution } from "./entity-details";
 
 type ApiState = "checking" | "online" | "offline";
 
@@ -60,6 +61,7 @@ type MarketEvent = {
   source_name: string;
   article_url: string;
   parent_event_id: string | null;
+  entity_resolution: EntityResolution | null;
   sources: Array<{
     article_id: string;
     source_name: string;
@@ -322,6 +324,7 @@ export default function Home() {
                       </span>
                     </p>
                   ) : null}
+                  <EntityDetails resolution={event.entity_resolution} />
                   {event.semantic_analysis?.result.summary ? (
                     <p className="mt-3 text-sm leading-6 text-slate-300">
                       {event.semantic_analysis.result.summary}

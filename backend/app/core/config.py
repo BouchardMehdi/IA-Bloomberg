@@ -20,6 +20,7 @@ class Settings(BaseSettings):
         max_length=255,
     )
     event_extraction_interval_minutes: int = Field(default=1, ge=1, le=1440)
+    entity_registry_enabled: bool = True
     document_collection_enabled: bool = True
     document_collection_interval_minutes: int = Field(default=1, ge=1, le=1440)
     document_collection_batch_size: int = Field(default=5, ge=1, le=50)

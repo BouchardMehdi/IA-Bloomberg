@@ -7,6 +7,7 @@ import asyncio
 import hashlib
 import json
 import uuid
+from copy import deepcopy
 from datetime import UTC, datetime
 
 import httpx
@@ -22,6 +23,7 @@ from app.models.source import Source
 from app.repositories.events import EventRepository, PendingArticle
 from app.semantic.ollama import OllamaSemanticClient
 from app.semantic.passages import PassagePlanner
+from app.services.entity_resolution import EntityResolutionService
 from app.services.event_grouping import EventGroupingService
 from app.services.semantic_analysis import SemanticAnalysisService
 from tests.test_semantic_analysis import make_extraction
@@ -139,9 +141,52 @@ async def main() -> None:
                 assert run.coverage["analyzed_count"] == 3 and run.coverage["coverage_ratio"] < 1
                 assert sum(len(p.input_text) for p in passages) <= 2400
                 assert all(text[p.start_offset : p.end_offset] == p.input_text for p in passages)
+                # A successful v5 document remains cached when upgrading to v6.
+                run.prompt_version = "semantic-v5-passages"
+                await session.commit()
+                cached = await service.process_pending(1, source.name)
+                assert cached.succeeded == 0 and len(calls) == before
+                quote = "Example Inc. acquired Other Corp. for 100 USD."
+                fact = facts[0]
+                data = deepcopy(fact.structured_data)
+                data["fact"]["entity_mentions"] = [
+                    {"name": "Example Inc.", "kind": "company", "role": "subject", "quote": quote},
+                    {
+                        "name": "Other Corp.",
+                        "kind": "company",
+                        "role": "counterparty",
+                        "quote": quote,
+                    },
+                    {"name": "USD", "kind": "currency", "role": "mention", "quote": quote},
+                ]
+                fact.structured_data = data
+                passage = next(p for p in passages if p.passage_index == data["passage_index"])
+                passage.input_text = quote
+                await session.commit()
+                entities_service = EntityResolutionService(session)
+                payload = {
+                    "fields": ["cik", "name", "ticker", "exchange"],
+                    "data": [
+                        [1, "Example Inc.", "EX", "NYSE"],
+                        [2, "Other Corp.", "OT", "Nasdaq"],
+                    ],
+                }
+                await entities_service.sync_registry(
+                    "MarketAI fixture",
+                    force=True,
+                    transport=httpx.MockTransport(lambda r: httpx.Response(200, json=payload)),
+                )
+                assert await entities_service.process_pending(5000) >= 2
+                await session.refresh(fact)
+                resolved = fact.structured_data["entity_resolution"]["entities"]
+                assert [e["status"] for e in resolved] == ["resolved"] * 3
+                assert resolved[1]["role"] == "counterparty"
+                assert resolved[0]["candidates"][0]["listings"][0]["ticker"] == "EX"
+                assert fact.structured_data["entity_resolution"]["registry"]["published_at"] is None
+                assert await entities_service.process_pending(5000) == 0
                 print(
                     "PostgreSQL smoke passed: 2 distinct facts, 3 cached passages, "
-                    "coverage and provenance preserved"
+                    "v5 cache reused, identities resolved with provenance"
                 )
         finally:
             await outer.rollback()

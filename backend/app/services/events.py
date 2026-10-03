@@ -80,6 +80,7 @@ class EventService:
             ],
             semantic_analysis=semantic_analysis,
             parent_event_id=record.event.parent_event_id,
+            entity_resolution=(record.event.structured_data or {}).get("entity_resolution"),
             sources=[
                 EventSourceRead(
                     article_id=link.article.id,

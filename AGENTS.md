@@ -42,3 +42,9 @@ Avant une modification, lire ce fichier et la documentation concernée. Limiter 
 La phase actuelle comprend la fondation, les collectors RSS de la BCE, de la Fed et des dépôts SEC 8-K, la récupération bornée des documents HTML officiels, leur scheduler, l'historique des collectes, l'extraction déterministe d'événements sourcés, l'identification des sociétés SEC par CIK, le regroupement exact avec conservation des sources et une analyse sémantique Ollama optionnelle. Les tests des collectors et de l'analyse utilisent des fixtures ou transports simulés et ne dépendent pas du réseau. Ne pas ajouter de fonction de trading sans demande explicite.
 
 L'analyse sémantique découpe et sélectionne les passages dans un budget explicite, conserve la couverture et reprend les passages réussis. Les faits extraits sont des événements enfants ; le regroupement des publications ne doit jamais fusionner des faits différents issus du même document.
+
+Les identités sont résolues sans appels LLM supplémentaires à partir des noms SEC,
+CIK et tickers explicites. Conserver les candidats ambigus et les mentions non
+vérifiées. Les liens `source_subject` du document ne prouvent pas le rôle d'une
+société dans chaque fait. Le référentiel SEC est daté par sa consultation, pas par
+une date de publication inventée ; ses cotations ne sont pas historiques.

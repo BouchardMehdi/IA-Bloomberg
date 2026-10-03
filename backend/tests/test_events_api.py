@@ -65,6 +65,32 @@ class StubEventService:
                             role="subject",
                         )
                     ],
+                    entity_resolution={
+                        "version": "entities-v1",
+                        "resolved_at": datetime(2026, 10, 3, tzinfo=UTC),
+                        "registry": {
+                            "url": "https://www.sec.gov/files/company_tickers_exchange.json",
+                            "observed_at": "2026-10-03T00:00:00Z",
+                            "published_at": None,
+                        },
+                        "entities": [
+                            {
+                                "name": "Example Corporation",
+                                "kind": "company",
+                                "role": "source_subject",
+                                "quote": None,
+                                "status": "resolved",
+                                "method": "filing_cik",
+                                "candidates": [
+                                    {
+                                        "cik": "0001234567",
+                                        "name": "Example Corporation",
+                                        "listings": [{"ticker": "EX", "exchange": "NYSE"}],
+                                    }
+                                ],
+                            }
+                        ],
+                    },
                 )
             ],
             total=1,
@@ -89,6 +115,9 @@ def test_events_endpoint_returns_traceable_events() -> None:
     assert payload["items"][0]["event_type"] == "regulatory_filing"
     assert payload["items"][0]["article_url"] == "https://www.sec.gov/example"
     assert payload["items"][0]["companies"][0]["cik"] == "0001234567"
+    resolution = payload["items"][0]["entity_resolution"]
+    assert resolution["registry"]["published_at"] is None
+    assert resolution["entities"][0]["candidates"][0]["listings"][0]["ticker"] == "EX"
 
 
 def test_events_endpoint_validates_page_size() -> None:

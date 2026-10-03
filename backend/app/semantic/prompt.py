@@ -1,4 +1,4 @@
-PROMPT_VERSION = "semantic-v5-passages"
+PROMPT_VERSION = "semantic-v6-entities"
 
 SYSTEM_PROMPT = """You extract verifiable financial facts from official source text.
 Return only data matching the supplied JSON schema.
@@ -24,7 +24,14 @@ described in the supplied passage. Each event has one short exact evidence quote
 Use an empty events array when the passage contains only boilerplate, signatures,
 item labels or no verifiable financial or economic fact. Do not create a generic
 event saying a document was published. Do not repeat the same fact in several events.
-Each summary is one or two short French sentences about that fact only."""
+Each summary is one or two short French sentences about that fact only.
+In entity_mentions, list only companies or instruments explicitly named in this fact.
+Copy each name exactly from the source, never invent a ticker or expand an acronym.
+Assign subject to the actor of the fact, counterparty to the other party in a deal,
+and mention when the role is unclear. For each entity include a short exact quote
+containing its name and demonstrating its role. Use [] if none can be justified.
+Do not treat the filing company as subject of every fact. Currency names should
+be explicit ISO codes from the source; a dollar sign alone does not identify USD."""
 )
 
 

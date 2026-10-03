@@ -12,6 +12,7 @@ from app.core.config import get_settings
 from app.db.session import async_session_factory
 from app.semantic.ollama import OllamaSemanticClient
 from app.services.document_content import DocumentContentService
+from app.services.entity_resolution import EntityResolutionService
 from app.services.event_extraction import DeterministicEventExtractionService
 from app.services.event_grouping import EventGroupingService
 from app.services.ingestion import ArticleIngestionService
@@ -138,6 +139,7 @@ async def run_semantic_analyzer(
 async def serve() -> None:
     settings = get_settings()
     tasks = [
+        run_entity_resolver(),
         run_collector(
             "ECB",
             ECBPressCollector,
@@ -203,6 +205,34 @@ async def run_document_fetcher() -> None:
                 settings.document_collection_interval_minutes, time.monotonic() - started
             )
         )
+
+
+async def run_entity_resolver() -> None:
+    settings = get_settings()
+    if not settings.scheduler_run_on_start:
+        await asyncio.sleep(60)
+    next_sync = 0.0
+    while True:
+        started = time.monotonic()
+        async with async_session_factory() as session:
+            service = EntityResolutionService(session)
+            if settings.entity_registry_enabled and started >= next_sync:
+                try:
+                    await service.sync_registry(settings.sec_user_agent)
+                    next_sync = started + 3600
+                except Exception:
+                    await session.rollback()
+                    next_sync = started + 3600
+                    logger.exception(
+                        "SEC identity registry refresh failed; keeping previous snapshot"
+                    )
+            try:
+                count = await service.process_pending()
+                logger.info("Entity resolution completed: processed=%s", count)
+            except Exception:
+                await session.rollback()
+                logger.exception("Entity resolution failed")
+        await asyncio.sleep(seconds_until_next_run(1, time.monotonic() - started))
 
 
 if __name__ == "__main__":

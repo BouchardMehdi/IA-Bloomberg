@@ -35,6 +35,23 @@ class EventSourceRead(BaseModel):
     is_primary_source: bool
 
 
+class ResolvedEntityRead(BaseModel):
+    name: str
+    kind: str
+    role: str
+    quote: str | None
+    status: str
+    method: str | None
+    candidates: list[dict[str, Any]]
+
+
+class EntityResolutionRead(BaseModel):
+    version: str
+    resolved_at: datetime
+    registry: dict[str, Any] | None
+    entities: list[ResolvedEntityRead]
+
+
 class EventRead(BaseModel):
     id: uuid.UUID
     event_type: str
@@ -55,6 +72,7 @@ class EventRead(BaseModel):
     semantic_analysis: SemanticAnalysisRead | None = None
     sources: list[EventSourceRead] = Field(default_factory=list)
     parent_event_id: uuid.UUID | None = None
+    entity_resolution: EntityResolutionRead | None = None
 
 
 class EventPage(BaseModel):
