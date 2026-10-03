@@ -10,8 +10,10 @@ type Instrument = { id: string; symbol: string; name: string; exchange: string; 
   quote_multiplier: string; price_provider: string; usd_valuation: UsdQuote;
   wls_eligibility: { status: string; security_id: string | null; source_url: string | null; as_of: string | null };
   latest_price: { close: Money; date: string; source_url: string; stale: boolean } | null;
-  collection_status: string; error_code: string | null };
+  collection_status: string; error_code: string | null; retry_at: string | null };
 type Market = { items: Instrument[]; provider_configured: boolean; daily_request_budget: number; wls_imported: boolean; wls_security_count: number };
+type PriceCollection = { quota_day: string; items: Array<{ provider: string; configured: boolean;
+  attempts_today: number; daily_request_budget: number; remaining_today: number; blocked_until: string | null }> };
 type Portfolio = { id: string; name: string; initial_capital: Money; cash: Money; total_value: Money | null;
   total_pnl: Money | null; realized_pnl: Money; return_pct: Money | null; valuation_stale: boolean;
   fee_bps: Money; max_position_pct: Money; allowed_symbols: string[]; starts_on: string | null; ends_on: string | null;
@@ -35,6 +37,7 @@ async function request<T>(path: string, body?: unknown): Promise<T> {
 
 export default function PortfolioPage() {
   const [market, setMarket] = useState<Market | null>(null);
+  const [priceCollection, setPriceCollection] = useState<PriceCollection | null>(null);
   const [portfolios, setPortfolios] = useState<Array<{ id: string; name: string }>>([]);
   const [selected, setSelected] = useState("");
   const [portfolio, setPortfolio] = useState<Portfolio | null>(null);
@@ -56,13 +59,13 @@ export default function PortfolioPage() {
   const submission = useRef<{ fingerprint: string; key: string } | null>(null);
 
   const load = useCallback(async () => {
-    const [m, p] = await Promise.all([request<Market>("/instruments"), request<{ items: Array<{ id: string; name: string }> }>("/portfolios")]);
-    setMarket(m); setPortfolios(p.items);
+    const [m, p, c] = await Promise.all([request<Market>("/instruments"), request<{ items: Array<{ id: string; name: string }> }>("/portfolios"), request<PriceCollection>("/price-collection")]);
+    setMarket(m); setPortfolios(p.items); setPriceCollection(c);
   }, []);
   useEffect(() => {
     let active = true;
-    Promise.all([request<Market>("/instruments"), request<{ items: Array<{ id: string; name: string }> }>("/portfolios")])
-      .then(([m, p]) => { if (active) { setMarket(m); setPortfolios(p.items); } })
+    Promise.all([request<Market>("/instruments"), request<{ items: Array<{ id: string; name: string }> }>("/portfolios"), request<PriceCollection>("/price-collection")])
+      .then(([m, p, c]) => { if (active) { setMarket(m); setPortfolios(p.items); setPriceCollection(c); } })
       .catch((e: Error) => { if (active) setError(e.message); });
     return () => { active = false; };
   }, []);
@@ -93,6 +96,10 @@ export default function PortfolioPage() {
     {notice ? <p role="status" className="mb-4 text-signal">{notice}</p> : null}
     <section className="rounded-2xl border border-white/10 p-5">
       <h2 className="font-display text-xl text-white">Titres suivis et cours quotidiens</h2>
+      {priceCollection?.items.filter((p) => p.configured).map((p) => <p key={p.provider} className="mt-3 text-sm text-slate-400">
+        Alpha Vantage : {p.attempts_today}/{p.daily_request_budget} tentatives le {priceCollection.quota_day} (UTC), {p.remaining_today} restantes.
+        {p.blocked_until ? ` Quota fournisseur signalé ; reprise au plus tôt le ${new Date(p.blocked_until).toLocaleString("fr-FR")}.` : p.remaining_today === 0 ? " Budget local épuisé ; reprise au prochain jour UTC." : ""}
+      </p>)}
       <Link href="/international" className="mt-2 inline-block text-sm text-signal underline">Titres internationaux et taux de conversion →</Link>
       {market ? <p className="mt-3 text-sm text-amber-300">{market.wls_imported ? `Export WLS chargé : ${market.wls_security_count} titres. L’éligibilité est vérifiée par ticker et marché.` : "Univers WLS non importé : les nouveaux achats simulés sont bloqués. Le référentiel SEC ne prouve pas l’appartenance au WLS."}</p> : null}
       {market?.items.length ? <ul className="mt-2 text-xs text-slate-400">{market.items.map((i) => <li key={i.id}>{i.symbol} · {i.exchange} : {i.wls_eligibility.status === "verified" ? `Action présente dans l’export WLS (${i.wls_eligibility.security_id})` : "Éligibilité WLS non vérifiée"}</li>)}</ul> : null}

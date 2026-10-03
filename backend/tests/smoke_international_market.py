@@ -163,6 +163,9 @@ async def main():
                         assert Decimal(trade["fee"]) == Decimal("0.13")
                         assert trade["conversion"]["local_close"] == "100.000000"
                         assert trade["conversion"]["usd_per_unit"] == "0.1250000000"
+                        assert trade["conversion"]["quote_provider"] == "manual"
+                        assert trade["conversion"]["quote_context"]["currency"] == "HKD"
+                        assert trade["conversion"]["quote_context"]["provider_symbol"] is None
                         await http.post(
                             "/api/v1/market/fx-rates", json={**good_fx, "usd_per_unit": "0.13"}
                         )

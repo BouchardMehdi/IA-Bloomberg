@@ -79,6 +79,13 @@ Ne pas les présenter comme des taux d'exécution Bloomberg. Les saisies manuell
 gardent priorité pour leur devise/date ; une collecte échouée n'efface aucun taux.
 Voir docs/FX_COLLECTION.md.
 
+La collecte des clôtures utilise le contrat commun `PriceProvider`, avec lots
+revalidés avant écriture et quotas/reprises persistants par fournisseur. Alpha
+Vantage reste le seul adaptateur connecté, NYSE/Nasdaq en USD et unité 1.
+Les cotations internationales restent manuelles jusqu'au raccordement d'une
+source autorisée et de correspondances exactes ; ne pas inventer de suffixes.
+Conserver fournisseur et conventions de chaque cours. Voir docs/PRICE_PROVIDERS.md.
+
 Les fiches `/analysis` rapprochent les titres suivis des documents et faits sans
 appel LLM supplémentaire. Distinguer la mention du titre et de sa cotation du
 contexte de l’émetteur. Ne pas transformer ce rapprochement en impact financier

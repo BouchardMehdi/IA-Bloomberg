@@ -5,7 +5,9 @@ clôtures locales et taux provenant de sources que l’utilisateur est autorisé
 exploiter. Aucun exemple de titre, composition WLS ou taux n’est chargé dans la
 base réelle. L’import WLS reste une opération séparée. Les
 [taux de référence BCE sont collectés automatiquement](FX_COLLECTION.md).
-La collecte automatique des clôtures internationales reste à connecter.
+La collecte automatique des clôtures internationales reste à connecter. Le
+[socle commun des fournisseurs](PRICE_PROVIDERS.md) prépare ce raccordement,
+sans activer de fournisseur ni inventer de correspondances de titres.
 
 ## Identifier une cotation
 

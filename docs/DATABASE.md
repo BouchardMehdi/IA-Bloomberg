@@ -69,3 +69,10 @@ les observations existantes restent manuelles. `fx_collection_runs` conserve
 l'historique des collectes BCE et leur couverture. Les écritures sont atomiques,
 le cache et le verrou PostgreSQL sont partagés entre CLI et scheduler. Les preuves
 de dérivation sont figées dans la conversion des opérations, comme les taux.
+
+La migration `0012` ajoute le fournisseur, contexte de cotation et date de reprise
+aux collectes de cours, ainsi que fournisseur et contexte aux observations.
+Les anciens cours conservent un contexte vide ; leurs fournisseurs viennent du
+mode de collecte déjà enregistré. Les quotas, caches et suspensions sont séparés
+par fournisseur ; les lots sont revalidés intégralement avant toute écriture.
+Voir [le contrat et les contrôles](PRICE_PROVIDERS.md).

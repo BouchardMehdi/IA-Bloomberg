@@ -55,6 +55,10 @@ class DailyPrice(UUIDPrimaryKeyMixin, Base):
     volume: Mapped[int] = mapped_column(BigInteger, nullable=False)
     source_url: Mapped[str] = mapped_column(Text, nullable=False)
     fetched_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    provider: Mapped[str] = mapped_column(
+        String(30), nullable=False, default="manual", server_default="manual"
+    )
+    quote_context: Mapped[dict | None] = mapped_column(JSONB)
 
 
 class FxRate(UUIDPrimaryKeyMixin, Base):
@@ -95,3 +99,12 @@ class MarketFetchRun(UUIDPrimaryKeyMixin, Base):
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     status: Mapped[str] = mapped_column(String(30), nullable=False)
     error_code: Mapped[str | None] = mapped_column(String(50))
+    provider: Mapped[str] = mapped_column(
+        String(30),
+        nullable=False,
+        default="alpha_vantage",
+        server_default="alpha_vantage",
+        index=True,
+    )
+    retry_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    quote_context: Mapped[dict | None] = mapped_column(JSONB)

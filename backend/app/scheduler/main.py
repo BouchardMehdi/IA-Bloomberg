@@ -10,8 +10,8 @@ from app.collectors.fed import FedPressCollector
 from app.collectors.sec import SEC8KCollector
 from app.core.config import get_settings
 from app.db.session import async_session_factory
-from app.market.alpha_vantage import AlphaVantageClient
 from app.market.ecb_fx import EcbFxClient
+from app.market.provider_registry import configured_price_providers
 from app.semantic.ollama import OllamaSemanticClient
 from app.services.document_content import DocumentContentService
 from app.services.entity_resolution import EntityResolutionService
@@ -244,20 +244,20 @@ async def run_entity_resolver() -> None:
 
 async def run_market_collector() -> None:
     settings = get_settings()
-    key = settings.alpha_vantage_api_key.get_secret_value()
-    if not key:
+    providers = configured_price_providers(settings)
+    if not providers:
         logger.info("Market collection disabled: ALPHA_VANTAGE_API_KEY is not configured")
         return
     if not settings.scheduler_run_on_start:
         await asyncio.sleep(3600)
-    client = AlphaVantageClient(key)
     while True:
-        try:
-            async with async_session_factory() as session:
-                stats = await MarketDataService(session).collect(client)
-                logger.info("Market collection completed: %s", stats)
-        except Exception:
-            logger.exception("Market collection failed")
+        for provider in providers:
+            try:
+                async with async_session_factory() as session:
+                    stats = await MarketDataService(session).collect(provider)
+                    logger.info("Market collection completed: %s", stats)
+            except Exception:
+                logger.exception("Market collection failed: %s", provider.policy.provider)
         await asyncio.sleep(3600)
 
 

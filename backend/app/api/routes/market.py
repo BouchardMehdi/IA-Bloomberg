@@ -33,6 +33,11 @@ async def instruments(session: Db):
     return market_response(await MarketDataService(session).list_instruments())
 
 
+@router.get("/price-collection")
+async def price_collection_status(session: Db):
+    return market_response(await MarketDataService(session).collection_status())
+
+
 @router.post("/instruments", status_code=201)
 async def add_instrument(request: InstrumentCreate, session: Db):
     try:

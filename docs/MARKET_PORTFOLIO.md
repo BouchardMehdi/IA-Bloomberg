@@ -30,7 +30,10 @@ simulation. Voir [la procédure et ses limites](INTERNATIONAL_MARKET.md).
 Le scheduler vérifie les titres toutes les heures, par lots de cinq. Il priorise
 ceux qui n'ont pas encore été vérifiés ou l'ont été le moins récemment. Une collecte
 réussie reste en cache jusqu'au prochain jour UTC ; une erreur attend au moins une
-heure. Une collecte manuelle utilise le même budget et le même cache :
+heure. Un refus/quota suspend tout le fournisseur jusqu'au prochain jour UTC.
+Le [contrat commun](PRICE_PROVIDERS.md) contrôle chaque lot et conserve ses
+conventions. Le budget consommé et les suspensions sont visibles dans `/portfolio`.
+Une collecte manuelle utilise le même budget et le même cache :
 
 ```powershell
 docker compose exec backend python -m app.cli.collect_market
@@ -109,6 +112,7 @@ conserver leur précision ; les quantités sont des entiers.
 | Route | Usage |
 | --- | --- |
 | GET /instruments | Titres, dernière clôture, état de collecte et activation du fournisseur |
+| GET /price-collection | Couverture, quota du jour UTC et suspension par fournisseur |
 | POST /instruments | Ajouter un ticker identifié dans le référentiel SEC |
 | GET /instruments/{id}/prices | Historique des clôtures et volumes, sources et dates |
 | GET /portfolios | Simulations existantes |

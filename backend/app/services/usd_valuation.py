@@ -65,6 +65,8 @@ class UsdValuationService:
             "quote_date": price.session_date.isoformat(),
             "quote_source_url": price.source_url,
             "quote_fetched_at": price.fetched_at.isoformat(),
+            "quote_provider": getattr(price, "provider", None),
+            "quote_context": getattr(price, "quote_context", None),
             "usd_per_unit": str(rate.usd_per_unit) if rate else "1",
             "fx_date": rate.rate_date.isoformat() if rate else None,
             "fx_source_url": rate.source_url if rate else None,

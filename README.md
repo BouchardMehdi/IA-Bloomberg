@@ -166,7 +166,9 @@ selon les précisions reçues ; Bloomberg assure la conversion pour le challenge
 La page <http://localhost:3000/international> permet de fournir des identités,
 clôtures locales et taux sourcés pour une valorisation et simulation en USD.
 Voir [la procédure internationale](docs/INTERNATIONAL_MARKET.md). La collecte
-automatique des cotations internationales reste à connecter. Les
+automatique des cotations internationales reste à connecter. Le
+[contrat commun des fournisseurs de cours](docs/PRICE_PROVIDERS.md) est prêt,
+avec contrôles de cotation/devise/unité, quotas persistants et reprises après erreur. Les
 [taux de référence BCE sont désormais collectés automatiquement](docs/FX_COLLECTION.md),
 sans clé API, avec leur date, source et calcul de conversion vers USD.
 Les nouveaux achats simulés sont bloqués tant que l'action n'est pas identifiée

@@ -91,6 +91,16 @@ class InternationalMarketService:
             "volume": request.volume,
             "source_url": str(request.source_url),
             "fetched_at": datetime.now(UTC),
+            "provider": "manual",
+            "quote_context": {
+                "instrument_id": str(instrument.id),
+                "symbol": instrument.symbol,
+                "exchange": instrument.exchange,
+                "currency": instrument.currency,
+                "quote_multiplier": str(instrument.quote_multiplier),
+                "adjusted": False,
+                "provider_symbol": None,
+            },
         }
         await self.session.execute(
             insert(DailyPrice)
