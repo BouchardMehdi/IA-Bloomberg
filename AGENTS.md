@@ -90,3 +90,9 @@ Les fiches `/analysis` rapprochent les titres suivis des documents et faits sans
 appel LLM supplémentaire. Distinguer la mention du titre et de sa cotation du
 contexte de l’émetteur. Ne pas transformer ce rapprochement en impact financier
 avéré. Voir docs/INSTRUMENT_RESEARCH.md.
+
+Le classement `/analysis` calcule une priorité de recherche déterministe sur les
+faits sourcés des 30 derniers jours. Ne pas confondre ce score avec rendement,
+signal d'achat ou éligibilité. Une seule contribution par publication parente,
+sources non futures, bornes de couverture visibles et données de marché séparées.
+Il reste sans appel LLM supplémentaire. Voir docs/RESEARCH_RANKING.md.

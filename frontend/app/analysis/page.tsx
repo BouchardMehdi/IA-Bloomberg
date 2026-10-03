@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { UsdQuoteDetails, type UsdQuote } from "../usd-quote";
+import { ResearchRanking } from "./research-ranking";
 
 const api = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
 type Instrument = { id: string; symbol: string; exchange: string; name: string;
@@ -27,13 +28,14 @@ export default function AnalysisPage() {
   const [instruments, setInstruments] = useState<Instrument[]>([]);
   const [selected, setSelected] = useState("");
   const [offset, setOffset] = useState(0);
+  const [revision, setRevision] = useState(0);
   const [result, setResult] = useState<Research | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     const controller = new AbortController();
     read<{ items: Instrument[] }>("/instruments", controller.signal).then((data) => {
-      setInstruments(data.items); setSelected(data.items[0]?.id ?? "");
+      setInstruments(data.items); setSelected((current) => current || data.items[0]?.id || "");
       if (!data.items.length) setLoading(false);
     }).catch((e: Error) => { if (!controller.signal.aborted) { setError(e.message); setLoading(false); } });
     return () => controller.abort();
@@ -45,18 +47,28 @@ export default function AnalysisPage() {
       .then((data) => { setResult(data); setLoading(false); })
       .catch((e: Error) => { if (!controller.signal.aborted) { setError(e.message); setLoading(false); } });
     return () => controller.abort();
-  }, [selected, offset]);
+  }, [selected, offset, revision]);
   function navigate(id: string, page: number) {
     setLoading(true); setResult(null); setError(""); setSelected(id); setOffset(page);
+    setRevision((value) => value + 1);
+  }
+  async function selectRanked(id: string) {
+    if (!instruments.some((instrument) => instrument.id === id)) {
+      try { const data = await read<{ items: Instrument[] }>("/instruments"); setInstruments(data.items); }
+      catch { setError("Impossible de charger la liste des titres."); return; }
+    }
+    navigate(id, 0);
+    document.getElementById("research-details")?.scrollIntoView({ behavior: "smooth" });
   }
   return <main className="mx-auto max-w-5xl px-5 py-8 text-slate-300">
     <header className="mb-6"><h1 className="font-display text-3xl text-white">Analyses des titres suivis</h1>
       <nav className="mt-3 flex gap-5 text-sm text-signal underline"><Link href="/">Veille</Link><Link href="/portfolio">Titres et portefeuille simulé</Link></nav>
     </header>
     <p className="mb-5 text-sm leading-6">Les fiches rapprochent les documents et faits sourcés des titres suivis. Un lien avec l’émetteur ne prouve pas un effet sur une classe d’action. Les points à examiner sont des questions, pas des prévisions.</p>
+    <ResearchRanking onSelect={(id) => { void selectRanked(id); }} />
     {error ? <p role="alert" className="text-rose-300">{error}</p> : null}
     {!loading && !instruments.length && !error ? <p>Ajoute un titre dans <Link href="/portfolio" className="text-signal underline">le portefeuille</Link> pour consulter ses documents. La liste WLS reste à fournir.</p> : null}
-    {instruments.length ? <label className="block">Titre suivi<select value={selected} onChange={(e) => navigate(e.target.value, 0)} className="mt-2 block w-full rounded border border-white/20 bg-slate-950 p-3">{instruments.map((i) => <option key={i.id} value={i.id}>{i.symbol} · {i.exchange} · {i.name}</option>)}</select></label> : null}
+    {instruments.length ? <label id="research-details" className="block">Titre suivi<select value={selected} onChange={(e) => navigate(e.target.value, 0)} className="mt-2 block w-full rounded border border-white/20 bg-slate-950 p-3">{instruments.map((i) => <option key={i.id} value={i.id}>{i.symbol} · {i.exchange} · {i.name}</option>)}</select></label> : null}
     {loading ? <p role="status" className="mt-5">Chargement…</p> : null}
     {result ? <>
       <section className="my-6 rounded-xl border border-white/10 p-5">

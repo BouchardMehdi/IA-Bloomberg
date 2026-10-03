@@ -228,3 +228,7 @@ Les pipelines BCE, Fed et SEC collectent les flux puis le texte des documents of
 La page <http://localhost:3000/analysis> relie les titres suivis aux faits et
 publications sourcés, avec distinction entre mention du titre et contexte de
 l’émetteur. Voir [le fonctionnement et les limites](docs/INSTRUMENT_RESEARCH.md).
+Elle propose aussi un [classement des titres à examiner](docs/RESEARCH_RANKING.md),
+avec score explicable, preuves et points à vérifier, sans appel IA supplémentaire.
+Les états des cours, taux et WLS sont affichés séparément ; ce classement ne
+constitue pas une recommandation d'achat ni une prévision de rentabilité.

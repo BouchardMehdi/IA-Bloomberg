@@ -16,6 +16,7 @@ from app.services.instrument_research import InstrumentResearchService
 from app.services.international_market import InternationalMarketService
 from app.services.market_data import MarketDataService
 from app.services.paper_portfolio import PaperPortfolioService
+from app.services.research_ranking import ResearchRankingService
 
 router = APIRouter()
 Db = Annotated[AsyncSession, Depends(get_db_session)]
@@ -36,6 +37,15 @@ async def instruments(session: Db):
 @router.get("/price-collection")
 async def price_collection_status(session: Db):
     return market_response(await MarketDataService(session).collection_status())
+
+
+@router.get("/research-ranking")
+async def research_ranking(
+    session: Db,
+    limit: Annotated[int, Query(ge=1, le=50)] = 20,
+    offset: Annotated[int, Query(ge=0, le=20000)] = 0,
+):
+    return market_response(await ResearchRankingService(session).ranking(limit, offset))
 
 
 @router.post("/instruments", status_code=201)

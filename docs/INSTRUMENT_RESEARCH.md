@@ -4,6 +4,10 @@ La page `/analysis` rapproche les titres ajoutés dans `/portfolio` des publicat
 et des faits déjà conservés en PostgreSQL. Elle ne consomme aucun appel LLM
 supplémentaire et ne crée aucun ordre.
 
+Un [classement explicable de priorité de recherche](RESEARCH_RANKING.md) précède
+les fiches. Il s'appuie sur les faits sourcés des 30 derniers jours, sans confondre
+ce score avec un rendement attendu. Cours, taux et éligibilité WLS restent séparés.
+
 L’API `GET /api/v1/market/instruments/{id}/research?limit=20&offset=0` fournit les
 fiches, le cours disponible et l’état d’éligibilité WLS. `next_offset` permet de
 parcourir les candidats suivants. Une page peut être vide si les candidats sont
