@@ -45,3 +45,12 @@ résolveur, du contenu du référentiel et des noms connus par CIK. Un nouveau f
 invalide sa résolution. L'écriture compare les données initiales pour éviter
 d'écraser une extraction concurrente. Les liens `event_companies` existants restent
 la provenance du document ; ils ne représentent pas ses contreparties.
+
+La migration `0009` ajoute `market_instruments`, `daily_prices`, `market_fetch_runs`,
+`paper_portfolios`, `paper_positions` et `paper_trades`. Les cours sont uniques par
+titre/date de séance ; les tentatives de collecte constituent le compteur de quota
+persistant. Le registre des opérations conserve un identifiant unique par
+portefeuille, le prix effectivement simulé, la date du cours, sa source, les frais
+et le gain réalisé. Les montants utilisent `Numeric` et les calculs `Decimal`.
+Une transaction verrouille le portefeuille avant de modifier le capital, la
+position et le registre. Voir [la procédure de simulation](MARKET_PORTFOLIO.md).

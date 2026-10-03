@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { EntityDetails, type EntityResolution } from "./entity-details";
+import Link from "next/link";
 
 type ApiState = "checking" | "online" | "offline";
 
@@ -197,6 +198,7 @@ export default function Home() {
           </div>
         </header>
 
+        <div className="mt-5"><Link href="/portfolio" className="text-sm text-signal underline">Cours et portefeuille simulé →</Link></div>
         <section className="grid gap-8 py-16 lg:grid-cols-[1.4fr_0.6fr] lg:items-end">
           <div>
             <p className="mb-4 text-sm text-slate-400">Fondation · Version 0.1</p>

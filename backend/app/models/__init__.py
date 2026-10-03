@@ -4,6 +4,8 @@ from app.models.collection_run import CollectionRun
 from app.models.company import Company, EventCompany
 from app.models.entity_registry import EntityRegistry
 from app.models.event import Event, EventArticle
+from app.models.market import DailyPrice, MarketFetchRun, MarketInstrument
+from app.models.portfolio import PaperPortfolio, PaperPosition, PaperTrade
 from app.models.source import Source
 
 __all__ = [
@@ -17,5 +19,11 @@ __all__ = [
     "EventCompany",
     "EntityRegistry",
     "Source",
+    "DailyPrice",
+    "MarketFetchRun",
+    "MarketInstrument",
+    "PaperPortfolio",
+    "PaperPosition",
+    "PaperTrade",
 ]
 from app.models.analysis_passage import AnalysisPassage

@@ -48,3 +48,15 @@ CIK et tickers explicites. Conserver les candidats ambigus et les mentions non
 vérifiées. Les liens `source_subject` du document ne prouvent pas le rôle d'une
 société dans chaque fait. Le référentiel SEC est daté par sa consultation, pas par
 une date de publication inventée ; ses cotations ne sont pas historiques.
+
+Le portefeuille simulé et la collecte de clôtures Alpha Vantage sont autorisés dans
+la phase actuelle. Ne pas transmettre d'ordres réels. Les paramètres du challenge
+restent provisoires. Les simulations doivent conserver prix/date/source, contrôler
+capital et positions, et rester idempotentes. Ne jamais compléter un cours manquant
+avec une valeur inventée ; les clés fournisseur restent côté serveur.
+
+Règles connues du challenge : 1 000 000 USD, actions en positions longues uniquement,
+sans levier, Forex ou matières premières. WLS est un univers privé annoncé de
+10 426 titres ; ne pas le reconstruire approximativement. L'éligibilité vient d'un
+export autorisé par titre et cotation, jamais du CIK d'une entreprise. Les frais,
+dates et limites restent à confirmer. Voir docs/CHALLENGE.md.

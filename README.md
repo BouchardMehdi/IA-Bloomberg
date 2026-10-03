@@ -156,6 +156,29 @@ est daté par sa consultation ; sa date de publication et les cotations historiq
 restent inconnues. Le lien et la date du document justificatif restent conservés
 avec les sources de l'événement.
 
+## Cours et portefeuille simulé
+
+Le challenge annoncé dispose de **1 000 000 USD**, avec des actions en positions
+longues uniquement, sans levier. L'univers WLS annoncé contient **10 426 titres**,
+distincts des entreprises. Voir [les règles connues et l'import WLS](docs/CHALLENGE.md).
+Les nouveaux achats simulés sont bloqués tant que l'action n'est pas identifiée
+dans un export WLS fourni ; la SEC ne constitue pas cet univers.
+
+La page <http://localhost:3000/portfolio> permet de suivre des titres NYSE/Nasdaq,
+créer une simulation en USD et consulter le capital, les positions, les frais et
+les gains ou pertes. Le capital et les contraintes sont configurables ; les valeurs
+du formulaire sont provisoires tant que le règlement du challenge est inconnu.
+
+Ajouter une clé personnelle `ALPHA_VANTAGE_API_KEY` dans `.env`, puis relancer Docker
+avec `docker compose --profile ai up -d --build` pour activer les cours quotidiens.
+Sans clé, les cours restent indisponibles et aucune donnée fictive n'est injectée.
+Les anciennes clôtures ne sont pas du temps réel ; une opération simulée conserve
+son prix, sa date de cours et sa source. Il n'y a pas encore de recommandations IA.
+
+Voir [la procédure et les limites](docs/MARKET_PORTFOLIO.md) pour le quota, les cours
+bruts, les opérations idempotentes et les frais. Les dividendes et splits ne sont
+pas comptabilisés automatiquement.
+
 ## Développement local
 
 Backend :
