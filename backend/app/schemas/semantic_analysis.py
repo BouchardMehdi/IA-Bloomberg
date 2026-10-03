@@ -38,4 +38,4 @@ class SemanticExtraction(BaseModel):
     importance_score: float = Field(ge=0, le=1)
     urgency_score: float = Field(ge=0, le=1)
     confidence_score: float = Field(ge=0, le=1)
-    evidence: list[EvidenceItem] = Field(min_length=1, max_length=10)
+    evidence: list[EvidenceItem] = Field(min_length=1, max_length=3)

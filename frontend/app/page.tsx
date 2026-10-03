@@ -13,6 +13,8 @@ type Article = {
   language: string | null;
   published_at: string | null;
   fetched_at: string;
+  content_status: string;
+  content_truncated: boolean;
 };
 
 type ArticlePage = {
@@ -43,7 +45,7 @@ type CollectionRunPage = {
 
 type MarketEvent = {
   id: string;
-  event_type: "central_bank_announcement" | "regulatory_filing";
+  event_type: string;
   title: string;
   description: string | null;
   event_datetime: string | null;
@@ -57,6 +59,14 @@ type MarketEvent = {
   region: string | null;
   source_name: string;
   article_url: string;
+  sources: Array<{
+    article_id: string;
+    source_name: string;
+    url: string;
+    document_url: string | null;
+    published_at: string | null;
+    content_status: string;
+  }>;
   companies: Array<{
     id: string;
     cik: string;
@@ -69,10 +79,12 @@ type MarketEvent = {
     duration_ms: number | null;
     prompt_tokens: number | null;
     completion_tokens: number | null;
+    source_url: string | null;
     result: {
       summary?: string;
       importance_score?: number;
       urgency_score?: number;
+      evidence?: Array<{ claim: string; quote: string }>;
     };
   } | null;
 };
@@ -244,7 +256,7 @@ export default function Home() {
           <div className="mb-6 flex items-end justify-between gap-4">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-signal">
-                Détection déterministe
+                Événements sourcés
               </p>
               <h3 className="mt-2 font-display text-2xl text-white">Derniers événements</h3>
             </div>
@@ -254,20 +266,19 @@ export default function Home() {
           {events?.items.length ? (
             <div className="grid gap-4 md:grid-cols-2">
               {events.items.map((event) => (
-                <a
+                <article
                   key={event.id}
-                  href={event.article_url}
-                  target="_blank"
-                  rel="noreferrer"
                   className="rounded-2xl border border-white/10 bg-white/[0.025] p-5 transition hover:border-signal/30 hover:bg-white/[0.04]"
                 >
                   <div className="flex items-center justify-between gap-3">
                     <span className="text-xs font-medium text-signal">{event.source_name}</span>
                     <span className="rounded-full bg-white/5 px-2 py-1 text-[10px] uppercase tracking-wider text-slate-500">
-                      {event.event_type === "regulatory_filing" ? "Dépôt 8-K" : "Banque centrale"}
+                      {event.event_type.replaceAll("_", " ")}
                     </span>
                   </div>
-                  <h4 className="mt-4 font-display text-lg text-white">{event.title}</h4>
+                  <h4 className="mt-4 font-display text-lg text-white">
+                    <a href={event.article_url} target="_blank" rel="noreferrer">{event.title}</a>
+                  </h4>
                   {event.companies.length ? (
                     <p className="mt-2 text-sm text-slate-300">
                       {event.companies.map((company) => company.name).join(", ")}
@@ -294,7 +305,31 @@ export default function Home() {
                         }).format(new Date(event.event_datetime))
                       : "Date inconnue"}
                   </time>
-                </a>
+                  <details className="mt-3 text-xs text-slate-400">
+                    <summary className="cursor-pointer text-signal">Sources et preuves ({event.sources.length})</summary>
+                    <ul className="mt-2 space-y-2">
+                      {event.sources.map((source) => (
+                        <li key={source.article_id}>
+                          <a href={source.document_url ?? source.url} target="_blank" rel="noreferrer" className="underline">
+                            {source.source_name}
+                          </a>
+                          {source.published_at ? ` · ${new Date(source.published_at).toLocaleDateString("fr-FR")}` : " · Date inconnue"}
+                          {source.content_status === "success" ? " · Texte récupéré" : " · Extrait RSS"}
+                        </li>
+                      ))}
+                    </ul>
+                    {event.semantic_analysis?.result.evidence?.map((item, index) => (
+                      <blockquote key={index} className="mt-2 border-l border-signal/40 pl-3">
+                        {item.quote}
+                      </blockquote>
+                    ))}
+                    {event.semantic_analysis?.source_url ? (
+                      <a href={event.semantic_analysis.source_url} target="_blank" rel="noreferrer" className="mt-2 block underline">
+                        Document utilisé pour l’analyse (passage limité)
+                      </a>
+                    ) : null}
+                  </details>
+                </article>
               ))}
             </div>
           ) : (
@@ -327,6 +362,13 @@ export default function Home() {
                 >
                   <div>
                     <p className="text-xs font-medium text-signal">{article.source_name}</p>
+                    <p className="mt-1 text-xs text-slate-400">
+                      {article.content_status === "success"
+                        ? (article.content_truncated ? "Texte récupéré (limité)" : "Texte récupéré")
+                        : article.content_status === "pending" || article.content_status === "fetching"
+                          ? "Récupération du texte en cours"
+                          : "Extrait RSS disponible"}
+                    </p>
                     <time className="mt-1 block text-xs text-slate-500">
                       {new Intl.DateTimeFormat("fr-FR", {
                         dateStyle: "medium",

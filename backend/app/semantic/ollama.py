@@ -18,7 +18,7 @@ class OllamaSemanticClient:
         self,
         base_url: str,
         model: str,
-        timeout_seconds: float = 180.0,
+        timeout_seconds: float = 600.0,
         client: httpx.AsyncClient | None = None,
     ) -> None:
         self.base_url = base_url.rstrip("/")

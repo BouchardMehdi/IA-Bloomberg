@@ -16,6 +16,7 @@ class AnalysisRun(UUIDPrimaryKeyMixin, Base):
             "event_id",
             "model_name",
             "prompt_version",
+            "input_hash",
             name="uq_analysis_runs_event_model_prompt",
         ),
     )
@@ -26,6 +27,8 @@ class AnalysisRun(UUIDPrimaryKeyMixin, Base):
     model_name: Mapped[str] = mapped_column(String(255), nullable=False)
     prompt_version: Mapped[str] = mapped_column(String(50), nullable=False)
     input_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    input_text: Mapped[str | None] = mapped_column(Text)
+    source_url: Mapped[str | None] = mapped_column(String(2048))
     status: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
     started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

@@ -28,6 +28,10 @@ Pour les dépôts SEC, l'extracteur déterministe récupère déjà le formulair
 
 ## Analyse sémantique locale
 
-Le client Ollama envoie le titre et le contenu autorisé avec le JSON Schema Pydantic de sortie. `semantic-v2` produit un résumé bref en français, un type d'événement, des sociétés, actifs, dates, montants, scores et preuves. La température est fixée à zéro. Toute citation qui ne peut pas être retrouvée dans la source normalisée invalide le résultat.
+Le client Ollama envoie le titre et un passage limité à 8 000 caractères du document récupéré avec le JSON Schema Pydantic de sortie. Après un échec définitif de récupération, l'extrait RSS reste utilisable. `semantic-v4` produit un résumé bref en français, un type d'événement, des sociétés, actifs, dates, montants, scores et jusqu'à trois preuves courtes. La température est fixée à zéro. Toute citation qui ne peut pas être retrouvée dans le passage transmis invalide le résultat. Les analyses échouées attendent dix minutes avant une nouvelle tentative ; une analyse en cours reste réservée pendant 31 minutes, couvrant le délai Ollama maximal configurable.
 
 `analysis_runs` journalise les succès et les échecs avec le modèle, la version du prompt, le hash d'entrée, la durée et les tokens. L'analyse est désactivée par défaut afin que la collecte reste disponible sans GPU ni modèle téléchargé.
+
+La clé unique inclut désormais le hash d'entrée. Une récupération de texte permet une nouvelle analyse sans écraser une analyse RSS. `input_text` et `source_url` conservent exactement le passage utilisé et son origine. Les sorties anciennes restent consultables même si le texte de l'article est ensuite enrichi.
+
+Le regroupement précède les cycles d'analyse : même numéro de dépôt SEC, ou texte complet identique avec source et date identiques. L'événement d'origine reste auditable via `merged_into_event_id`. Aucun rapprochement fondé uniquement sur un titre ou un score de similarité n'est effectué.

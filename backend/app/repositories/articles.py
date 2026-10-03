@@ -20,6 +20,16 @@ class ArticleRepository:
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
 
+    async def get(self, article_id: uuid.UUID) -> ArticleRecord | None:
+        row = (
+            await self.session.execute(
+                select(Article, Source.name)
+                .join(Source, Source.id == Article.source_id)
+                .where(Article.id == article_id)
+            )
+        ).one_or_none()
+        return ArticleRecord(article=row[0], source_name=row[1]) if row else None
+
     async def upsert_source(self, collector: BaseCollector) -> uuid.UUID:
         statement = (
             insert(Source)

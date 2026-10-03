@@ -7,7 +7,12 @@ import httpx
 import pytest
 
 from app.models.article import Article
-from app.repositories.semantic_analysis import validate_evidence
+from app.repositories.semantic_analysis import (
+    ANALYSIS_CHAR_LIMIT,
+    AnalysisCandidate,
+    analysis_content,
+    validate_evidence,
+)
 from app.schemas.semantic_analysis import EvidenceItem, SemanticExtraction
 from app.semantic.ollama import OllamaSemanticClient
 from app.services.semantic_analysis import SemanticAnalysisService
@@ -82,6 +87,17 @@ def test_evidence_must_exist_in_the_source_text() -> None:
 
     with pytest.raises(ValueError, match="absent"):
         validate_evidence(make_extraction("rates were increased"), article)
+
+
+def test_enriched_input_changes_hash_and_only_transmitted_quotes_are_valid() -> None:
+    article = Article(title="Policy", content="decided to keep rates unchanged")
+    candidate = AnalysisCandidate(event=None, article=article, source_name="ECB")
+    rss_hash = candidate.input_hash
+    article.full_content = "a" * ANALYSIS_CHAR_LIMIT + " decided to keep rates unchanged"
+    assert candidate.input_hash != rss_hash
+    assert len(analysis_content(article)) == ANALYSIS_CHAR_LIMIT
+    with pytest.raises(ValueError, match="absent"):
+        validate_evidence(make_extraction("decided to keep rates unchanged"), article)
 
 
 @pytest.mark.asyncio

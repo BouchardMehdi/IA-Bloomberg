@@ -29,6 +29,7 @@ Les endpoints suivants servent à l'orchestration :
 - `GET /api/v1/health/live` vérifie que le processus répond ;
 - `GET /api/v1/health/ready` vérifie PostgreSQL et Redis.
 - `GET /api/v1/articles` retourne les articles récents avec pagination.
+- `GET /api/v1/articles/{id}` retourne aussi le texte du document et son état de récupération.
 - `GET /api/v1/events` retourne les événements détectés avec leur source primaire.
 - `GET /api/v1/collection-runs` retourne l'historique des collectes.
 
@@ -90,6 +91,23 @@ docker compose exec backend python -m app.cli.analyze_events --limit 3
 
 Le résultat contient un résumé, une catégorie sémantique, les sociétés et actifs cités, les dates, les montants, les scores de sentiment, d'importance, d'urgence et de confiance, ainsi que les preuves textuelles.
 
+## Récupérer les documents et regrouper les événements
+
+Le scheduler récupère automatiquement le texte HTML des publications officielles BCE, Fed et SEC. Pour une page d'index SEC, il sélectionne le document principal `8-K` ou `8-K/A`, en conservant son URL exacte. Le RSS d'origine reste conservé séparément. Les PDF et les pièces jointes ne sont pas extraits dans cette version.
+
+```bash
+docker compose exec backend python -m app.cli.fetch_documents --limit 5
+docker compose exec backend python -m app.cli.fetch_documents --source ecb --limit 1
+```
+
+La récupération est séquentielle : cinq documents par cycle d'une minute, au plus 2 Mo par téléchargement, 60 000 caractères conservés et 90 secondes par document. Une erreur est enregistrée ; deux nouvelles tentatives sont possibles après 5 puis 10 minutes. Les redirections restent dans le domaine officiel et les pages non prises en charge sont signalées. Ces limites sont configurables via les variables `DOCUMENT_*` de `.env.example`.
+
+L'analyse attend la récupération ou son échec définitif. Elle utilise les 8 000 premiers caractères du texte récupéré, ou l'extrait RSS après un échec définitif. Le passage transmis, son hash et son URL sont conservés dans `analysis_runs`. Un texte nouvellement récupéré peut ainsi déclencher une nouvelle analyse sans effacer la précédente. Une limite de stockage ou d'analyse peut laisser des faits situés plus loin dans un long document hors de l'analyse.
+
+Sur CPU, un document plus long peut demander plusieurs minutes d'analyse. `OLLAMA_TIMEOUT_SECONDS` autorise jusqu'à 600 secondes par appel par défaut ; la durée réelle d'un cycle peut dépasser l'intervalle configuré, sans chevauchement des cycles du scheduler.
+
+Les événements correspondant au même numéro de dépôt SEC sont regroupés. Pour les autres publications, le regroupement exige un texte intégral identique d'au moins 500 caractères, la même source et la même date de publication ; un texte tronqué ne suffit pas. Les événements regroupés et leurs historiques restent en base, tandis que l'API expose l'événement conservé avec toutes ses sources. Des articles simplement proches par leur sujet restent distincts.
+
 ## Développement local
 
 Backend :
@@ -122,4 +140,4 @@ Pour exécuter le backend hors Docker tout en gardant les services de données d
 
 Le principe structurant est **Article != Event** : plusieurs articles peuvent documenter le même événement. PostgreSQL reste la mémoire permanente et les futurs workers Ollama ne recevront jamais ses identifiants.
 
-Les pipelines BCE, Fed et SEC sont collectés automatiquement et observables. L'extraction déterministe crée des événements sourcés et identifie les sociétés déclarantes des dépôts SEC. L'analyse sémantique Ollama est disponible de manière optionnelle et conserve ses preuves et métriques. La prochaine étape sera d'étendre le contenu collecté avant l'analyse et de regrouper les événements équivalents.
+Les pipelines BCE, Fed et SEC collectent les flux puis le texte des documents officiels. L'extraction déterministe crée des événements sourcés et identifie les sociétés déclarantes des dépôts SEC. Le regroupement exact conserve toutes les sources ; l'analyse Ollama optionnelle garde ses preuves et métriques. La prochaine étape pourra étendre la couverture des documents, puis le rapprochement des faits décrit différemment par plusieurs sources.

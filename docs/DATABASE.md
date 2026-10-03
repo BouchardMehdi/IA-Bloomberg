@@ -27,3 +27,7 @@ alembic revision --autogenerate -m "description"
 ```
 
 Toute modification du modèle persistant doit être accompagnée d'une migration réversible.
+
+La migration `0006` conserve le texte RSS et ajoute `full_content`, son hash, `document_url`, les états de récupération, les tentatives, l'erreur, la prochaine tentative et le marqueur de troncature. `merged_into_event_id` conserve l'identité des événements regroupés. Les liens des articles sont également ajoutés à l'événement conservé.
+
+L'unicité des analyses inclut le hash d'entrée ; `input_text` et `source_url` préservent le contexte des preuves. Le downgrade de `0006` fonctionne tant qu'aucun groupe modèle/prompt/événement n'a plusieurs entrées. Dans ce dernier cas, il refuse d'effacer implicitement l'historique : exporter les analyses avant une restauration de sauvegarde.

@@ -189,17 +189,24 @@ class EventRepository:
             .options(
                 selectinload(Event.company_links).joinedload(EventCompany.company),
                 selectinload(Event.analysis_runs),
+                selectinload(Event.article_links)
+                .joinedload(EventArticle.article)
+                .joinedload(Article.source),
             )
             .join(EventArticle, EventArticle.event_id == Event.id)
             .join(Article, Article.id == EventArticle.article_id)
             .join(Source, Source.id == Article.source_id)
-            .where(EventArticle.is_primary_source.is_(True))
+            .where(EventArticle.is_primary_source.is_(True), Event.merged_into_event_id.is_(None))
             .order_by(Event.event_datetime.desc(), Event.created_at.desc())
             .limit(limit)
             .offset(offset)
         )
         rows = (await self.session.execute(statement)).all()
-        total = (await self.session.execute(select(func.count(Event.id)))).scalar_one()
+        total = (
+            await self.session.execute(
+                select(func.count(Event.id)).where(Event.merged_into_event_id.is_(None))
+            )
+        ).scalar_one()
         return [
             EventRecord(event=row[0], source_name=row[1], article_url=row[2]) for row in rows
         ], total

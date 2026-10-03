@@ -4,13 +4,16 @@ import time
 from collections.abc import Callable
 
 from app.collectors.base import BaseCollector
+from app.collectors.documents import OfficialDocumentClient
 from app.collectors.ecb import ECBPressCollector
 from app.collectors.fed import FedPressCollector
 from app.collectors.sec import SEC8KCollector
 from app.core.config import get_settings
 from app.db.session import async_session_factory
 from app.semantic.ollama import OllamaSemanticClient
+from app.services.document_content import DocumentContentService
 from app.services.event_extraction import DeterministicEventExtractionService
+from app.services.event_grouping import EventGroupingService
 from app.services.ingestion import ArticleIngestionService
 from app.services.semantic_analysis import SemanticAnalysisService
 
@@ -66,6 +69,8 @@ async def run_collector(
 async def extract_events_once() -> None:
     async with async_session_factory() as session:
         stats = await DeterministicEventExtractionService(session).process_pending()
+        grouping = await EventGroupingService(session).process()
+    logger.info("Event grouping completed: grouped=%s", grouping.grouped)
     logger.info(
         "Deterministic event extraction completed: created=%s enriched=%s",
         stats.created,
@@ -92,7 +97,9 @@ async def run_event_extractor(interval_minutes: int, run_on_start: bool) -> None
 
 async def analyze_events_once(client: OllamaSemanticClient, batch_size: int) -> None:
     async with async_session_factory() as session:
-        stats = await SemanticAnalysisService(session, client).process_pending(batch_size)
+        stats = await SemanticAnalysisService(
+            session, client, require_document=get_settings().document_collection_enabled
+        ).process_pending(batch_size)
     logger.info(
         "Semantic analysis completed: succeeded=%s failed=%s",
         stats.succeeded,
@@ -152,10 +159,16 @@ async def serve() -> None:
             settings.scheduler_run_on_start,
         ),
     ]
+    if settings.document_collection_enabled:
+        tasks.append(run_document_fetcher())
     if settings.ai_analysis_enabled:
         tasks.append(
             run_semantic_analyzer(
-                OllamaSemanticClient(settings.ollama_base_url, settings.ollama_model),
+                OllamaSemanticClient(
+                    settings.ollama_base_url,
+                    settings.ollama_model,
+                    timeout_seconds=settings.ollama_timeout_seconds,
+                ),
                 settings.ai_analysis_interval_minutes,
                 settings.ai_analysis_batch_size,
                 settings.scheduler_run_on_start,
@@ -164,6 +177,30 @@ async def serve() -> None:
     else:
         logger.info("Semantic analyzer disabled")
     await asyncio.gather(*tasks)
+
+
+async def run_document_fetcher() -> None:
+    settings = get_settings()
+    client = OfficialDocumentClient(
+        settings.sec_user_agent, settings.document_max_bytes, settings.document_max_chars
+    )
+    if not settings.scheduler_run_on_start:
+        await asyncio.sleep(settings.document_collection_interval_minutes * 60)
+    while True:
+        started = time.monotonic()
+        try:
+            async with async_session_factory() as session:
+                stats = await DocumentContentService(session, client).process_pending(
+                    settings.document_collection_batch_size
+                )
+            logger.info("Document retrieval completed: %s", stats)
+        except Exception:
+            logger.exception("Document retrieval cycle failed")
+        await asyncio.sleep(
+            seconds_until_next_run(
+                settings.document_collection_interval_minutes, time.monotonic() - started
+            )
+        )
 
 
 if __name__ == "__main__":

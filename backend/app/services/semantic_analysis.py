@@ -3,7 +3,11 @@ from dataclasses import dataclass
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.repositories.semantic_analysis import SemanticAnalysisRepository, validate_evidence
+from app.repositories.semantic_analysis import (
+    SemanticAnalysisRepository,
+    analysis_content,
+    validate_evidence,
+)
 from app.semantic.ollama import OllamaSemanticClient
 from app.semantic.prompt import PROMPT_VERSION
 
@@ -19,16 +23,22 @@ class SemanticAnalysisService:
         self,
         session: AsyncSession,
         client: OllamaSemanticClient,
+        require_document: bool = True,
     ) -> None:
         self.session = session
         self.client = client
+        self.require_document = require_document
         self.repository = SemanticAnalysisRepository(session)
 
-    async def process_pending(self, limit: int = 5) -> SemanticAnalysisStats:
+    async def process_pending(
+        self, limit: int = 5, source_name: str | None = None
+    ) -> SemanticAnalysisStats:
         candidates = await self.repository.list_candidates(
             self.client.model,
             PROMPT_VERSION,
             limit,
+            require_document=self.require_document,
+            source_name=source_name,
         )
         succeeded = 0
         failed = 0
@@ -47,7 +57,7 @@ class SemanticAnalysisService:
                 result = await self.client.analyze(
                     candidate.source_name,
                     candidate.article.title,
-                    candidate.article.content,
+                    analysis_content(candidate.article),
                 )
                 validate_evidence(result.extraction, candidate.article)
                 duration_ms = round((time.perf_counter() - started) * 1000)

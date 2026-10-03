@@ -13,6 +13,16 @@ class ArticleRead(BaseModel):
     language: str | None
     published_at: datetime | None
     fetched_at: datetime
+    document_url: str | None = None
+    content_status: str = "pending"
+    content_attempts: int = 0
+    content_fetched_at: datetime | None = None
+    content_truncated: bool = False
+    content_error: str | None = None
+
+
+class ArticleDetail(ArticleRead):
+    full_content: str | None = None
 
 
 class ArticlePage(BaseModel):

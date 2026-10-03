@@ -1,7 +1,13 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.repositories.events import EventRepository
-from app.schemas.event import EventCompanyRead, EventPage, EventRead, SemanticAnalysisRead
+from app.schemas.event import (
+    EventCompanyRead,
+    EventPage,
+    EventRead,
+    EventSourceRead,
+    SemanticAnalysisRead,
+)
 
 
 class EventService:
@@ -36,6 +42,7 @@ class EventService:
                 prompt_tokens=successful_run.prompt_tokens,
                 completion_tokens=successful_run.completion_tokens,
                 result=successful_run.result,
+                source_url=successful_run.source_url,
             )
         return EventRead(
             id=record.event.id,
@@ -63,4 +70,16 @@ class EventService:
                 for link in record.event.company_links
             ],
             semantic_analysis=semantic_analysis,
+            sources=[
+                EventSourceRead(
+                    article_id=link.article.id,
+                    source_name=link.article.source.name,
+                    url=link.article.url,
+                    document_url=link.article.document_url,
+                    published_at=link.article.published_at,
+                    content_status=link.article.content_status,
+                    is_primary_source=link.is_primary_source,
+                )
+                for link in record.event.article_links
+            ],
         )
