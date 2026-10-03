@@ -212,3 +212,9 @@ Pour exécuter le backend hors Docker tout en gardant les services de données d
 Le principe structurant est **Article != Event** : plusieurs articles peuvent documenter le même événement. PostgreSQL reste la mémoire permanente et les futurs workers Ollama ne recevront jamais ses identifiants.
 
 Les pipelines BCE, Fed et SEC collectent les flux puis le texte des documents officiels. L'extraction déterministe crée des publications sourcées ; Ollama peut produire plusieurs faits avec leurs preuves. Le regroupement exact conserve toutes les sources et le résolveur identifie les sociétés et les tickers explicites. La prochaine étape pourra utiliser ces identités pour des watchlists et des alertes ciblées.
+
+## Analyses des titres
+
+La page <http://localhost:3000/analysis> relie les titres suivis aux faits et
+publications sourcés, avec distinction entre mention du titre et contexte de
+l’émetteur. Voir [le fonctionnement et les limites](docs/INSTRUMENT_RESEARCH.md).

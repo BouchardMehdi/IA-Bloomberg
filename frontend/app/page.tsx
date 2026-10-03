@@ -198,7 +198,7 @@ export default function Home() {
           </div>
         </header>
 
-        <div className="mt-5"><Link href="/portfolio" className="text-sm text-signal underline">Cours et portefeuille simulé →</Link></div>
+        <div className="mt-5 flex gap-5"><Link href="/portfolio" className="text-sm text-signal underline">Cours et portefeuille simulé →</Link><Link href="/analysis" className="text-sm text-signal underline">Analyses des titres →</Link></div>
         <section className="grid gap-8 py-16 lg:grid-cols-[1.4fr_0.6fr] lg:items-end">
           <div>
             <p className="mb-4 text-sm text-slate-400">Fondation · Version 0.1</p>

@@ -60,3 +60,8 @@ sans levier, Forex ou matières premières. WLS est un univers privé annoncé d
 10 426 titres ; ne pas le reconstruire approximativement. L'éligibilité vient d'un
 export autorisé par titre et cotation, jamais du CIK d'une entreprise. Les frais,
 dates et limites restent à confirmer. Voir docs/CHALLENGE.md.
+
+Les fiches `/analysis` rapprochent les titres suivis des documents et faits sans
+appel LLM supplémentaire. Distinguer la mention du titre et de sa cotation du
+contexte de l’émetteur. Ne pas transformer ce rapprochement en impact financier
+avéré. Voir docs/INSTRUMENT_RESEARCH.md.

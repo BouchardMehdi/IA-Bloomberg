@@ -13,9 +13,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import engine, get_db_session
 from app.main import app
 from app.market.alpha_vantage import AlphaVantageClient
+from app.models.article import Article
 from app.models.entity_registry import EntityRegistry
+from app.models.event import Event, EventArticle
 from app.models.market import MarketInstrument
 from app.models.portfolio import PaperTrade
+from app.models.source import Source
 from app.schemas.market import PaperOrder, PortfolioCreate
 from app.services.market_data import MarketDataService
 from app.services.paper_portfolio import PaperPortfolioService
@@ -179,6 +182,73 @@ async def main():
                         assert response.status_code == 200
                         assert response.json()["total_pnl"] == "197.80"
                         assert response.json()["positions"] == []
+                        fixture_id = uuid4().hex
+                        source = Source(
+                            name="Research fixture " + fixture_id,
+                            source_type="rss",
+                            url="https://example.org/fixture",
+                        )
+                        session.add(source)
+                        await session.flush()
+                        article = Article(
+                            source_id=source.id,
+                            title="Research fixture",
+                            url="https://example.org/" + fixture_id,
+                            content_hash=fixture_id * 2,
+                            published_at=datetime.now(UTC),
+                            fetched_at=datetime.now(UTC),
+                        )
+                        session.add(article)
+                        await session.flush()
+                        fact = Event(
+                            deduplication_key="research-fixture-" + uuid4().hex,
+                            event_type="company_event",
+                            title="Fixture research",
+                            status="detected",
+                            evidence_excerpt=instrument.symbol,
+                            structured_data={
+                                "entity_resolution": {
+                                    "entities": [
+                                        {
+                                            "status": "resolved",
+                                            "kind": "equity",
+                                            "role": "counterparty",
+                                            "quote": instrument.symbol,
+                                            "candidates": [
+                                                {
+                                                    "cik": instrument.cik,
+                                                    "ticker": instrument.symbol,
+                                                    "exchange": instrument.exchange,
+                                                }
+                                            ],
+                                        }
+                                    ]
+                                }
+                            },
+                        )
+                        session.add(fact)
+                        await session.flush()
+                        session.add(
+                            EventArticle(
+                                event_id=fact.id, article_id=article.id, is_primary_source=True
+                            )
+                        )
+                        await session.commit()
+                        response = await http.get(
+                            f"/api/v1/market/instruments/{instrument.id}/research"
+                        )
+                        assert response.status_code == 200
+                        data = response.json()
+                        card = next(c for c in data["items"] if c["event_id"] == str(fact.id))
+                        assert card["relationship"]["basis"] == "security_mention"
+                        assert card["relationship"]["role"] == "counterparty"
+                        assert isinstance(data["instrument"]["latest_price"]["close"], str)
+                        assert Decimal(data["instrument"]["latest_price"]["close"]) == Decimal(
+                            "120"
+                        )
+                        assert (
+                            await http.get(f"/api/v1/market/instruments/{uuid4()}/research")
+                        ).status_code == 404
                 finally:
                     app.dependency_overrides.pop(get_db_session, None)
                 print(

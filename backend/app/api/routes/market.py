@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db_session
 from app.schemas.market import InstrumentCreate, PaperOrder, PortfolioCreate
+from app.services.instrument_research import InstrumentResearchService
 from app.services.market_data import MarketDataService
 from app.services.paper_portfolio import PaperPortfolioService
 
@@ -49,6 +50,19 @@ async def prices(
 @router.get("/portfolios")
 async def portfolios(session: Db):
     return market_response(await PaperPortfolioService(session).list_portfolios())
+
+
+@router.get("/instruments/{instrument_id}/research")
+async def instrument_research(
+    instrument_id: UUID,
+    session: Db,
+    limit: Annotated[int, Query(ge=1, le=100)] = 20,
+    offset: Annotated[int, Query(ge=0)] = 0,
+):
+    result = await InstrumentResearchService(session).detail(instrument_id, limit, offset)
+    if result is None:
+        raise HTTPException(404, "Titre introuvable.")
+    return market_response(result)
 
 
 @router.post("/portfolios", status_code=201)

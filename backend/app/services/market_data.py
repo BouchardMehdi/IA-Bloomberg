@@ -60,13 +60,12 @@ class MarketDataService:
         await self.session.commit()
         return {"id": instrument_id, "symbol": request.symbol}
 
-    async def list_instruments(self) -> dict:
+    async def list_instruments(self, instrument_id: UUID | None = None) -> dict:
         universe = await self.session.get(EntityRegistry, "wls_universe")
-        instruments = (
-            (await self.session.execute(select(MarketInstrument).order_by(MarketInstrument.symbol)))
-            .scalars()
-            .all()
-        )
+        query = select(MarketInstrument).order_by(MarketInstrument.symbol)
+        if instrument_id is not None:
+            query = query.where(MarketInstrument.id == instrument_id)
+        instruments = (await self.session.execute(query)).scalars().all()
         items = []
         for instrument in instruments:
             price = await self.latest_price(instrument.id)

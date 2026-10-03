@@ -3,6 +3,9 @@
 Cette étape suit les [règles du challenge connues](CHALLENGE.md). Elle ne produit pas
 encore de propositions d'investissement et ne transmet aucun ordre à un courtier.
 
+Les [analyses des titres suivis](INSTRUMENT_RESEARCH.md) sont consultables dans
+`/analysis` : documents et faits sourcés, cours disponible et points à examiner.
+
 ## Activer les cours
 
 Créer une clé personnelle depuis <https://www.alphavantage.co/support/#api-key> puis
