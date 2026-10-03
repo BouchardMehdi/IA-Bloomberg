@@ -4,7 +4,7 @@ from app.models.collection_run import CollectionRun
 from app.models.company import Company, EventCompany
 from app.models.entity_registry import EntityRegistry
 from app.models.event import Event, EventArticle
-from app.models.market import DailyPrice, FxRate, MarketFetchRun, MarketInstrument
+from app.models.market import DailyPrice, FxCollectionRun, FxRate, MarketFetchRun, MarketInstrument
 from app.models.portfolio import PaperPortfolio, PaperPosition, PaperTrade
 from app.models.source import Source
 
@@ -21,6 +21,7 @@ __all__ = [
     "Source",
     "DailyPrice",
     "FxRate",
+    "FxCollectionRun",
     "MarketFetchRun",
     "MarketInstrument",
     "PaperPortfolio",

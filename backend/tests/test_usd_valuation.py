@@ -100,6 +100,8 @@ async def test_fx_missing_stale_and_usd_identity():
     service = UsdValuationService(session)
     assert (await service.quote(instrument, price, today))["status"] == "missing_fx"
     rate = NS(
+        provider="manual",
+        derivation=None,
         usd_per_unit=Decimal("0.128"),
         rate_date=today - timedelta(days=8),
         source_url="https://example.org/fx",

@@ -73,6 +73,12 @@ préserver la conversion initiale de chaque opération. Ne pas inventer de taux,
 CIK, MIC ou mapping Bloomberg ; l'ISIN ne prouve pas la cotation ou le WLS.
 Voir docs/INTERNATIONAL_MARKET.md.
 
+Les taux de référence BCE sont collectés automatiquement depuis le XML officiel.
+Conserver la date de référence, les valeurs EUR utilisées et le calcul vers USD.
+Ne pas les présenter comme des taux d'exécution Bloomberg. Les saisies manuelles
+gardent priorité pour leur devise/date ; une collecte échouée n'efface aucun taux.
+Voir docs/FX_COLLECTION.md.
+
 Les fiches `/analysis` rapprochent les titres suivis des documents et faits sans
 appel LLM supplémentaire. Distinguer la mention du titre et de sa cotation du
 contexte de l’émetteur. Ne pas transformer ce rapprochement en impact financier

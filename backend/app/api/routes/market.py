@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import get_db_session
 from app.schemas.international import FxRateCreate, InternationalInstrumentCreate, LocalPriceCreate
 from app.schemas.market import InstrumentCreate, PaperOrder, PortfolioCreate
+from app.services.fx_collection import FxCollectionService
 from app.services.instrument_research import InstrumentResearchService
 from app.services.international_market import InternationalMarketService
 from app.services.market_data import MarketDataService
@@ -82,6 +83,11 @@ async def supply_local_price(instrument_id: UUID, request: LocalPriceCreate, ses
 @router.get("/fx-rates")
 async def fx_rates(session: Db):
     return market_response(await InternationalMarketService(session).rates())
+
+
+@router.get("/fx-collection")
+async def fx_collection_status(session: Db):
+    return market_response(await FxCollectionService(session).status())
 
 
 @router.post("/fx-rates")

@@ -7,11 +7,13 @@ from sqlalchemy import (
     Date,
     DateTime,
     ForeignKey,
+    Integer,
     Numeric,
     String,
     Text,
     UniqueConstraint,
 )
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
@@ -63,6 +65,23 @@ class FxRate(UUIDPrimaryKeyMixin, Base):
     usd_per_unit: Mapped[Decimal] = mapped_column(Numeric(20, 10), nullable=False)
     source_url: Mapped[str] = mapped_column(Text, nullable=False)
     fetched_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    provider: Mapped[str] = mapped_column(
+        String(30), nullable=False, default="manual", server_default="manual"
+    )
+    derivation: Mapped[dict | None] = mapped_column(JSONB)
+
+
+class FxCollectionRun(UUIDPrimaryKeyMixin, Base):
+    __tablename__ = "fx_collection_runs"
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    status: Mapped[str] = mapped_column(String(30), nullable=False)
+    error_code: Mapped[str | None] = mapped_column(String(50))
+    source_url: Mapped[str] = mapped_column(Text, nullable=False)
+    latest_reference_date: Mapped[date | None] = mapped_column(Date)
+    record_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    preserved_manual_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    available_currencies: Mapped[list | None] = mapped_column(JSONB)
 
 
 class MarketFetchRun(UUIDPrimaryKeyMixin, Base):

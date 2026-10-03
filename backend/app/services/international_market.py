@@ -31,6 +31,8 @@ class InternationalMarketService:
                     "usd_per_unit": r.usd_per_unit,
                     "source_url": r.source_url,
                     "fetched_at": r.fetched_at,
+                    "provider": r.provider,
+                    "derivation": r.derivation,
                 }
                 for r in rows
             ]
@@ -107,6 +109,8 @@ class InternationalMarketService:
             "usd_per_unit": request.usd_per_unit,
             "source_url": str(request.source_url),
             "fetched_at": datetime.now(UTC),
+            "provider": "manual",
+            "derivation": None,
         }
         await self.session.execute(
             insert(FxRate)

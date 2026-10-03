@@ -11,11 +11,13 @@ from app.collectors.sec import SEC8KCollector
 from app.core.config import get_settings
 from app.db.session import async_session_factory
 from app.market.alpha_vantage import AlphaVantageClient
+from app.market.ecb_fx import EcbFxClient
 from app.semantic.ollama import OllamaSemanticClient
 from app.services.document_content import DocumentContentService
 from app.services.entity_resolution import EntityResolutionService
 from app.services.event_extraction import DeterministicEventExtractionService
 from app.services.event_grouping import EventGroupingService
+from app.services.fx_collection import FxCollectionService
 from app.services.ingestion import ArticleIngestionService
 from app.services.market_data import MarketDataService
 from app.services.semantic_analysis import SemanticAnalysisService
@@ -168,6 +170,8 @@ async def serve() -> None:
     ]
     if settings.document_collection_enabled:
         tasks.append(run_document_fetcher())
+    if settings.fx_collection_enabled:
+        tasks.append(run_fx_collector())
     if settings.ai_analysis_enabled:
         tasks.append(
             run_semantic_analyzer(
@@ -255,6 +259,23 @@ async def run_market_collector() -> None:
         except Exception:
             logger.exception("Market collection failed")
         await asyncio.sleep(3600)
+
+
+async def run_fx_collector() -> None:
+    settings = get_settings()
+    interval = settings.fx_collection_interval_minutes
+    if not settings.scheduler_run_on_start:
+        await asyncio.sleep(interval * 60)
+    client = EcbFxClient()
+    while True:
+        started = time.monotonic()
+        try:
+            async with async_session_factory() as session:
+                stats = await FxCollectionService(session).collect(client)
+                logger.info("ECB FX collection completed: %s", stats)
+        except Exception:
+            logger.exception("ECB FX collection failed; keeping previous rates")
+        await asyncio.sleep(seconds_until_next_run(interval, time.monotonic() - started))
 
 
 if __name__ == "__main__":

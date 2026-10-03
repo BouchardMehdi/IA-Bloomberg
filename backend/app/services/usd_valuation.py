@@ -69,6 +69,8 @@ class UsdValuationService:
             "fx_date": rate.rate_date.isoformat() if rate else None,
             "fx_source_url": rate.source_url if rate else None,
             "fx_fetched_at": rate.fetched_at.isoformat() if rate else None,
+            "fx_provider": rate.provider if rate else None,
+            "fx_derivation": rate.derivation if rate else None,
         }
         try:
             value = converted_price(

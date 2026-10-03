@@ -63,3 +63,9 @@ uniques. `fx_rates` conserve des taux USD par unité, uniques par devise/date.
 `paper_trades.conversion` préserve l'instantané des preuves de chaque opération
 convertie, sans modifier les anciennes opérations USD. Le downgrade refuse de
 supprimer implicitement des titres internationaux ou des preuves de conversion.
+
+La migration `0011` ajoute le fournisseur et la dérivation aux observations FX ;
+les observations existantes restent manuelles. `fx_collection_runs` conserve
+l'historique des collectes BCE et leur couverture. Les écritures sont atomiques,
+le cache et le verrou PostgreSQL sont partagés entre CLI et scheduler. Les preuves
+de dérivation sont figées dans la conversion des opérations, comme les taux.

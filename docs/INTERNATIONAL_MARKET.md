@@ -3,8 +3,9 @@
 La page <http://localhost:3000/international> permet de fournir des identités,
 clôtures locales et taux provenant de sources que l’utilisateur est autorisé à
 exploiter. Aucun exemple de titre, composition WLS ou taux n’est chargé dans la
-base réelle. L’import WLS reste une opération séparée. La collecte automatique
-internationale et les taux automatiques ne sont pas encore branchés.
+base réelle. L’import WLS reste une opération séparée. Les
+[taux de référence BCE sont collectés automatiquement](FX_COLLECTION.md).
+La collecte automatique des clôtures internationales reste à connecter.
 
 ## Identifier une cotation
 
@@ -43,8 +44,10 @@ ne devine pas l’unité depuis le nom de la place ou le symbole. Les cours four
 doivent respecter la devise et le facteur du titre ; les cours Alpha Vantage ne
 peuvent pas être remplacés par cette route de saisie.
 
-Le sens du taux est **USD pour 1 unité de la devise locale**. Les taux inverses
-ou croisés doivent être normalisés explicitement avant leur saisie. Aucun taux
+Le sens du taux est **USD pour 1 unité de la devise locale**. Le collecteur BCE
+normalise ses taux depuis EUR et conserve les deux valeurs de référence. Les
+taux complémentaires inverses ou croisés doivent être normalisés explicitement
+avant leur saisie manuelle. Aucun taux
 USD/USD n’est nécessaire : le facteur 1 est une identité arithmétique.
 
 ```text
@@ -60,6 +63,7 @@ Les cours et taux conservent leur date effective, URL et date d’enregistrement
 La source doit être une URL HTTP(S) sans identifiants, query string ni fragment ;
 utiliser une référence documentaire sans paramètres secrets. Une nouvelle saisie
 pour le même titre/date ou la même devise/date corrige l’observation existante.
+Les saisies manuelles de taux gardent priorité sur la collecte BCE pour leur date.
 Le contrôle automatique ne certifie pas la véracité d’une donnée saisie.
 
 ## Valorisation et simulation
@@ -100,6 +104,7 @@ Toutes les routes sont sous `/api/v1/market` :
 | POST /international-instruments | Identité explicite et provenance de la cotation |
 | POST /instruments/{id}/prices | Clôture locale datée d’une cotation manuelle |
 | GET /fx-rates | Dernier taux fourni par devise, date et source |
+| GET /fx-collection | Dernière tentative et dernier succès de la collecte automatique |
 | POST /fx-rates | Taux daté, `currency`, `usd_per_unit`, `as_of`, `source_url` |
 | GET /instruments | Cours local et `usd_valuation` : état, prix USD, conversion |
 

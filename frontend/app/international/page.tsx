@@ -12,7 +12,9 @@ type Instrument = { id: string; symbol: string; exchange: string; name: string; 
   isin: string | null; bloomberg_symbol: string | null; quote_multiplier: string; price_provider: string;
   registry_url: string; identity_as_of: string | null; usd_valuation: UsdQuote;
   latest_price: { close: string; date: string; source_url: string } | null };
-type Rate = { currency: string; date: string; usd_per_unit: string; source_url: string };
+type Rate = { currency: string; date: string; usd_per_unit: string; source_url: string; provider: string };
+type FxRun = { status: string; finished_at: string | null; latest_reference_date: string | null; available_currencies: string[] | null };
+type FxStatus = { enabled: boolean; interval_minutes: number; latest_run: FxRun | null; last_success: FxRun | null; source_url: string };
 async function request<T>(path: string, body?: unknown): Promise<T> {
   const response = await fetch(`${api}/market${path}`, body === undefined ? { cache: "no-store" } : {
     method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
@@ -28,6 +30,7 @@ function Provenance({ label }: { label: string }) {
 export default function InternationalPage() {
   const [items, setItems] = useState<Instrument[]>([]);
   const [rates, setRates] = useState<Rate[]>([]);
+  const [fxStatus, setFxStatus] = useState<FxStatus | null>(null);
   const [selected, setSelected] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -35,17 +38,17 @@ export default function InternationalPage() {
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     let active = true;
-    Promise.all([request<{ items: Instrument[] }>("/instruments"), request<{ items: Rate[] }>("/fx-rates")])
-      .then(([market, fx]) => { if (active) { setItems(market.items); setRates(fx.items); setLoading(false); } })
+    Promise.all([request<{ items: Instrument[] }>("/instruments"), request<{ items: Rate[] }>("/fx-rates"), request<FxStatus>("/fx-collection")])
+      .then(([market, fx, status]) => { if (active) { setItems(market.items); setRates(fx.items); setFxStatus(status); setLoading(false); } })
       .catch((e: Error) => { if (active) { setError(e.message); setLoading(false); } });
     return () => { active = false; };
   }, []);
-  async function act(action: () => Promise<void>) {
+  async function act(action: () => Promise<void>, message = "Données enregistrées. L’éligibilité WLS reste une vérification séparée.") {
     setBusy(true); setError(""); setNotice("");
     try {
       await action();
-      const [market, fx] = await Promise.all([request<{ items: Instrument[] }>("/instruments"), request<{ items: Rate[] }>("/fx-rates")]);
-      setItems(market.items); setRates(fx.items); setNotice("Données enregistrées. L’éligibilité WLS reste une vérification séparée.");
+      const [market, fx, status] = await Promise.all([request<{ items: Instrument[] }>("/instruments"), request<{ items: Rate[] }>("/fx-rates"), request<FxStatus>("/fx-collection")]);
+      setItems(market.items); setRates(fx.items); setFxStatus(status); setNotice(message);
     } catch (e) { setError(e instanceof Error ? e.message : "Erreur de connexion."); }
     finally { setBusy(false); }
   }
@@ -54,10 +57,18 @@ export default function InternationalPage() {
   return <main className="mx-auto max-w-6xl px-5 py-8 text-slate-300">
     <header><h1 className="font-display text-3xl text-white">Titres internationaux et conversion USD</h1>
       <nav className="mt-3 flex gap-5 text-sm text-signal underline"><Link href="/portfolio">Portefeuille simulé</Link><Link href="/analysis">Analyses</Link></nav></header>
-    <p className="my-6 text-sm leading-6">Les actions internationales sont autorisées dans le challenge. Ici, les identités, clôtures et taux sont fournis depuis tes sources autorisées ; leur collecte internationale automatique reste à connecter. Aucun titre WLS n’est déduit de ces saisies. La conversion sert à valoriser une action en USD, sans position Forex. Ses conventions peuvent différer de celles de Bloomberg.</p>
+    <p className="my-6 text-sm leading-6">Les actions internationales sont autorisées dans le challenge. Les taux de référence BCE sont récupérés automatiquement et convertis vers USD. Les identités et clôtures internationales restent à fournir depuis tes sources autorisées. Aucun titre WLS n’est déduit de ces données. La conversion sert à valoriser une action en USD, sans position Forex. Ses conventions peuvent différer de celles de Bloomberg.</p>
     {error ? <p role="alert" className="mb-4 text-rose-300">{error}</p> : null}
     {notice ? <p role="status" className="mb-4 text-signal">{notice}</p> : null}
     {loading ? <p role="status">Chargement…</p> : null}
+    {fxStatus ? <section className="mb-6 rounded-xl border border-signal/20 p-5">
+      <h2 className="text-xl text-white">Collecte automatique des taux</h2>
+      <p className="mt-2 text-sm">{fxStatus.enabled ? `Activée · vérification toutes les ${fxStatus.interval_minutes} minutes.` : "Collecte automatique désactivée."} <a href={fxStatus.source_url} target="_blank" rel="noreferrer" className="text-signal underline">Source BCE</a></p>
+      {fxStatus.last_success ? <p className="mt-2 text-sm">Dernière date de référence récupérée : {fxStatus.last_success.latest_reference_date} · devises disponibles dans cette publication : {fxStatus.last_success.available_currencies?.join(", ")}.<br />Collecte terminée le {fxStatus.last_success.finished_at ? new Date(fxStatus.last_success.finished_at).toLocaleString("fr-FR") : "—"}.</p> : <p className="mt-2 text-sm">Aucune collecte réussie pour le moment.</p>}
+      {fxStatus.latest_run?.status === "failed" ? <p role="status" className="mt-2 text-sm text-amber-300">La dernière collecte a échoué. Les taux précédents sont conservés ; leur ancienneté reste contrôlée avant une simulation.</p> : null}
+      <p className="mt-2 text-xs text-slate-400">Taux de référence indicatifs, pas des taux d’exécution. Les devises absentes de la source ne sont pas complétées automatiquement. Une saisie manuelle pour une date donnée garde priorité sur la collecte BCE.</p>
+      <button type="button" disabled={busy} className="mt-3 text-sm text-signal underline disabled:opacity-40" onClick={() => act(async () => {}, "Affichage actualisé.")}>Actualiser l’affichage</button>
+    </section> : null}
     <section className="rounded-xl border border-white/10 p-5"><h2 className="text-xl text-white">Identifier une cotation</h2>
       <p className="mt-2 text-sm">Un ISIN identifie le titre ; le marché et le ticker distinguent sa cotation. Utilise les identifiants exacts de ta source. Pour NYSE/Nasdaq, utilise l’ajout SEC du portefeuille.</p>
       <form className="mt-4 grid gap-4 sm:grid-cols-3" onSubmit={(e) => { e.preventDefault(); const data = Object.fromEntries(new FormData(e.currentTarget)); act(async () => {
@@ -88,14 +99,14 @@ export default function InternationalPage() {
           <Provenance label="Date de séance" /><button className={button} disabled={busy || !instrument}>Enregistrer le cours</button>
         </form>
       </section>
-      <section className="rounded-xl border border-white/10 p-5"><h2 className="text-xl text-white">Fournir un taux vers USD</h2>
+      <section className="rounded-xl border border-white/10 p-5"><h2 className="text-xl text-white">Fournir un taux complémentaire vers USD</h2>
         <p className="mt-2 text-sm">Sens du taux : 1 unité de la devise = le nombre d’USD indiqué. Si ta source donne le sens inverse, convertir explicitement avant la saisie.</p>
         <form className="mt-4 grid gap-4" onSubmit={(e) => { e.preventDefault(); const data = Object.fromEntries(new FormData(e.currentTarget)); act(async () => { await request("/fx-rates", data); }); }}>
           <label className="text-xs">Devise<select name="currency" className={input}>{currencies.map((c) => <option key={c}>{c}</option>)}</select></label>
           <label className="text-xs">USD pour 1 unité<input name="usd_per_unit" type="number" min="0.0000000001" step="0.0000000001" className={input} required /></label>
           <Provenance label="Date du taux" /><button className={button} disabled={busy}>Enregistrer le taux</button>
         </form>
-        <ul className="mt-4 space-y-2 text-xs">{rates.map((r) => <li key={r.currency}>1 {r.currency} = {r.usd_per_unit} USD · <a href={r.source_url} target="_blank" rel="noreferrer" className="text-signal underline">{r.date}</a></li>)}</ul>
+        <ul className="mt-4 space-y-2 text-xs">{rates.map((r) => <li key={r.currency}>1 {r.currency} = {r.usd_per_unit} USD · <a href={r.source_url} target="_blank" rel="noreferrer" className="text-signal underline">{r.date}</a> · {r.provider === "ecb" ? "Référence BCE convertie" : "Donnée fournie"}</li>)}</ul>
       </section>
     </div>
     <section className="mt-6 rounded-xl border border-white/10 p-5"><h2 className="text-xl text-white">Cours et valorisations des cotations fournies</h2>
