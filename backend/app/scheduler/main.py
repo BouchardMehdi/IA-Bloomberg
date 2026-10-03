@@ -101,9 +101,11 @@ async def analyze_events_once(client: OllamaSemanticClient, batch_size: int) -> 
             session, client, require_document=get_settings().document_collection_enabled
         ).process_pending(batch_size)
     logger.info(
-        "Semantic analysis completed: succeeded=%s failed=%s",
+        "Semantic analysis completed: succeeded=%s failed=%s partial=%s facts_created=%s",
         stats.succeeded,
         stats.failed,
+        stats.partial,
+        stats.facts_created,
     )
 
 

@@ -14,6 +14,9 @@ class EventService:
     def __init__(self, session: AsyncSession) -> None:
         self.repository = EventRepository(session)
 
+    async def analysis_detail(self, event_id) -> dict | None:
+        return await self.repository.analysis_detail(event_id)
+
     async def list_latest(self, limit: int, offset: int) -> EventPage:
         records, total = await self.repository.list_latest(limit=limit, offset=offset)
         return EventPage(
@@ -25,11 +28,12 @@ class EventService:
 
     @staticmethod
     def _to_read(record) -> EventRead:
-        successful_run = next(
+        successful_run = record.event.fact_analysis_run or next(
             (
                 run
                 for run in record.event.analysis_runs
-                if run.status == "success" and run.result is not None
+                if run.coverage is not None
+                or (run.status in {"success", "partial"} and run.result is not None)
             ),
             None,
         )
@@ -41,8 +45,13 @@ class EventService:
                 duration_ms=successful_run.duration_ms,
                 prompt_tokens=successful_run.prompt_tokens,
                 completion_tokens=successful_run.completion_tokens,
-                result=successful_run.result,
+                result=(record.event.structured_data or {}).get(
+                    "fact", successful_run.result or {}
+                ),
                 source_url=successful_run.source_url,
+                id=successful_run.id,
+                status=successful_run.status,
+                coverage=successful_run.coverage,
             )
         return EventRead(
             id=record.event.id,
@@ -70,6 +79,7 @@ class EventService:
                 for link in record.event.company_links
             ],
             semantic_analysis=semantic_analysis,
+            parent_event_id=record.event.parent_event_id,
             sources=[
                 EventSourceRead(
                     article_id=link.article.id,

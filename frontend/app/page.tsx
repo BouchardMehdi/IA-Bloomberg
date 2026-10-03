@@ -59,6 +59,7 @@ type MarketEvent = {
   region: string | null;
   source_name: string;
   article_url: string;
+  parent_event_id: string | null;
   sources: Array<{
     article_id: string;
     source_name: string;
@@ -74,6 +75,17 @@ type MarketEvent = {
     role: string;
   }>;
   semantic_analysis: {
+    id: string | null;
+    status: string;
+    coverage: {
+      analyzed_count: number;
+      selected_count: number;
+      chunk_count: number;
+      coverage_ratio: number;
+      document_truncated: boolean;
+      input_source: string;
+      passages: Array<{ index: number; start: number; end: number; status: string }>;
+    } | null;
     model_name: string;
     prompt_version: string;
     duration_ms: number | null;
@@ -279,8 +291,31 @@ export default function Home() {
                   <h4 className="mt-4 font-display text-lg text-white">
                     <a href={event.article_url} target="_blank" rel="noreferrer">{event.title}</a>
                   </h4>
+                  <p className="mt-2 text-xs text-slate-500">
+                    {event.parent_event_id ? "Fait extrait d’une publication" : "Publication officielle"}
+                  </p>
+                  {event.semantic_analysis?.coverage ? (
+                    <details className="mt-3 text-xs text-slate-400">
+                      <summary className="cursor-pointer text-signal">
+                        Couverture : {event.semantic_analysis.coverage.analyzed_count}/{event.semantic_analysis.coverage.selected_count} passages · {Math.round(event.semantic_analysis.coverage.coverage_ratio * 100)} % du texte
+                      </summary>
+                      <p className="mt-2">
+                        {event.semantic_analysis.coverage.input_source === "rss" ? "Analyse de l’extrait RSS. " : "Analyse du texte récupéré. "}
+                        {event.semantic_analysis.coverage.document_truncated ? "Document limité lors de la récupération. " : ""}
+                        Les passages non retenus peuvent contenir d’autres faits.
+                      </p>
+                      <ul className="mt-2 space-y-1">
+                        {event.semantic_analysis.coverage.passages.map((passage) => (
+                          <li key={passage.index}>
+                            Passage {passage.index + 1} · caractères {passage.start + 1}–{passage.end} : {passage.status === "success" ? "analysé" : passage.status === "failed" ? "échec" : passage.status === "not_selected" ? "non retenu" : "en attente"}
+                          </li>
+                        ))}
+                      </ul>
+                    </details>
+                  ) : null}
                   {event.companies.length ? (
                     <p className="mt-2 text-sm text-slate-300">
+                      {event.parent_event_id ? "Sociétés du document : " : ""}
                       {event.companies.map((company) => company.name).join(", ")}
                       <span className="ml-2 text-xs text-slate-500">
                         CIK {event.companies[0].cik}
@@ -325,7 +360,7 @@ export default function Home() {
                     ))}
                     {event.semantic_analysis?.source_url ? (
                       <a href={event.semantic_analysis.source_url} target="_blank" rel="noreferrer" className="mt-2 block underline">
-                        Document utilisé pour l’analyse (passage limité)
+                        Document utilisé pour l’analyse
                       </a>
                     ) : null}
                   </details>

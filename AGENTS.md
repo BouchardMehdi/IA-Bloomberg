@@ -40,3 +40,5 @@ docker compose run --rm frontend npm run build
 Avant une modification, lire ce fichier et la documentation concernée. Limiter chaque changement à une fonctionnalité cohérente, ajouter les tests utiles, exécuter les vérifications adaptées et mettre à jour la documentation si le comportement change.
 
 La phase actuelle comprend la fondation, les collectors RSS de la BCE, de la Fed et des dépôts SEC 8-K, la récupération bornée des documents HTML officiels, leur scheduler, l'historique des collectes, l'extraction déterministe d'événements sourcés, l'identification des sociétés SEC par CIK, le regroupement exact avec conservation des sources et une analyse sémantique Ollama optionnelle. Les tests des collectors et de l'analyse utilisent des fixtures ou transports simulés et ne dépendent pas du réseau. Ne pas ajouter de fonction de trading sans demande explicite.
+
+L'analyse sémantique découpe et sélectionne les passages dans un budget explicite, conserve la couverture et reprend les passages réussis. Les faits extraits sont des événements enfants ; le regroupement des publications ne doit jamais fusionner des faits différents issus du même document.

@@ -1,10 +1,11 @@
 from typing import Annotated
+from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db_session
-from app.schemas.event import EventPage
+from app.schemas.event import AnalysisDetail, EventPage
 from app.services.events import EventService
 
 router = APIRouter()
@@ -23,3 +24,13 @@ async def list_events(
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> EventPage:
     return await service.list_latest(limit=limit, offset=offset)
+
+
+@router.get("/{event_id}/analysis", response_model=AnalysisDetail)
+async def analysis_detail(
+    event_id: UUID, service: Annotated[EventService, Depends(get_event_service)]
+) -> dict:
+    detail = await service.analysis_detail(event_id)
+    if detail is None:
+        raise HTTPException(status_code=404, detail="No analysis for this event")
+    return detail

@@ -47,7 +47,9 @@ class EventGroupingService:
                 .join(EventArticle, EventArticle.event_id == Event.id)
                 .join(Article, Article.id == EventArticle.article_id)
                 .where(
-                    Event.merged_into_event_id.is_(None), EventArticle.is_primary_source.is_(True)
+                    Event.merged_into_event_id.is_(None),
+                    EventArticle.is_primary_source.is_(True),
+                    Event.parent_event_id.is_(None),
                 )
                 .order_by(Event.created_at, Event.id)
                 .with_for_update(of=Event)

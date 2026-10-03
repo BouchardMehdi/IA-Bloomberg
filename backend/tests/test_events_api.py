@@ -9,6 +9,31 @@ from app.schemas.event import EventCompanyRead, EventPage, EventRead
 
 
 class StubEventService:
+    async def analysis_detail(self, event_id: UUID) -> dict | None:
+        if str(event_id) != "00000000-0000-0000-0000-000000000003":
+            return None
+        return {
+            "id": UUID("00000000-0000-0000-0000-000000000009"),
+            "status": "partial",
+            "source_url": "https://www.sec.gov/example",
+            "model_name": "fixture-model",
+            "prompt_version": "semantic-v5-passages",
+            "coverage": {"analyzed_count": 1},
+            "passages": [
+                {
+                    "index": 2,
+                    "start": 9000,
+                    "end": 9044,
+                    "text": "The company approved a material acquisition.",
+                    "status": "success",
+                    "result": {"events": []},
+                    "error_message": None,
+                    "prompt_tokens": 80,
+                    "completion_tokens": 20,
+                }
+            ],
+        }
+
     async def list_latest(self, limit: int, offset: int) -> EventPage:
         return EventPage(
             items=[
@@ -69,3 +94,17 @@ def test_events_endpoint_returns_traceable_events() -> None:
 def test_events_endpoint_validates_page_size() -> None:
     response = client.get("/api/v1/events?limit=101")
     assert response.status_code == 422
+
+
+def test_analysis_detail_exposes_passage_text_offsets_and_unknown_event_returns_404() -> None:
+    app.dependency_overrides[get_event_service] = StubEventService
+    try:
+        response = client.get("/api/v1/events/00000000-0000-0000-0000-000000000003/analysis")
+        missing = client.get("/api/v1/events/00000000-0000-0000-0000-000000000099/analysis")
+    finally:
+        app.dependency_overrides.clear()
+    assert response.status_code == 200
+    assert response.json()["coverage"]["analyzed_count"] == 1
+    assert response.json()["passages"][0]["start"] == 9000
+    assert "acquisition" in response.json()["passages"][0]["text"]
+    assert missing.status_code == 404

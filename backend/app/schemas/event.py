@@ -20,6 +20,9 @@ class SemanticAnalysisRead(BaseModel):
     completion_tokens: int | None
     result: dict[str, Any]
     source_url: str | None = None
+    id: uuid.UUID | None = None
+    status: str = "success"
+    coverage: dict[str, Any] | None = None
 
 
 class EventSourceRead(BaseModel):
@@ -51,6 +54,7 @@ class EventRead(BaseModel):
     companies: list[EventCompanyRead]
     semantic_analysis: SemanticAnalysisRead | None = None
     sources: list[EventSourceRead] = Field(default_factory=list)
+    parent_event_id: uuid.UUID | None = None
 
 
 class EventPage(BaseModel):
@@ -58,3 +62,25 @@ class EventPage(BaseModel):
     total: int
     limit: int
     offset: int
+
+
+class PassageRead(BaseModel):
+    index: int
+    start: int
+    end: int
+    text: str
+    status: str
+    result: dict[str, Any] | None
+    error_message: str | None
+    prompt_tokens: int | None
+    completion_tokens: int | None
+
+
+class AnalysisDetail(BaseModel):
+    id: uuid.UUID
+    status: str
+    source_url: str | None
+    model_name: str
+    prompt_version: str
+    coverage: dict[str, Any] | None
+    passages: list[PassageRead]

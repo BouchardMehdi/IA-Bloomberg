@@ -6,6 +6,7 @@ from app.models.event import Event, EventArticle
 from app.models.source import Source
 
 __all__ = [
+    "AnalysisPassage",
     "Article",
     "AnalysisRun",
     "CollectionRun",
@@ -15,3 +16,4 @@ __all__ = [
     "EventCompany",
     "Source",
 ]
+from app.models.analysis_passage import AnalysisPassage

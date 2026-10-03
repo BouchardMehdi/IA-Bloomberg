@@ -28,6 +28,9 @@ class Settings(BaseSettings):
     ai_analysis_enabled: bool = False
     ai_analysis_interval_minutes: int = Field(default=5, ge=1, le=1440)
     ai_analysis_batch_size: int = Field(default=3, ge=1, le=50)
+    ai_passage_chars: int = Field(default=3000, ge=500, le=6000)
+    ai_max_passages: int = Field(default=3, ge=1, le=10)
+    ai_input_budget_chars: int = Field(default=9000, ge=6000, le=60000)
     ollama_base_url: str = "http://ollama:11434"
     ollama_model: str = "qwen3:4b-instruct"
     ollama_timeout_seconds: int = Field(default=600, ge=30, le=1800)

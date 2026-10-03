@@ -37,5 +37,6 @@ class AnalysisRun(UUIDPrimaryKeyMixin, Base):
     completion_tokens: Mapped[int | None] = mapped_column(Integer)
     result: Mapped[dict[str, object] | None] = mapped_column(JSONB)
     error_message: Mapped[str | None] = mapped_column(Text)
+    coverage: Mapped[dict | None] = mapped_column(JSONB)
 
-    event = relationship("Event", back_populates="analysis_runs")
+    event = relationship("Event", back_populates="analysis_runs", foreign_keys=[event_id])

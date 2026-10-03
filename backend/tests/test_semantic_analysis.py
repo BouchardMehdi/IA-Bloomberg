@@ -13,7 +13,7 @@ from app.repositories.semantic_analysis import (
     analysis_content,
     validate_evidence,
 )
-from app.schemas.semantic_analysis import EvidenceItem, SemanticExtraction
+from app.schemas.semantic_analysis import EvidenceItem, PassageExtraction, SemanticExtraction
 from app.semantic.ollama import OllamaSemanticClient
 from app.services.semantic_analysis import SemanticAnalysisService
 
@@ -112,11 +112,13 @@ async def test_batch_continues_after_a_failed_analysis() -> None:
     session = AsyncMock()
     client = SimpleNamespace(
         model="test-model",
-        analyze=AsyncMock(
+        analyze_passage=AsyncMock(
             side_effect=[
                 ValueError("invalid output"),
                 SimpleNamespace(
-                    extraction=make_extraction("decided to keep rates unchanged"),
+                    extraction=PassageExtraction(
+                        events=[make_extraction("decided to keep rates unchanged").model_dump()]
+                    ),
                     prompt_tokens=120,
                     completion_tokens=45,
                 ),
@@ -127,14 +129,18 @@ async def test_batch_continues_after_a_failed_analysis() -> None:
     service.repository = SimpleNamespace(
         list_candidates=AsyncMock(return_value=candidates),
         start=AsyncMock(side_effect=["first-run", "second-run"]),
-        fail=AsyncMock(),
-        succeed=AsyncMock(),
+        prepare=AsyncMock(),
+        passages=AsyncMock(return_value=[SimpleNamespace(index=0, status="pending")]),
+        save_failure=AsyncMock(),
+        save_success=AsyncMock(return_value=1),
+        finish=AsyncMock(side_effect=[("failed", 0), ("success", 1)]),
     )
 
     stats = await service.process_pending(2)
 
     assert (stats.succeeded, stats.failed) == (1, 1)
     session.rollback.assert_awaited_once()
-    assert session.refresh.await_count == 4
-    service.repository.fail.assert_awaited_once()
-    service.repository.succeed.assert_awaited_once()
+    assert session.refresh.await_count == 6
+    service.repository.save_failure.assert_awaited_once()
+    service.repository.save_success.assert_awaited_once()
+    assert stats.facts_created == 1

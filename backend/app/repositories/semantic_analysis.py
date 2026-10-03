@@ -13,6 +13,7 @@ from app.models.article import Article
 from app.models.event import Event, EventArticle
 from app.models.source import Source
 from app.schemas.semantic_analysis import SemanticExtraction
+from app.semantic.passages import DEFAULT_SIGNATURE
 
 ANALYSIS_CHAR_LIMIT = 8000
 
@@ -26,10 +27,12 @@ class AnalysisCandidate:
     event: Event
     article: Article
     source_name: str
+    planning_signature: str = DEFAULT_SIGNATURE
 
     @property
     def input_hash(self) -> str:
-        value = f"{self.article.title}\n{analysis_content(self.article)}"
+        content = self.article.full_content or self.article.content or ""
+        value = f"{self.article.title}\n{content}\n{self.planning_signature}"
         return hashlib.sha256(value.encode("utf-8")).hexdigest()
 
 
@@ -44,6 +47,8 @@ class SemanticAnalysisRepository:
         limit: int,
         require_document: bool = True,
         source_name: str | None = None,
+        planning_signature: str = DEFAULT_SIGNATURE,
+        lease_seconds: int = 36000,
     ) -> list[AnalysisCandidate]:
         completed_run = AnalysisRun.__table__.alias("completed_run")
         ranked_sources = (
@@ -64,11 +69,14 @@ class SemanticAnalysisRepository:
             .join(Article, Article.id == EventArticle.article_id)
             .subquery()
         )
-        text = func.substr(
-            func.coalesce(Article.full_content, Article.content, ""), 1, ANALYSIS_CHAR_LIMIT
-        )
+        text = func.coalesce(Article.full_content, Article.content, "")
         input_hash = func.encode(
-            func.sha256(func.convert_to(func.concat(Article.title, "\n", text), "UTF8")), "hex"
+            func.sha256(
+                func.convert_to(
+                    func.concat(Article.title, "\n", text, "\n", planning_signature), "UTF8"
+                )
+            ),
+            "hex",
         )
         statement = (
             select(Event, Article, Source.name)
@@ -85,12 +93,13 @@ class SemanticAnalysisRepository:
                     or_(
                         completed_run.c.status == "success",
                         and_(
-                            completed_run.c.status == "failed",
+                            completed_run.c.status.in_(["failed", "partial"]),
                             completed_run.c.finished_at > datetime.now(UTC) - timedelta(minutes=10),
                         ),
                         and_(
                             completed_run.c.status == "running",
-                            completed_run.c.started_at > datetime.now(UTC) - timedelta(minutes=31),
+                            completed_run.c.started_at
+                            > datetime.now(UTC) - timedelta(seconds=lease_seconds),
                         ),
                     ),
                 ),
@@ -100,6 +109,7 @@ class SemanticAnalysisRepository:
                 Event.extraction_version.is_not(None),
                 completed_run.c.id.is_(None),
                 Event.merged_into_event_id.is_(None),
+                Event.parent_event_id.is_(None),
             )
             .order_by(Event.event_datetime.desc(), Event.id)
             .limit(limit)
@@ -116,15 +126,25 @@ class SemanticAnalysisRepository:
                 )
             )
         rows = (await self.session.execute(statement)).all()
-        return [AnalysisCandidate(event=row[0], article=row[1], source_name=row[2]) for row in rows]
+        return [
+            AnalysisCandidate(
+                event=row[0],
+                article=row[1],
+                source_name=row[2],
+                planning_signature=planning_signature,
+            )
+            for row in rows
+        ]
 
     async def start(
         self,
         candidate: AnalysisCandidate,
         model_name: str,
         prompt_version: str,
-    ) -> uuid.UUID:
+        lease_seconds: int = 36000,
+    ) -> uuid.UUID | None:
         started_at = datetime.now(UTC)
+        content = candidate.article.full_content or candidate.article.content or ""
         statement = (
             insert(AnalysisRun)
             .values(
@@ -132,7 +152,7 @@ class SemanticAnalysisRepository:
                 model_name=model_name,
                 prompt_version=prompt_version,
                 input_hash=candidate.input_hash,
-                input_text=f"{candidate.article.title}\n{analysis_content(candidate.article)}",
+                input_text=f"{candidate.article.title}\n{content}",
                 source_url=candidate.article.document_url or candidate.article.url,
                 status="running",
                 started_at=started_at,
@@ -150,10 +170,17 @@ class SemanticAnalysisRepository:
                     "prompt_tokens": None,
                     "completion_tokens": None,
                 },
+                where=and_(
+                    AnalysisRun.status != "success",
+                    or_(
+                        AnalysisRun.status != "running",
+                        AnalysisRun.started_at <= started_at - timedelta(seconds=lease_seconds),
+                    ),
+                ),
             )
             .returning(AnalysisRun.id)
         )
-        return (await self.session.execute(statement)).scalar_one()
+        return (await self.session.execute(statement)).scalar_one_or_none()
 
     async def succeed(
         self,

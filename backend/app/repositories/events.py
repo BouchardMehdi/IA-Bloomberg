@@ -6,6 +6,8 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.models.analysis_passage import AnalysisPassage
+from app.models.analysis_run import AnalysisRun
 from app.models.article import Article
 from app.models.company import Company, EventCompany
 from app.models.event import Event, EventArticle
@@ -64,6 +66,52 @@ def _evidence_excerpt(article: Article) -> str:
 class EventRepository:
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
+
+    async def analysis_detail(self, event_id) -> dict | None:
+        fact_run = select(Event.fact_analysis_run_id).where(Event.id == event_id).scalar_subquery()
+        run = (
+            await self.session.execute(
+                select(AnalysisRun)
+                .where((AnalysisRun.event_id == event_id) | (AnalysisRun.id == fact_run))
+                .order_by(AnalysisRun.started_at.desc())
+                .limit(1)
+            )
+        ).scalar_one_or_none()
+        if run is None:
+            return None
+        passages = (
+            (
+                await self.session.execute(
+                    select(AnalysisPassage)
+                    .where(AnalysisPassage.run_id == run.id)
+                    .order_by(AnalysisPassage.passage_index)
+                )
+            )
+            .scalars()
+            .all()
+        )
+        return {
+            "id": run.id,
+            "status": run.status,
+            "source_url": run.source_url,
+            "model_name": run.model_name,
+            "prompt_version": run.prompt_version,
+            "coverage": run.coverage,
+            "passages": [
+                {
+                    "index": p.passage_index,
+                    "start": p.start_offset,
+                    "end": p.end_offset,
+                    "text": p.input_text,
+                    "status": p.status,
+                    "result": p.result,
+                    "error_message": p.error_message,
+                    "prompt_tokens": p.prompt_tokens,
+                    "completion_tokens": p.completion_tokens,
+                }
+                for p in passages
+            ],
+        }
 
     async def lock_pending_articles(self, limit: int) -> list[PendingArticle]:
         statement = (
@@ -189,6 +237,7 @@ class EventRepository:
             .options(
                 selectinload(Event.company_links).joinedload(EventCompany.company),
                 selectinload(Event.analysis_runs),
+                selectinload(Event.fact_analysis_run),
                 selectinload(Event.article_links)
                 .joinedload(EventArticle.article)
                 .joinedload(Article.source),

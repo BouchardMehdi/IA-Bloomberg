@@ -14,6 +14,10 @@ class Event(UUIDPrimaryKeyMixin, TimestampMixin, Base):
 
     deduplication_key: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
     merged_into_event_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("events.id"))
+    parent_event_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("events.id"), index=True)
+    fact_analysis_run_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("analysis_runs.id", name="fk_events_fact_run", use_alter=True)
+    )
     event_type: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
     title: Mapped[str] = mapped_column(String(1024), nullable=False)
     description: Mapped[str | None] = mapped_column(Text)
@@ -39,7 +43,9 @@ class Event(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         "AnalysisRun",
         back_populates="event",
         order_by="AnalysisRun.started_at.desc()",
+        foreign_keys="AnalysisRun.event_id",
     )
+    fact_analysis_run = relationship("AnalysisRun", foreign_keys=[fact_analysis_run_id])
 
 
 class EventArticle(UUIDPrimaryKeyMixin, Base):

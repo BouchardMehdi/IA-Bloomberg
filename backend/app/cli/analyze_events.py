@@ -28,9 +28,11 @@ async def analyze(limit: int, source: str | None = None) -> None:
             session, client, require_document=settings.document_collection_enabled
         ).process_pending(limit, source_name=names.get(source))
     logger.info(
-        "Semantic analysis completed: succeeded=%s failed=%s",
+        "Semantic analysis completed: succeeded=%s failed=%s partial=%s facts_created=%s",
         stats.succeeded,
         stats.failed,
+        stats.partial,
+        stats.facts_created,
     )
 
 

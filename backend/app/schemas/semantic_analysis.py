@@ -39,3 +39,14 @@ class SemanticExtraction(BaseModel):
     urgency_score: float = Field(ge=0, le=1)
     confidence_score: float = Field(ge=0, le=1)
     evidence: list[EvidenceItem] = Field(min_length=1, max_length=3)
+
+
+class PassageFact(SemanticExtraction):
+    model_config = ConfigDict(str_strip_whitespace=True, extra="forbid")
+    summary: str = Field(min_length=10, max_length=600)
+    evidence: list[EvidenceItem] = Field(min_length=1, max_length=1)
+
+
+class PassageExtraction(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    events: list[PassageFact] = Field(max_length=3)

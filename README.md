@@ -31,6 +31,7 @@ Les endpoints suivants servent à l'orchestration :
 - `GET /api/v1/articles` retourne les articles récents avec pagination.
 - `GET /api/v1/articles/{id}` retourne aussi le texte du document et son état de récupération.
 - `GET /api/v1/events` retourne les événements détectés avec leur source primaire.
+- `GET /api/v1/events/{id}/analysis` retourne les passages transmis, leur état et leurs résultats.
 - `GET /api/v1/collection-runs` retourne l'historique des collectes.
 
 ## Collecter les publications des banques centrales
@@ -102,9 +103,21 @@ docker compose exec backend python -m app.cli.fetch_documents --source ecb --lim
 
 La récupération est séquentielle : cinq documents par cycle d'une minute, au plus 2 Mo par téléchargement, 60 000 caractères conservés et 90 secondes par document. Une erreur est enregistrée ; deux nouvelles tentatives sont possibles après 5 puis 10 minutes. Les redirections restent dans le domaine officiel et les pages non prises en charge sont signalées. Ces limites sont configurables via les variables `DOCUMENT_*` de `.env.example`.
 
-L'analyse attend la récupération ou son échec définitif. Elle utilise les 8 000 premiers caractères du texte récupéré, ou l'extrait RSS après un échec définitif. Le passage transmis, son hash et son URL sont conservés dans `analysis_runs`. Un texte nouvellement récupéré peut ainsi déclencher une nouvelle analyse sans effacer la précédente. Une limite de stockage ou d'analyse peut laisser des faits situés plus loin dans un long document hors de l'analyse.
+L'analyse attend la récupération ou son échec définitif. Elle découpe l'ensemble du texte conservé et sélectionne des passages selon des indices financiers déterministes (montants, décisions, acquisitions, résultats, sections SEC). Les mentions légales sont moins prioritaires. En l'absence de signal, la sélection échantillonne plusieurs positions dans le document. Après un échec définitif de récupération, l'extrait RSS reste utilisable.
+
+Par défaut, le budget est de trois passages de 3 000 caractères au maximum, avec un total de 9 000 caractères hors titre et instructions. `AI_PASSAGE_CHARS`, `AI_MAX_PASSAGES` et `AI_INPUT_BUDGET_CHARS` règlent ces limites. La sélection utilise des règles simples ; elle peut manquer un fait pertinent. La couverture affichée porte sur le texte conservé, qui peut lui-même avoir été limité lors de la récupération.
+
+Chaque passage peut produire zéro à trois faits distincts. Un fait devient un événement lié à la publication d'origine via `parent_event_id`, avec sa citation, son passage et son URL. La publication reste conservée. Le regroupement des publications n'agrège pas ces faits différents. La même preuve et le même type, dans une publication donnée, réutilisent le même événement ; des formulations ou preuves différentes peuvent encore créer des faits proches.
+
+`analysis_runs` conserve le document d'entrée, son hash, l'URL et la couverture. `analysis_passages` conserve les passages choisis, leurs positions, résultats, erreurs et tokens. Une citation absente du passage transmis est rejetée. Les passages réussis sont réutilisés après un échec, et une analyse partielle reste visible. Un changement de texte, de prompt ou de paramètres de sélection permet une nouvelle analyse sans effacer la précédente.
 
 Sur CPU, un document plus long peut demander plusieurs minutes d'analyse. `OLLAMA_TIMEOUT_SECONDS` autorise jusqu'à 600 secondes par appel par défaut ; la durée réelle d'un cycle peut dépasser l'intervalle configuré, sans chevauchement des cycles du scheduler.
+
+Un contrôle optionnel vérifie les écritures PostgreSQL avec un modèle simulé et annule toutes ses données de test :
+
+```bash
+docker compose exec backend python -m tests.smoke_passage_pipeline
+```
 
 Les événements correspondant au même numéro de dépôt SEC sont regroupés. Pour les autres publications, le regroupement exige un texte intégral identique d'au moins 500 caractères, la même source et la même date de publication ; un texte tronqué ne suffit pas. Les événements regroupés et leurs historiques restent en base, tandis que l'API expose l'événement conservé avec toutes ses sources. Des articles simplement proches par leur sujet restent distincts.
 
