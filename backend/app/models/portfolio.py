@@ -54,3 +54,4 @@ class PaperTrade(UUIDPrimaryKeyMixin, Base):
     quote_date: Mapped[date] = mapped_column(Date, nullable=False)
     quote_source_url: Mapped[str] = mapped_column(String(512), nullable=False)
     executed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    conversion: Mapped[dict | None] = mapped_column(JSONB)

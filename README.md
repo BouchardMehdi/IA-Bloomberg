@@ -163,8 +163,10 @@ longues uniquement, sans levier. L'univers WLS annoncé contient **10 426 titres
 distincts des entreprises. Voir [les règles connues et l'import WLS](docs/CHALLENGE.md).
 Les actions hors États-Unis et les cotations dans d'autres devises sont autorisées
 selon les précisions reçues ; Bloomberg assure la conversion pour le challenge.
-Notre simulation reste actuellement limitée aux titres NYSE/Nasdaq en USD et
-ne dispose pas encore de la conversion nécessaire pour les autres cotations.
+La page <http://localhost:3000/international> permet de fournir des identités,
+clôtures locales et taux sourcés pour une valorisation et simulation en USD.
+Voir [la procédure internationale](docs/INTERNATIONAL_MARKET.md). La collecte
+automatique des cotations internationales et des taux reste à connecter.
 Les nouveaux achats simulés sont bloqués tant que l'action n'est pas identifiée
 dans un export WLS fourni ; la SEC ne constitue pas cet univers.
 

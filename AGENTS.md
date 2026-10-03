@@ -66,7 +66,12 @@ selon la clarification de l'utilisateur. Bloomberg effectue la conversion dans l
 challenge ; notre simulation devra disposer de cours locaux et de taux datés et
 sourcés pour valoriser ces titres en USD. L'interdiction du Forex ne signifie pas
 une restriction aux actions cotées en USD. NYSE/Nasdaq en USD reste une limite
-technique actuelle, pas une règle du challenge.
+technique du collecteur automatique, pas une règle du challenge. Les identités
+internationales, clôtures locales et taux peuvent être fournis dans `/international`.
+Conserver les unités, convertir avec un taux au plus tard à la date du cours et
+préserver la conversion initiale de chaque opération. Ne pas inventer de taux,
+CIK, MIC ou mapping Bloomberg ; l'ISIN ne prouve pas la cotation ou le WLS.
+Voir docs/INTERNATIONAL_MARKET.md.
 
 Les fiches `/analysis` rapprochent les titres suivis des documents et faits sans
 appel LLM supplémentaire. Distinguer la mention du titre et de sa cotation du

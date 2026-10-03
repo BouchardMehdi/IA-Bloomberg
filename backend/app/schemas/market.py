@@ -7,7 +7,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 
 class InstrumentCreate(BaseModel):
-    symbol: str = Field(pattern=r"^[A-Z][A-Z0-9.-]{0,19}$")
+    symbol: str = Field(pattern=r"^[A-Z0-9][A-Z0-9.-]{0,19}$")
     exchange: Literal["NYSE", "Nasdaq"] | None = None
 
 

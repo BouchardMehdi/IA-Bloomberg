@@ -11,6 +11,7 @@ from app.market.wls import eligibility
 from app.models.entity_registry import EntityRegistry
 from app.models.market import DailyPrice, MarketFetchRun, MarketInstrument
 from app.schemas.market import InstrumentCreate
+from app.services.usd_valuation import UsdValuationService
 
 
 class MarketDataService:
@@ -87,6 +88,14 @@ class MarketDataService:
                     "exchange": instrument.exchange,
                     "cik": instrument.cik,
                     "currency": instrument.currency,
+                    "isin": instrument.isin,
+                    "bloomberg_symbol": instrument.bloomberg_symbol,
+                    "identity_as_of": instrument.identity_as_of,
+                    "quote_multiplier": instrument.quote_multiplier,
+                    "price_provider": instrument.price_provider,
+                    "usd_valuation": await UsdValuationService(self.session).quote(
+                        instrument, price
+                    ),
                     "registry_url": instrument.registry_url,
                     "registry_observed_at": instrument.registry_observed_at,
                     "latest_price": {
@@ -99,7 +108,11 @@ class MarketDataService:
                     }
                     if price
                     else None,
-                    "collection_status": run.status if run else "pending",
+                    "collection_status": "manual"
+                    if instrument.price_provider == "manual"
+                    else run.status
+                    if run
+                    else "pending",
                     "error_code": run.error_code if run else None,
                     "wls_eligibility": eligibility(instrument, universe),
                 }
@@ -125,7 +138,8 @@ class MarketDataService:
         ).scalar_one_or_none()
 
     async def history(self, instrument_id: UUID, limit: int) -> dict | None:
-        if await self.session.get(MarketInstrument, instrument_id) is None:
+        instrument = await self.session.get(MarketInstrument, instrument_id)
+        if instrument is None:
             return None
         prices = (
             (
@@ -153,6 +167,8 @@ class MarketDataService:
                 for p in reversed(prices)
             ],
             "adjusted": False,
+            "currency": instrument.currency,
+            "quote_multiplier": instrument.quote_multiplier,
         }
 
     async def collect(self, client: AlphaVantageClient, limit: int = 5) -> dict:
@@ -160,6 +176,11 @@ class MarketDataService:
             (
                 await self.session.execute(
                     select(MarketInstrument.id)
+                    .where(
+                        MarketInstrument.price_provider == "alpha_vantage",
+                        MarketInstrument.currency == "USD",
+                        MarketInstrument.quote_multiplier == 1,
+                    )
                     .outerjoin(
                         MarketFetchRun,
                         MarketFetchRun.instrument_id == MarketInstrument.id,

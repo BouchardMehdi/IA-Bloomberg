@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     alpha_vantage_api_key: SecretStr = SecretStr("")
     market_daily_request_budget: int = Field(default=20, ge=1, le=25)
     market_max_price_age_days: int = Field(default=7, ge=1, le=30)
+    market_max_fx_age_days: int = Field(default=7, ge=1, le=30)
     document_collection_enabled: bool = True
     document_collection_interval_minutes: int = Field(default=1, ge=1, le=1440)
     document_collection_batch_size: int = Field(default=5, ge=1, le=50)

@@ -20,10 +20,22 @@ from app.models.common import TimestampMixin, UUIDPrimaryKeyMixin
 
 class MarketInstrument(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     __tablename__ = "market_instruments"
-    __table_args__ = (UniqueConstraint("symbol", "exchange", name="uq_market_symbol_exchange"),)
+    __table_args__ = (
+        UniqueConstraint("symbol", "exchange", name="uq_market_symbol_exchange"),
+        UniqueConstraint("isin", "exchange", name="uq_market_isin_exchange"),
+    )
     symbol: Mapped[str] = mapped_column(String(32), nullable=False)
     exchange: Mapped[str] = mapped_column(String(50), nullable=False)
-    cik: Mapped[str] = mapped_column(String(10), nullable=False)
+    cik: Mapped[str | None] = mapped_column(String(10))
+    isin: Mapped[str | None] = mapped_column(String(12))
+    identity_as_of: Mapped[date | None] = mapped_column(Date)
+    bloomberg_symbol: Mapped[str | None] = mapped_column(String(100), unique=True)
+    quote_multiplier: Mapped[Decimal] = mapped_column(
+        Numeric(12, 6), nullable=False, default=Decimal("1"), server_default="1"
+    )
+    price_provider: Mapped[str] = mapped_column(
+        String(30), nullable=False, default="alpha_vantage", server_default="alpha_vantage"
+    )
     name: Mapped[str] = mapped_column(String(512), nullable=False)
     currency: Mapped[str] = mapped_column(String(3), nullable=False, default="USD")
     registry_url: Mapped[str] = mapped_column(Text, nullable=False)
@@ -39,6 +51,16 @@ class DailyPrice(UUIDPrimaryKeyMixin, Base):
     session_date: Mapped[date] = mapped_column(Date, nullable=False)
     close: Mapped[Decimal] = mapped_column(Numeric(20, 6), nullable=False)
     volume: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    source_url: Mapped[str] = mapped_column(Text, nullable=False)
+    fetched_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class FxRate(UUIDPrimaryKeyMixin, Base):
+    __tablename__ = "fx_rates"
+    __table_args__ = (UniqueConstraint("currency", "rate_date", name="uq_fx_currency_date"),)
+    currency: Mapped[str] = mapped_column(String(3), nullable=False)
+    rate_date: Mapped[date] = mapped_column(Date, nullable=False)
+    usd_per_unit: Mapped[Decimal] = mapped_column(Numeric(20, 10), nullable=False)
     source_url: Mapped[str] = mapped_column(Text, nullable=False)
     fetched_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 

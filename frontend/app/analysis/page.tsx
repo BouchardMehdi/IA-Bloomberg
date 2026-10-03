@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { UsdQuoteDetails, type UsdQuote } from "../usd-quote";
 
 const api = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
 type Instrument = { id: string; symbol: string; exchange: string; name: string;
+  currency: string; quote_multiplier: string; usd_valuation: UsdQuote;
   wls_eligibility: { status: string };
   latest_price: { close: string; date: string; source_url: string; stale: boolean } | null };
 type Card = { event_id: string; title: string; kind: string; summary: string | null;
@@ -59,7 +61,8 @@ export default function AnalysisPage() {
     {result ? <>
       <section className="my-6 rounded-xl border border-white/10 p-5">
         <p className="text-sm text-amber-300">{result.instrument.wls_eligibility.status === "verified" ? "Titre présent dans l’export WLS importé." : "Éligibilité WLS non vérifiée : nouveaux achats simulés bloqués."}</p>
-        {result.instrument.latest_price ? <p className="mt-3">Clôture : {result.instrument.latest_price.close} USD · séance du {result.instrument.latest_price.date} · <a className="text-signal underline" href={result.instrument.latest_price.source_url} target="_blank" rel="noreferrer">Source du cours</a>{result.instrument.latest_price.stale ? " · cours ancien" : ""}</p> : <p className="mt-3">Cours indisponible.</p>}
+        {result.instrument.latest_price ? <p className="mt-3">Clôture locale : {result.instrument.latest_price.close} × {result.instrument.quote_multiplier} {result.instrument.currency} · séance du {result.instrument.latest_price.date} · <a className="text-signal underline" href={result.instrument.latest_price.source_url} target="_blank" rel="noreferrer">Source du cours</a></p> : <p className="mt-3">Cours indisponible.</p>}
+        <div className="mt-2 text-sm"><UsdQuoteDetails quote={result.instrument.usd_valuation} /></div>
         <p className="mt-3 text-sm">{result.notice}</p>
       </section>
       {!result.items.length ? <p>Aucun document daté ou fait associé sur cette page. Cela ne prouve pas l’absence de nouvelles.</p> : null}

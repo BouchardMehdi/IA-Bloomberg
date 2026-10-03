@@ -23,9 +23,9 @@ certifiée par ce référentiel ; l'éligibilité au challenge reste à confirme
 
 Le challenge autorise aussi les actions hors États-Unis cotées dans d'autres
 devises, avec conversion par Bloomberg. La restriction NYSE/Nasdaq et USD est
-une limite de cette version de Market AI. Notre simulation n'effectue pas encore
-cette conversion ; la prise en charge internationale nécessitera des cours locaux
-et des taux de change datés et sourcés, ainsi que des identifiants de titres vérifiés.
+une limite du collecteur automatique actuel. La page `/international` permet de
+fournir des identités, cours locaux et taux datés pour la conversion USD de notre
+simulation. Voir [la procédure et ses limites](INTERNATIONAL_MARKET.md).
 
 Le scheduler vérifie les titres toutes les heures, par lots de cinq. Il priorise
 ceux qui n'ont pas encore été vérifiés ou l'ont été le moins récemment. Une collecte
@@ -61,7 +61,8 @@ pour l'usage des données ; l'application actuelle est une installation locale.
 
 Chaque création fixe ses règles : capital initial, frais par opération en points de
 base, concentration maximale par titre, tickers autorisés et dates facultatives.
-La devise prise en charge dans cette version est USD. Les valeurs proposées par le
+La devise du portefeuille est USD ; les cotations locales sont converties pour
+la valorisation et les opérations simulées. Les valeurs proposées par le
 formulaire utilisent désormais 1 000 000 USD, conformément au capital communiqué.
 Les frais de 10 points de base et la limite de 25 % restent des exemples de
 configuration à confirmer. Créer une nouvelle simulation
@@ -92,7 +93,9 @@ Le portefeuille est verrouillé pendant une opération. Capital, position et lig
 du registre sont enregistrés dans une transaction unique. L'unicité du couple
 portefeuille/identifiant d'ordre rend une reprise idempotente : le même ordre
 renvoie sa ligne existante ; réutiliser son identifiant pour un ordre différent est
-refusé. Les dividendes, splits, conversions de devises, taxes, glissement de prix,
+refusé. Les conversions USD sont désormais sourcées et conservées dans chaque
+opération convertie. Les conventions exactes de Bloomberg ne sont pas connues.
+Les dividendes, splits, frais de change, taxes, glissement de prix,
 frais minimaux et liquidité ne sont pas modélisés. Il faut les ajouter avant de
 présenter la simulation comme une reproduction fidèle du challenge.
 

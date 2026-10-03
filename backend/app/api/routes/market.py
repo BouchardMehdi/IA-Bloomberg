@@ -5,11 +5,14 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db_session
+from app.schemas.international import FxRateCreate, InternationalInstrumentCreate, LocalPriceCreate
 from app.schemas.market import InstrumentCreate, PaperOrder, PortfolioCreate
 from app.services.instrument_research import InstrumentResearchService
+from app.services.international_market import InternationalMarketService
 from app.services.market_data import MarketDataService
 from app.services.paper_portfolio import PaperPortfolioService
 
@@ -45,6 +48,45 @@ async def prices(
     if result is None:
         raise HTTPException(404, "Titre introuvable.")
     return market_response(result)
+
+
+@router.post("/international-instruments", status_code=201)
+async def add_international_instrument(request: InternationalInstrumentCreate, session: Db):
+    try:
+        return market_response(
+            await InternationalMarketService(session).add_instrument(request), 201
+        )
+    except ValueError as exc:
+        await session.rollback()
+        raise HTTPException(400, str(exc)) from None
+    except IntegrityError:
+        await session.rollback()
+        raise HTTPException(
+            409, "Identité de titre déjà enregistrée : vérifier les identifiants."
+        ) from None
+
+
+@router.post("/instruments/{instrument_id}/prices")
+async def supply_local_price(instrument_id: UUID, request: LocalPriceCreate, session: Db):
+    try:
+        return market_response(
+            await InternationalMarketService(session).save_price(instrument_id, request)
+        )
+    except LookupError as exc:
+        raise HTTPException(404, str(exc)) from None
+    except ValueError as exc:
+        await session.rollback()
+        raise HTTPException(400, str(exc)) from None
+
+
+@router.get("/fx-rates")
+async def fx_rates(session: Db):
+    return market_response(await InternationalMarketService(session).rates())
+
+
+@router.post("/fx-rates")
+async def supply_fx(request: FxRateCreate, session: Db):
+    return market_response(await InternationalMarketService(session).save_fx(request))
 
 
 @router.get("/portfolios")

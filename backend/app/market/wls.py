@@ -21,7 +21,7 @@ def parse_wls_csv(text: str, as_of: date) -> list[dict]:
             or len(security_id) > 100
             or not exchange
             or len(exchange) > 50
-            or not re.fullmatch(r"[A-Z][A-Z0-9.-]{0,19}", symbol)
+            or not re.fullmatch(r"[A-Z0-9][A-Z0-9.-]{0,19}", symbol)
         ):
             raise ValueError("Identifiant de titre, ticker ou marché invalide.")
         if (row.get("asset_class") or "").strip().lower() != "equity":

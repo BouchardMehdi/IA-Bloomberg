@@ -38,9 +38,10 @@ valorisation ne constitue pas une position Forex. Tant que ces données et les
 conventions ne sont pas disponibles, ne pas présenter une performance simulée
 comme identique à celle du challenge.
 
-L'application actuelle ne prend en charge que les titres NYSE/Nasdaq suivis en USD.
-Cette limite technique n'est pas une règle du challenge. Aucun titre international
-ni taux de change fictif n'est ajouté à la suite de cette clarification.
+L'application collecte automatiquement les titres NYSE/Nasdaq suivis en USD.
+Les [cotations internationales et taux sourcés](INTERNATIONAL_MARKET.md) peuvent
+désormais être fournis explicitement pour valoriser et simuler en USD. Leur
+collecte automatique reste à connecter ; aucun titre ni taux fictif n'est ajouté.
 
 ## Importer l'univers
 
@@ -55,10 +56,11 @@ security_id,symbol,exchange,asset_class
 `security_id` est un identifiant unique de chaque titre/cotation dans cet export,
 pas un identifiant d'entreprise. `asset_class=equity` signifie ici une action ;
 les ETF, fonds, dérivés et autres instruments doivent être exclus à la normalisation.
-Le ticker et le marché doivent correspondre exactement au titre suivi (actuellement
-`NYSE` ou `Nasdaq`). Ne pas inventer de conversion de symboles Bloomberg vers ceux
-du fournisseur. La liste peut contenir d'autres marchés ; leur collecte de cours
-n'est pas encore prise en charge.
+Le ticker et le marché doivent correspondre exactement au titre suivi (`NYSE`,
+`Nasdaq` ou le MIC fourni pour une cotation internationale). Les tickers numériques
+sont acceptés et leurs zéros initiaux conservés. Ne pas inventer de conversion
+de symboles Bloomberg vers ceux du fournisseur. La collecte automatique de cours
+hors du périmètre américain n'est pas encore prise en charge.
 
 Copier le CSV autorisé dans le conteneur puis importer avec sa date et l'URL de sa
 source officielle, qui peut nécessiter un accès privé :

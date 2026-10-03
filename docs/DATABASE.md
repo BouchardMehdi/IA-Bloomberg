@@ -54,3 +54,12 @@ portefeuille, le prix effectivement simulé, la date du cours, sa source, les fr
 et le gain réalisé. Les montants utilisent `Numeric` et les calculs `Decimal`.
 Une transaction verrouille le portefeuille avant de modifier le capital, la
 position et le registre. Voir [la procédure de simulation](MARKET_PORTFOLIO.md).
+
+La migration `0010` ajoute ISIN, symbole Bloomberg, validité de l'identité, facteur
+de cotation et mode de collecte aux titres. Le CIK devient facultatif. Les lignes
+existantes conservent leur devise, prix et identifiants ; le facteur vaut 1 et la
+collecte reste Alpha Vantage. Les identités ISIN/marché et symboles Bloomberg sont
+uniques. `fx_rates` conserve des taux USD par unité, uniques par devise/date.
+`paper_trades.conversion` préserve l'instantané des preuves de chaque opération
+convertie, sans modifier les anciennes opérations USD. Le downgrade refuse de
+supprimer implicitement des titres internationaux ou des preuves de conversion.

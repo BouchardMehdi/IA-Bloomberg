@@ -13,12 +13,14 @@ from app.models.market import MarketInstrument
 from app.models.portfolio import PaperPortfolio, PaperPosition, PaperTrade
 from app.schemas.market import PaperOrder, PortfolioCreate
 from app.services.market_data import MarketDataService
+from app.services.usd_valuation import UsdValuationService
 
 
 class PaperPortfolioService:
     def __init__(self, session: AsyncSession):
         self.session = session
         self.market = MarketDataService(session)
+        self.valuation = UsdValuationService(session)
 
     async def create(self, request: PortfolioCreate) -> dict:
         portfolio = PaperPortfolio(**request.model_dump(), cash=request.initial_capital)
@@ -63,8 +65,13 @@ class PaperPortfolioService:
         all_priced = True
         for position, instrument in positions:
             price = await self.market.latest_price(instrument.id)
-            value = money(price.close * position.quantity) if price else None
-            all_priced &= price is not None
+            valuation = await self.valuation.quote(instrument, price)
+            value = (
+                money(valuation["price_usd"] * position.quantity)
+                if valuation["price_usd"] is not None
+                else None
+            )
+            all_priced &= value is not None
             if value is not None:
                 total += value
             holdings.append(
@@ -78,11 +85,11 @@ class PaperPortfolioService:
                     "value": value,
                     "unrealized_pnl": value - position.cost_basis if value is not None else None,
                     "price": price.close if price else None,
+                    "currency": instrument.currency,
+                    "usd_valuation": valuation,
                     "quote_date": price.session_date if price else None,
                     "source_url": price.source_url if price else None,
-                    "stale": price is None
-                    or (datetime.now(UTC).date() - price.session_date).days
-                    > get_settings().market_max_price_age_days,
+                    "stale": valuation["stale"],
                 }
             )
         realized = (
@@ -94,7 +101,7 @@ class PaperPortfolioService:
         ).scalar_one()
         trades = (
             await self.session.execute(
-                select(PaperTrade, MarketInstrument.symbol)
+                select(PaperTrade, MarketInstrument.symbol, MarketInstrument.exchange)
                 .join(
                     MarketInstrument,
                     MarketInstrument.id == PaperTrade.instrument_id,
@@ -123,16 +130,18 @@ class PaperPortfolioService:
             "realized_pnl": realized,
             "valuation_stale": any(h["stale"] for h in holdings),
             "positions": holdings,
-            "trades": [self.trade_read(t, symbol) for t, symbol in trades],
+            "trades": [self.trade_read(t, symbol, exchange) for t, symbol, exchange in trades],
         }
 
     @staticmethod
-    def trade_read(trade, symbol) -> dict:
+    def trade_read(trade, symbol, exchange) -> dict:
         return {
             "id": trade.id,
             "client_order_id": trade.client_order_id,
             "instrument_id": trade.instrument_id,
             "symbol": symbol,
+            "exchange": exchange,
+            "price_currency": "USD",
             "side": trade.side,
             "quantity": trade.quantity,
             "price": trade.price,
@@ -141,6 +150,7 @@ class PaperPortfolioService:
             "quote_date": trade.quote_date,
             "quote_source_url": trade.quote_source_url,
             "executed_at": trade.executed_at,
+            "conversion": trade.conversion,
         }
 
     async def order(self, portfolio_id: UUID, request: PaperOrder) -> dict:
@@ -174,7 +184,7 @@ class PaperPortfolioService:
                     "Cet identifiant de simulation est déjà utilisé pour un autre ordre."
                 )
             instrument = await self.session.get(MarketInstrument, existing.instrument_id)
-            return self.trade_read(existing, instrument.symbol)
+            return self.trade_read(existing, instrument.symbol, instrument.exchange)
         instrument = await self.session.get(MarketInstrument, request.instrument_id)
         if instrument is None:
             raise LookupError("Titre introuvable.")
@@ -189,8 +199,6 @@ class PaperPortfolioService:
             raise ValueError("La simulation est en dehors des dates du challenge configurées.")
         if portfolio.allowed_symbols and instrument.symbol not in portfolio.allowed_symbols:
             raise ValueError("Titre non autorisé dans ce portefeuille.")
-        if instrument.currency != portfolio.currency:
-            raise ValueError("La devise du titre ne correspond pas au portefeuille.")
         quote = await self.market.latest_price(instrument.id)
         if (
             quote is None
@@ -201,6 +209,12 @@ class PaperPortfolioService:
             raise ValueError(
                 "Cours absent ou trop ancien : synchroniser les cours avant de simuler."
             )
+        valuation = await self.valuation.quote(instrument, quote, today)
+        if valuation["price_usd"] is None or valuation["stale"]:
+            raise ValueError(
+                "Conversion USD absente, invalide ou trop ancienne : actualiser les données."
+            )
+        usd_price = valuation["price_usd"]
         position = (
             await self.session.execute(
                 select(PaperPosition).where(
@@ -215,7 +229,7 @@ class PaperPortfolioService:
             cost_basis=position.cost_basis if position else Decimal("0"),
             side=request.side,
             quantity=request.quantity,
-            price=quote.close,
+            price=usd_price,
             fee_bps=portfolio.fee_bps,
         )
         if request.side == "buy":
@@ -225,7 +239,7 @@ class PaperPortfolioService:
                     "Actualiser les autres positions avant de contrôler la concentration."
                 )
             nav_after = snapshot["total_value"] - fill.fee
-            check_concentration(fill.quantity * quote.close, nav_after, portfolio.max_position_pct)
+            check_concentration(fill.quantity * usd_price, nav_after, portfolio.max_position_pct)
         portfolio.cash = fill.cash
         if position is None:
             position = PaperPosition(portfolio_id=portfolio_id, instrument_id=instrument.id)
@@ -238,13 +252,16 @@ class PaperPortfolioService:
             client_order_id=request.client_order_id,
             side=request.side,
             quantity=request.quantity,
-            price=quote.close,
+            price=usd_price,
             fee=fill.fee,
             realized_pnl=fill.realized_pnl,
             quote_date=quote.session_date,
             quote_source_url=quote.source_url,
             executed_at=datetime.now(UTC),
+            conversion=valuation["conversion"]
+            if instrument.currency != "USD" or instrument.quote_multiplier != 1
+            else None,
         )
         self.session.add(trade)
         await self.session.commit()
-        return self.trade_read(trade, instrument.symbol)
+        return self.trade_read(trade, instrument.symbol, instrument.exchange)

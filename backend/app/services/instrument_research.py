@@ -2,7 +2,7 @@
 
 from uuid import UUID
 
-from sqlalchemy import or_, select
+from sqlalchemy import false, or_, select
 from sqlalchemy.orm import selectinload
 
 from app.models.company import Company, EventCompany
@@ -11,6 +11,8 @@ from app.services.market_data import MarketDataService
 
 
 def relationship(event, instrument) -> dict | None:
+    if not instrument.cik:
+        return None
     entities = (event.structured_data or {}).get("entity_resolution", {}).get("entities", [])
     matches = []
     for entity in entities:
@@ -95,6 +97,8 @@ class InstrumentResearchService:
                 }
             }
         )
+        if not instrument.cik:
+            resolved = false()
         query = (
             select(Event)
             .where(Event.merged_into_event_id.is_(None), or_(Event.id.in_(issuer), resolved))
