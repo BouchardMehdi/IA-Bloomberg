@@ -11,10 +11,36 @@ Informations reçues le 3 octobre 2026 ; le règlement et l'export officiel rest
   composition récupérée ou vérifiée par Market AI.
 - Une société peut avoir plusieurs titres : une identité d'émetteur ne suffit pas
   à identifier un instrument achetable.
+- Précision transmise par l'utilisateur d'après son collègue : les actions hors
+  États-Unis sont autorisées et les titres ne sont pas nécessairement cotés en USD.
+  L'interdiction concerne le trading Forex ; elle n'interdit pas l'achat d'actions
+  cotées dans une autre devise. Bloomberg effectue la conversion pour le challenge.
+  Les exemples cités (`2600hk`, Sega, Total, Airbus) ne sont pas des identifiants
+  validés dans Market AI et ne remplacent pas l'export WLS.
 
 Les frais, dates, plafonds par position, traitement des dividendes/splits et marchés
-précis restent à confirmer. La restriction sur les devises ne permet pas de déduire
-que toutes les actions autorisées sont cotées en USD.
+précis restent à confirmer. Les taux, horaires et conventions de conversion utilisés
+par Bloomberg ne sont pas encore connus. L'utilisateur essaiera d'obtenir la liste
+WLS lundi ; aucun fichier ni date de livraison ferme n'est encore disponible.
+
+## Préparer les titres internationaux
+
+La prise en charge internationale devra conserver, pour chaque titre, son
+identifiant, sa classe d'action, sa cotation, sa devise et l'unité du cours. Les
+symboles Bloomberg devront être rapprochés explicitement des identifiants du
+fournisseur de données, sans supposer qu'un nom de société identifie une action.
+
+Le portefeuille reste valorisé en USD. Notre simulation ne bénéficie pas de la
+conversion automatique de Bloomberg : elle devra conserver le cours local et un
+taux de conversion vers USD, chacun avec date et source, et refuser une opération
+si les données nécessaires sont absentes ou trop anciennes. Cette conversion de
+valorisation ne constitue pas une position Forex. Tant que ces données et les
+conventions ne sont pas disponibles, ne pas présenter une performance simulée
+comme identique à celle du challenge.
+
+L'application actuelle ne prend en charge que les titres NYSE/Nasdaq suivis en USD.
+Cette limite technique n'est pas une règle du challenge. Aucun titre international
+ni taux de change fictif n'est ajouté à la suite de cette clarification.
 
 ## Importer l'univers
 

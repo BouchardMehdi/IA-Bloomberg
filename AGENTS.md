@@ -61,6 +61,13 @@ sans levier, Forex ou matières premières. WLS est un univers privé annoncé d
 export autorisé par titre et cotation, jamais du CIK d'une entreprise. Les frais,
 dates et limites restent à confirmer. Voir docs/CHALLENGE.md.
 
+Les actions hors États-Unis et les cotations dans d'autres devises sont autorisées
+selon la clarification de l'utilisateur. Bloomberg effectue la conversion dans le
+challenge ; notre simulation devra disposer de cours locaux et de taux datés et
+sourcés pour valoriser ces titres en USD. L'interdiction du Forex ne signifie pas
+une restriction aux actions cotées en USD. NYSE/Nasdaq en USD reste une limite
+technique actuelle, pas une règle du challenge.
+
 Les fiches `/analysis` rapprochent les titres suivis des documents et faits sans
 appel LLM supplémentaire. Distinguer la mention du titre et de sa cotation du
 contexte de l’émetteur. Ne pas transformer ce rapprochement en impact financier

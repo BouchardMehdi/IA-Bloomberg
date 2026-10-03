@@ -21,6 +21,12 @@ doit correspondre sans ambiguïté à un émetteur du référentiel SEC et à un
 NYSE ou Nasdaq. Les valeurs sont suivies en USD. La classe du titre n'est pas
 certifiée par ce référentiel ; l'éligibilité au challenge reste à confirmer.
 
+Le challenge autorise aussi les actions hors États-Unis cotées dans d'autres
+devises, avec conversion par Bloomberg. La restriction NYSE/Nasdaq et USD est
+une limite de cette version de Market AI. Notre simulation n'effectue pas encore
+cette conversion ; la prise en charge internationale nécessitera des cours locaux
+et des taux de change datés et sourcés, ainsi que des identifiants de titres vérifiés.
+
 Le scheduler vérifie les titres toutes les heures, par lots de cinq. Il priorise
 ceux qui n'ont pas encore été vérifiés ou l'ont été le moins récemment. Une collecte
 réussie reste en cache jusqu'au prochain jour UTC ; une erreur attend au moins une
