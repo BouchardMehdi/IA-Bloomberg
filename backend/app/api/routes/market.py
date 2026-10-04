@@ -21,6 +21,7 @@ from app.services.fx_collection import FxCollectionService
 from app.services.instrument_research import InstrumentResearchService
 from app.services.international_market import InternationalMarketService
 from app.services.market_data import MarketDataService
+from app.services.opportunity import OpportunityService
 from app.services.paper_portfolio import PaperPortfolioService
 from app.services.research_ranking import ResearchRankingService
 
@@ -210,6 +211,14 @@ async def instrument_research(
     offset: Annotated[int, Query(ge=0)] = 0,
 ):
     result = await InstrumentResearchService(session).detail(instrument_id, limit, offset)
+    if result is None:
+        raise HTTPException(404, "Titre introuvable.")
+    return market_response(result)
+
+
+@router.get("/instruments/{instrument_id}/opportunity")
+async def opportunity(instrument_id: UUID, session: Db):
+    result = await OpportunityService(session).detail(instrument_id)
     if result is None:
         raise HTTPException(404, "Titre introuvable.")
     return market_response(result)

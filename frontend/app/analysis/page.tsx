@@ -6,6 +6,7 @@ import { UsdQuoteDetails, type UsdQuote } from "../usd-quote";
 import { ResearchRanking } from "./research-ranking";
 import { CompanyPublications } from "./company-publications";
 import { FinancialResults } from "./financial-results";
+import { Opportunity } from "./opportunity";
 
 const api = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
 type Instrument = { id: string; symbol: string; exchange: string; name: string;
@@ -73,6 +74,7 @@ export default function AnalysisPage() {
     {!loading && !instruments.length && !error ? <p>Ajoute un titre dans <Link href="/portfolio" className="text-signal underline">le portefeuille</Link> pour consulter ses documents. La liste WLS reste à fournir.</p> : null}
     {instruments.length ? <label id="research-details" className="block">Titre suivi<select value={selected} onChange={(e) => navigate(e.target.value, 0)} className="mt-2 block w-full rounded border border-white/20 bg-slate-950 p-3">{instruments.map((i) => <option key={i.id} value={i.id}>{i.symbol} · {i.exchange} · {i.name}</option>)}</select></label> : null}
     {loading ? <p role="status" className="mt-5">Chargement…</p> : null}
+    {selected ? <Opportunity key={`opportunity-${selected}-${revision}`} instrumentId={selected} /> : null}
     {selected ? <CompanyPublications key={selected} instrumentId={selected} onCollected={() => navigate(selected, 0)} /> : null}
     {selected ? <FinancialResults key={`financial-${selected}`} instrumentId={selected} /> : null}
     {result ? <>

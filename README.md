@@ -225,6 +225,11 @@ Les pipelines BCE, Fed et SEC collectent les flux puis le texte des documents of
 
 ## Analyses des titres
 
+Chaque titre suivi dispose d’une [fiche d’opportunité](docs/OPPORTUNITY_DOSSIERS.md)
+dans `/analysis` : éléments favorables à examiner, risques documentés et questions
+à vérifier, prochains résultats prévisionnels et données manquantes. Elle utilise
+les observations conservées, sans appel IA supplémentaire ni score d’achat.
+
 Les fiches collectent aussi des [observations chiffrées SEC XBRL](docs/FINANCIAL_RESULTS.md) :
 chiffre d'affaires, résultat net et BPA US-GAAP, avec périodes exactes, unités et
 dépôts sourcés. Les définitions et valeurs republiées restent séparées ; aucun
@@ -238,7 +243,8 @@ couverture de ce collecteur.
 La page <http://localhost:3000/calendar> propose un [calendrier sourcé](docs/EARNINGS_CALENDAR.md),
 des estimations de BPA et des résultats fournis. Le calendrier Alpha Vantage partage
 le quota des cours ; les cotations internationales acceptent des observations
-manuelles. Les chiffres publiés ne sont pas récupérés automatiquement à ce stade.
+manuelles. Les résultats du calendrier ne sont pas alimentés automatiquement par
+les BPA SEC : les conventions et la correspondance avec le titre restent à vérifier.
 
 La page <http://localhost:3000/analysis> relie les titres suivis aux faits et
 publications sourcés, avec distinction entre mention du titre et contexte de

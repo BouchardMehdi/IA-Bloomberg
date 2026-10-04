@@ -1,5 +1,10 @@
 # Instructions pour les agents
 
+Les fiches d’opportunité `/analysis` sont des dossiers de recherche sourcés,
+sans score d’achat ou de rendement. Ne pas déduire le sentiment d’un type de fait,
+confondre bénéfice comptable et valorisation attractive, ou réactiver une ancienne
+date prévisionnelle après son déplacement. Voir docs/OPPORTUNITY_DOSSIERS.md.
+
 Les observations `/analysis` SEC XBRL gardent concepts, unités, début/fin de période
 et dépôts distincts. `fy/fp` ne prouvent pas une durée trimestrielle. Ne pas fusionner
 les définitions de chiffre d'affaires ni attribuer un BPA d'émetteur à une cotation
