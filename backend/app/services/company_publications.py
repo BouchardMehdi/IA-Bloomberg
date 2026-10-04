@@ -2,7 +2,7 @@ from dataclasses import asdict
 from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
-from sqlalchemy import String, cast, func, select
+from sqlalchemy import String, cast, func, or_, select
 
 from app.collectors.company_sec import FORMS, CompanyPublicationError, SECCompanyCollector
 from app.core.config import get_settings
@@ -66,7 +66,7 @@ class CompanyPublicationService:
                 select(CollectionRun.id)
                 .join(Source)
                 .where(
-                    Source.name.like("SEC company %"),
+                    or_(Source.name.like("SEC company %"), Source.name.like("SEC financials %")),
                     CollectionRun.status == "running",
                     CollectionRun.started_at > now - timedelta(minutes=2),
                 )

@@ -1,5 +1,11 @@
 # Instructions pour les agents
 
+Les observations `/analysis` SEC XBRL gardent concepts, unités, début/fin de période
+et dépôts distincts. `fy/fp` ne prouvent pas une durée trimestrielle. Ne pas fusionner
+les définitions de chiffre d'affaires ni attribuer un BPA d'émetteur à une cotation
+sans preuve. Ne pas comparer aux estimations sans conventions et antériorité vérifiées.
+Voir docs/FINANCIAL_RESULTS.md.
+
 La collecte SEC ciblée des titres suivis utilise les CIK vérifiés, sans deviner
 de cotations ni d'éligibilité WLS. Les dépôts restent des documents, datés par
 l'acceptation SEC ; le contexte de l'émetteur ne prouve pas un impact sur le titre.

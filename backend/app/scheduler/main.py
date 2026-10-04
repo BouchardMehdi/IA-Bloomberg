@@ -20,6 +20,7 @@ from app.services.earnings import EarningsService
 from app.services.entity_resolution import EntityResolutionService
 from app.services.event_extraction import DeterministicEventExtractionService
 from app.services.event_grouping import EventGroupingService
+from app.services.financial_results import FinancialResultsService
 from app.services.fx_collection import FxCollectionService
 from app.services.ingestion import ArticleIngestionService
 from app.services.market_data import MarketDataService
@@ -175,6 +176,8 @@ async def serve() -> None:
         tasks.append(run_document_fetcher())
     if settings.company_publications_enabled:
         tasks.append(run_company_publication_collector())
+    if settings.financial_results_enabled:
+        tasks.append(run_financial_results_collector())
     if settings.fx_collection_enabled:
         tasks.append(run_fx_collector())
     if settings.ai_analysis_enabled:
@@ -309,6 +312,19 @@ async def run_fx_collector() -> None:
         except Exception:
             logger.exception("ECB FX collection failed; keeping previous rates")
         await asyncio.sleep(seconds_until_next_run(interval, time.monotonic() - started))
+
+
+async def run_financial_results_collector() -> None:
+    if not get_settings().scheduler_run_on_start:
+        await asyncio.sleep(900)
+    while True:
+        try:
+            async with async_session_factory() as session:
+                stats = await FinancialResultsService(session).collect_scheduled()
+                logger.info("SEC financial collection completed: %s", stats)
+        except Exception:
+            logger.exception("SEC financial collection failed")
+        await asyncio.sleep(900)
 
 
 if __name__ == "__main__":

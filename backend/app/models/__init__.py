@@ -5,6 +5,7 @@ from app.models.company import Company, EventCompany
 from app.models.earnings import EarningsObservation
 from app.models.entity_registry import EntityRegistry
 from app.models.event import Event, EventArticle
+from app.models.financial_fact import FinancialFact
 from app.models.market import DailyPrice, FxCollectionRun, FxRate, MarketFetchRun, MarketInstrument
 from app.models.portfolio import PaperPortfolio, PaperPosition, PaperTrade
 from app.models.source import Source
@@ -20,6 +21,7 @@ __all__ = [
     "EventCompany",
     "EntityRegistry",
     "EarningsObservation",
+    "FinancialFact",
     "Source",
     "DailyPrice",
     "FxRate",

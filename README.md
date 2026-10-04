@@ -225,6 +225,11 @@ Les pipelines BCE, Fed et SEC collectent les flux puis le texte des documents of
 
 ## Analyses des titres
 
+Les fiches collectent aussi des [observations chiffrées SEC XBRL](docs/FINANCIAL_RESULTS.md) :
+chiffre d'affaires, résultat net et BPA US-GAAP, avec périodes exactes, unités et
+dépôts sourcés. Les définitions et valeurs republiées restent séparées ; aucun
+écart au consensus n'est inventé.
+
 Les fiches proposent une [collecte SEC ciblée des émetteurs suivis](docs/COMPANY_PUBLICATIONS.md),
 en complément du flux général : dépôts annuels, trimestriels et annonces, avec
 cache, historique et rapprochement par CIK. Les sociétés sans CIK restent hors

@@ -25,6 +25,7 @@ class Settings(BaseSettings):
     market_daily_request_budget: int = Field(default=20, ge=1, le=25)
     earnings_calendar_enabled: bool = True
     company_publications_enabled: bool = True
+    financial_results_enabled: bool = True
     market_max_price_age_days: int = Field(default=7, ge=1, le=30)
     market_max_fx_age_days: int = Field(default=7, ge=1, le=30)
     fx_collection_enabled: bool = True
