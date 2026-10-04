@@ -169,7 +169,7 @@ async def test_provider_quota_is_classified_without_body(response):
 def test_retry_policy_and_explicit_configuration():
     now = datetime(2026, 10, 3, 14, 30, tzinfo=UTC)
     policy = ProviderPolicy(provider="fixture", daily_request_budget=1)
-    assert policy.retry_at("provider_http_error", now) == now + timedelta(hours=1)
+    assert policy.retry_at("provider_http_error", now) == now + timedelta(minutes=5)
     assert policy.retry_at("provider_quota", now) == datetime(2026, 10, 4, tzinfo=UTC)
     settings = Settings(alpha_vantage_api_key="")
     assert configured_price_providers(settings) == ()

@@ -50,7 +50,7 @@ Il porte sur la journée UTC et ne connaît pas les appels externes avec la mêm
 Le scheduler vérifie chaque fournisseur configuré toutes les heures, par lots de
 cinq, en priorité les titres les moins récemment vérifiés. Les titres hors de la
 couverture de l'adaptateur sont ignorés sans consommer son budget. Une réussite
-reste en cache jusqu'au prochain jour UTC. Une erreur attend une heure par défaut,
+reste en cache jusqu'au prochain jour UTC. Une erreur attend cinq minutes par défaut,
 avec `retry_at` persistant. Une interruption conserve la réservation et attend
 aussi ce délai avant reprise. Chaque appel est borné à 90 secondes au total.
 

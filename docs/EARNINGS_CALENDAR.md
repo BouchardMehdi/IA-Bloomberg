@@ -26,7 +26,11 @@ le verrou PostgreSQL, le budget quotidien UTC et les délais après quota.
 Les calendriers sont en plus limités à `max(1, budget // 4)` requêtes par jour,
 soit cinq pour le budget par défaut de vingt. Les erreurs comptent dans ce budget.
 Un titre consulté avec succès n'est pas rappelé le même jour ; les interruptions
-et autres erreurs attendent au moins une heure. Les cours restent indépendants
+et autres erreurs attendent cinq minutes par défaut. Une consultation manuelle
+peut reprendre après ce délai ; le scheduler conserve son cycle horaire.
+Les anciens délais techniques Alpha Vantage sont raccourcis par migration sans
+modifier les tentatives consommées ni les suspensions pour quota.
+Les cours restent indépendants
 des dates de collecte de calendrier. La couverture dépend des titres suivis et
 du quota ; elle ne représente pas tout le WLS.
 

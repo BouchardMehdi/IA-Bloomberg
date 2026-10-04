@@ -120,7 +120,7 @@ class QuoteBatch(ImmutableModel):
 class ProviderPolicy(ImmutableModel):
     provider: str = Field(pattern=r"^[a-z][a-z0-9_]{0,29}$")
     daily_request_budget: int = Field(ge=1, le=100_000)
-    retry_seconds: int = Field(default=3600, ge=60, le=86400)
+    retry_seconds: int = Field(default=300, ge=60, le=86400)
     timeout_seconds: int = Field(default=90, ge=1, le=120)
 
     def retry_at(self, code: str, now: datetime) -> datetime:

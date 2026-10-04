@@ -29,8 +29,10 @@ simulation. Voir [la procédure et ses limites](INTERNATIONAL_MARKET.md).
 
 Le scheduler vérifie les titres toutes les heures, par lots de cinq. Il priorise
 ceux qui n'ont pas encore été vérifiés ou l'ont été le moins récemment. Une collecte
-réussie reste en cache jusqu'au prochain jour UTC ; une erreur attend au moins une
-heure. Un refus/quota suspend tout le fournisseur jusqu'au prochain jour UTC.
+réussie reste en cache jusqu'au prochain jour UTC ; une erreur technique attend
+cinq minutes par défaut. La collecte manuelle peut reprendre après ce délai,
+sans attendre le prochain cycle horaire. Un refus/quota suspend tout le fournisseur
+jusqu'au prochain jour UTC.
 Le [contrat commun](PRICE_PROVIDERS.md) contrôle chaque lot et conserve ses
 conventions. Le budget consommé et les suspensions sont visibles dans `/portfolio`.
 Une collecte manuelle utilise le même budget et le même cache :
