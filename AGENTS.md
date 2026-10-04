@@ -1,5 +1,10 @@
 # Instructions pour les agents
 
+La collecte SEC ciblée des titres suivis utilise les CIK vérifiés, sans deviner
+de cotations ni d'éligibilité WLS. Les dépôts restent des documents, datés par
+l'acceptation SEC ; le contexte de l'émetteur ne prouve pas un impact sur le titre.
+Voir docs/COMPANY_PUBLICATIONS.md.
+
 Le calendrier `/calendar` conserve les observations sans écraser leur historique.
 Les appels Alpha Vantage de calendrier et de cours partagent le quota persistant.
 Les dates fournisseur sont prévisionnelles ; une consultation n'est pas une date

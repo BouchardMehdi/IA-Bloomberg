@@ -225,6 +225,11 @@ Les pipelines BCE, Fed et SEC collectent les flux puis le texte des documents of
 
 ## Analyses des titres
 
+Les fiches proposent une [collecte SEC ciblée des émetteurs suivis](docs/COMPANY_PUBLICATIONS.md),
+en complément du flux général : dépôts annuels, trimestriels et annonces, avec
+cache, historique et rapprochement par CIK. Les sociétés sans CIK restent hors
+couverture de ce collecteur.
+
 La page <http://localhost:3000/calendar> propose un [calendrier sourcé](docs/EARNINGS_CALENDAR.md),
 des estimations de BPA et des résultats fournis. Le calendrier Alpha Vantage partage
 le quota des cours ; les cotations internationales acceptent des observations

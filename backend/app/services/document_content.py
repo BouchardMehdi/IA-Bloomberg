@@ -24,7 +24,9 @@ class DocumentContentService:
         self.session = session
         self.client = client
 
-    async def process_pending(self, limit: int = 5, source_name: str | None = None) -> ContentStats:
+    async def process_pending(
+        self, limit: int = 5, source_name: str | None = None, source_prefix: str | None = None
+    ) -> ContentStats:
         counts = {"succeeded": 0, "failed": 0, "unsupported": 0}
         for _ in range(limit):
             now = datetime.now(UTC)
@@ -48,10 +50,12 @@ class DocumentContentService:
                 .limit(1)
                 .with_for_update(of=Article, skip_locked=True)
             )
-            if source_name is not None:
-                statement = statement.join(Source, Source.id == Article.source_id).where(
-                    Source.name == source_name
-                )
+            if source_name is not None or source_prefix is not None:
+                statement = statement.join(Source, Source.id == Article.source_id)
+                if source_name is not None:
+                    statement = statement.where(Source.name == source_name)
+                if source_prefix is not None:
+                    statement = statement.where(Source.name.startswith(source_prefix))
             article = (await self.session.execute(statement)).scalar_one_or_none()
             if article is None:
                 await self.session.rollback()

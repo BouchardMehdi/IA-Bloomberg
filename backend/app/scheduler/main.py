@@ -14,6 +14,7 @@ from app.market.earnings_calendar import EarningsCalendarClient
 from app.market.ecb_fx import EcbFxClient
 from app.market.provider_registry import configured_price_providers
 from app.semantic.ollama import OllamaSemanticClient
+from app.services.company_publications import CompanyPublicationService
 from app.services.document_content import DocumentContentService
 from app.services.earnings import EarningsService
 from app.services.entity_resolution import EntityResolutionService
@@ -172,6 +173,8 @@ async def serve() -> None:
     ]
     if settings.document_collection_enabled:
         tasks.append(run_document_fetcher())
+    if settings.company_publications_enabled:
+        tasks.append(run_company_publication_collector())
     if settings.fx_collection_enabled:
         tasks.append(run_fx_collector())
     if settings.ai_analysis_enabled:
@@ -203,10 +206,14 @@ async def run_document_fetcher() -> None:
         started = time.monotonic()
         try:
             async with async_session_factory() as session:
-                stats = await DocumentContentService(session, client).process_pending(
-                    settings.document_collection_batch_size
+                service = DocumentContentService(session, client)
+                batch_size = settings.document_collection_batch_size
+                targeted = await service.process_pending(
+                    min(2, batch_size), source_prefix="SEC company "
                 )
-            logger.info("Document retrieval completed: %s", stats)
+                remaining = batch_size - targeted.succeeded - targeted.failed - targeted.unsupported
+                stats = await service.process_pending(remaining)
+            logger.info("Document retrieval completed: targeted=%s general=%s", targeted, stats)
         except Exception:
             logger.exception("Document retrieval cycle failed")
         await asyncio.sleep(
@@ -252,6 +259,7 @@ async def run_market_collector() -> None:
         return
     if not settings.scheduler_run_on_start:
         await asyncio.sleep(3600)
+
     while True:
         for provider in providers:
             try:
@@ -271,6 +279,19 @@ async def run_market_collector() -> None:
             except Exception:
                 logger.exception("Market collection failed: %s", provider.policy.provider)
         await asyncio.sleep(3600)
+
+
+async def run_company_publication_collector() -> None:
+    if not get_settings().scheduler_run_on_start:
+        await asyncio.sleep(900)
+    while True:
+        try:
+            async with async_session_factory() as session:
+                stats = await CompanyPublicationService(session).collect_scheduled()
+                logger.info("Company publication collection completed: %s", stats)
+        except Exception:
+            logger.exception("Company publication collection failed")
+        await asyncio.sleep(900)
 
 
 async def run_fx_collector() -> None:

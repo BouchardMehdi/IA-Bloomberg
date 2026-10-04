@@ -14,7 +14,8 @@ from app.models.event import Event, EventArticle
 from app.models.source import Source
 
 SEC_TITLE_PATTERN = re.compile(
-    r"^(?P<form>8-K(?:/A)?)\s+-\s+(?P<company>.+?)\s+\((?P<cik>\d{10})\)\s+\([^)]+\)$"
+    r"^(?P<form>(?:8-K|10-Q|10-K|6-K|20-F|40-F)(?:/A)?)\s+-\s+"
+    r"(?P<company>.+?)\s+\((?P<cik>\d{10})\)\s+\([^)]+\)$"
 )
 ACCESSION_PATTERN = re.compile(r"accession-number=(?P<accession>[\d-]+)")
 EXTRACTION_VERSION = "deterministic-v1"

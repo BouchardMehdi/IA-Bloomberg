@@ -14,6 +14,7 @@ from app.market.earnings_calendar import EarningsCalendarClient
 from app.schemas.earnings import EarningsInput
 from app.schemas.international import FxRateCreate, InternationalInstrumentCreate, LocalPriceCreate
 from app.schemas.market import InstrumentCreate, PaperOrder, PortfolioCreate
+from app.services.company_publications import CompanyPublicationService
 from app.services.earnings import EarningsService
 from app.services.fx_collection import FxCollectionService
 from app.services.instrument_research import InstrumentResearchService
@@ -36,6 +37,23 @@ def market_response(data: dict, status_code: int = 200) -> JSONResponse:
 @router.get("/instruments")
 async def instruments(session: Db):
     return market_response(await MarketDataService(session).list_instruments())
+
+
+@router.get("/instruments/{instrument_id}/publications/collection")
+async def company_publication_status(instrument_id: UUID, session: Db):
+    result = await CompanyPublicationService(session).status(instrument_id)
+    if result is None:
+        raise HTTPException(404, "Titre introuvable.")
+    return market_response(result)
+
+
+@router.post("/instruments/{instrument_id}/publications/collect")
+async def collect_company_publications(instrument_id: UUID, session: Db):
+    try:
+        return market_response(await CompanyPublicationService(session).collect(instrument_id))
+    except ValueError as exc:
+        await session.rollback()
+        raise HTTPException(400, str(exc)) from None
 
 
 @router.get("/instruments/{instrument_id}/earnings")
