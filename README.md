@@ -225,6 +225,11 @@ Les pipelines BCE, Fed et SEC collectent les flux puis le texte des documents of
 
 ## Analyses des titres
 
+La [comparaison des résultats dans le temps](docs/FINANCIAL_TRENDS.md) présente
+les variations du chiffre d'affaires et du résultat net entre périodes de même
+durée dans le même dépôt SEC. Les unités, définitions et sources restent visibles ;
+les ambiguïtés bloquent les calculs, les bases nulles/négatives bloquent les pourcentages.
+
 Chaque titre suivi dispose d’une [fiche d’opportunité](docs/OPPORTUNITY_DOSSIERS.md)
 dans `/analysis` : éléments favorables à examiner, risques documentés et questions
 à vérifier, prochains résultats prévisionnels et données manquantes. Elle utilise

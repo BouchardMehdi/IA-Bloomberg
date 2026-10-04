@@ -1,5 +1,11 @@
 # Instructions pour les agents
 
+Les comparaisons temporelles SEC exigent même concept, unité, durée exacte et
+présentation dans le même dépôt. Ne pas revenir à un ancien dépôt pour contourner
+une comparaison manquante ou ambiguë. Base nulle/négative : aucun pourcentage.
+Ne pas présenter une variation publiée comme croissance organique ou signal
+d'achat. Voir docs/FINANCIAL_TRENDS.md.
+
 Les fiches d’opportunité `/analysis` sont des dossiers de recherche sourcés,
 sans score d’achat ou de rendement. Ne pas déduire le sentiment d’un type de fait,
 confondre bénéfice comptable et valorisation attractive, ou réactiver une ancienne

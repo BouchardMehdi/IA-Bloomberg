@@ -51,6 +51,10 @@ publiées : une consultation récente ne rend pas le chiffre nouveau.
 
 ## Comparaisons
 
+Les variations de chiffre d'affaires et de résultat net sont disponibles dans
+une [rubrique dédiée](FINANCIAL_TRENDS.md), avec même définition, unité, durée
+exacte et dépôt. Les pourcentages sur bases nulles/négatives sont bloqués.
+
 Les BPA SEC ne sont pas injectés dans le calendrier comme des résultats propres
 au titre. Aucun écart automatique n'est calculé avec les estimations Alpha Vantage :
 leur début de période, convention GAAP/ajustée et correspondance avec l'unité

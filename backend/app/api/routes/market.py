@@ -17,6 +17,7 @@ from app.schemas.market import InstrumentCreate, PaperOrder, PortfolioCreate
 from app.services.company_publications import CompanyPublicationService
 from app.services.earnings import EarningsService
 from app.services.financial_results import FinancialResultsService
+from app.services.financial_trends import FinancialTrendsService
 from app.services.fx_collection import FxCollectionService
 from app.services.instrument_research import InstrumentResearchService
 from app.services.international_market import InternationalMarketService
@@ -69,6 +70,14 @@ async def collect_financial_results(instrument_id: UUID, session: Db):
     except ValueError as exc:
         await session.rollback()
         raise HTTPException(400, str(exc)) from None
+
+
+@router.get("/instruments/{instrument_id}/financial-trends")
+async def financial_trends(instrument_id: UUID, session: Db):
+    result = await FinancialTrendsService(session).detail(instrument_id)
+    if result is None:
+        raise HTTPException(404, "Titre introuvable.")
+    return market_response(result)
 
 
 @router.post("/instruments/{instrument_id}/publications/collect")
