@@ -225,6 +225,11 @@ Les pipelines BCE, Fed et SEC collectent les flux puis le texte des documents of
 
 ## Analyses des titres
 
+La page <http://localhost:3000/calendar> propose un [calendrier sourcé](docs/EARNINGS_CALENDAR.md),
+des estimations de BPA et des résultats fournis. Le calendrier Alpha Vantage partage
+le quota des cours ; les cotations internationales acceptent des observations
+manuelles. Les chiffres publiés ne sont pas récupérés automatiquement à ce stade.
+
 La page <http://localhost:3000/analysis> relie les titres suivis aux faits et
 publications sourcés, avec distinction entre mention du titre et contexte de
 l’émetteur. Voir [le fonctionnement et les limites](docs/INSTRUMENT_RESEARCH.md).

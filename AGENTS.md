@@ -1,5 +1,12 @@
 # Instructions pour les agents
 
+Le calendrier `/calendar` conserve les observations sans écraser leur historique.
+Les appels Alpha Vantage de calendrier et de cours partagent le quota persistant.
+Les dates fournisseur sont prévisionnelles ; une consultation n'est pas une date
+de publication. Ne jamais calculer d'écart de BPA avec une période, devise ou
+convention inconnue, ni avec une estimation conservée après le résultat.
+Voir docs/EARNINGS_CALENDAR.md.
+
 ## But du projet
 
 Market AI collecte des informations financières, les normalise puis crée des événements structurés et traçables. La priorité est : pipeline fiable, qualité des sources, puis complexité IA.

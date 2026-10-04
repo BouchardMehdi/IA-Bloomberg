@@ -65,6 +65,7 @@ class MarketDataService:
                     "remaining_today": max(0, descriptor["daily_request_budget"] - attempts),
                     "blocked_until": blocked_until,
                     "latest_run": {
+                        "operation": latest.operation,
                         "instrument_id": latest.instrument_id,
                         "status": latest.status,
                         "started_at": latest.started_at,
@@ -141,6 +142,7 @@ class MarketDataService:
                     .where(
                         MarketFetchRun.instrument_id == instrument.id,
                         MarketFetchRun.provider == instrument.price_provider,
+                        MarketFetchRun.operation == "prices",
                     )
                     .order_by(MarketFetchRun.started_at.desc())
                     .limit(1)
@@ -254,7 +256,9 @@ class MarketDataService:
                     .outerjoin(
                         MarketFetchRun,
                         (MarketFetchRun.instrument_id == MarketInstrument.id)
-                        & (MarketFetchRun.provider == policy.provider),
+                        & (MarketFetchRun.provider == policy.provider)
+                        & (MarketFetchRun.operation == "prices"),
+                        # Calendar requests share quota, but not quote freshness.
                     )
                     .group_by(MarketInstrument.id)
                     .order_by(
@@ -317,6 +321,7 @@ class MarketDataService:
                     .where(
                         MarketFetchRun.instrument_id == instrument_id,
                         MarketFetchRun.provider == policy.provider,
+                        MarketFetchRun.operation == "prices",
                     )
                     .order_by(MarketFetchRun.started_at.desc())
                     .limit(1)

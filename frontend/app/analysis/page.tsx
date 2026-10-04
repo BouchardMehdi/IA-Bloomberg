@@ -65,6 +65,7 @@ export default function AnalysisPage() {
       <nav className="mt-3 flex gap-5 text-sm text-signal underline"><Link href="/">Veille</Link><Link href="/portfolio">Titres et portefeuille simulé</Link></nav>
     </header>
     <p className="mb-5 text-sm leading-6">Les fiches rapprochent les documents et faits sourcés des titres suivis. Un lien avec l’émetteur ne prouve pas un effet sur une classe d’action. Les points à examiner sont des questions, pas des prévisions.</p>
+    <p className="mb-5 text-sm"><Link href="/calendar" className="text-signal underline">Calendrier, estimations et résultats sourcés →</Link></p>
     <ResearchRanking onSelect={(id) => { void selectRanked(id); }} />
     {error ? <p role="alert" className="text-rose-300">{error}</p> : null}
     {!loading && !instruments.length && !error ? <p>Ajoute un titre dans <Link href="/portfolio" className="text-signal underline">le portefeuille</Link> pour consulter ses documents. La liste WLS reste à fournir.</p> : null}

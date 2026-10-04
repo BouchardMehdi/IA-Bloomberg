@@ -90,6 +90,9 @@ class FxCollectionRun(UUIDPrimaryKeyMixin, Base):
 
 class MarketFetchRun(UUIDPrimaryKeyMixin, Base):
     __tablename__ = "market_fetch_runs"
+    operation: Mapped[str] = mapped_column(
+        String(30), nullable=False, default="prices", server_default="prices"
+    )
     instrument_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("market_instruments.id"), nullable=False
     )

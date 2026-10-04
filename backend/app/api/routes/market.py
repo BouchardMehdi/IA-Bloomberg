@@ -8,9 +8,13 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import get_settings
 from app.db.session import get_db_session
+from app.market.earnings_calendar import EarningsCalendarClient
+from app.schemas.earnings import EarningsInput
 from app.schemas.international import FxRateCreate, InternationalInstrumentCreate, LocalPriceCreate
 from app.schemas.market import InstrumentCreate, PaperOrder, PortfolioCreate
+from app.services.earnings import EarningsService
 from app.services.fx_collection import FxCollectionService
 from app.services.instrument_research import InstrumentResearchService
 from app.services.international_market import InternationalMarketService
@@ -32,6 +36,48 @@ def market_response(data: dict, status_code: int = 200) -> JSONResponse:
 @router.get("/instruments")
 async def instruments(session: Db):
     return market_response(await MarketDataService(session).list_instruments())
+
+
+@router.get("/instruments/{instrument_id}/earnings")
+async def earnings(
+    instrument_id: UUID,
+    session: Db,
+    limit: Annotated[int, Query(ge=1, le=100)] = 50,
+    offset: Annotated[int, Query(ge=0, le=20000)] = 0,
+):
+    result = await EarningsService(session).detail(instrument_id, limit, offset)
+    if result is None:
+        raise HTTPException(404, "Titre introuvable.")
+    return market_response(result)
+
+
+@router.post("/instruments/{instrument_id}/earnings", status_code=201)
+async def add_earnings(instrument_id: UUID, request: EarningsInput, session: Db):
+    try:
+        return market_response(await EarningsService(session).add(instrument_id, request), 201)
+    except ValueError as exc:
+        await session.rollback()
+        raise HTTPException(400, str(exc)) from None
+
+
+@router.post("/instruments/{instrument_id}/earnings/collect")
+async def collect_earnings(instrument_id: UUID, session: Db):
+    settings = get_settings()
+    key = settings.alpha_vantage_api_key.get_secret_value()
+    if not key:
+        raise HTTPException(503, "Clé Alpha Vantage non configurée côté serveur.")
+    try:
+        return market_response(
+            await EarningsService(session).collect(
+                instrument_id,
+                EarningsCalendarClient(
+                    key, daily_request_budget=settings.market_daily_request_budget
+                ),
+            )
+        )
+    except ValueError as exc:
+        await session.rollback()
+        raise HTTPException(400, str(exc)) from None
 
 
 @router.get("/price-collection")

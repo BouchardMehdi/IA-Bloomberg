@@ -10,10 +10,12 @@ from app.collectors.fed import FedPressCollector
 from app.collectors.sec import SEC8KCollector
 from app.core.config import get_settings
 from app.db.session import async_session_factory
+from app.market.earnings_calendar import EarningsCalendarClient
 from app.market.ecb_fx import EcbFxClient
 from app.market.provider_registry import configured_price_providers
 from app.semantic.ollama import OllamaSemanticClient
 from app.services.document_content import DocumentContentService
+from app.services.earnings import EarningsService
 from app.services.entity_resolution import EntityResolutionService
 from app.services.event_extraction import DeterministicEventExtractionService
 from app.services.event_grouping import EventGroupingService
@@ -254,6 +256,16 @@ async def run_market_collector() -> None:
         for provider in providers:
             try:
                 async with async_session_factory() as session:
+                    if (
+                        settings.earnings_calendar_enabled
+                        and provider.policy.provider == "alpha_vantage"
+                    ):
+                        await EarningsService(session).collect_scheduled(
+                            EarningsCalendarClient(
+                                settings.alpha_vantage_api_key.get_secret_value(),
+                                daily_request_budget=settings.market_daily_request_budget,
+                            )
+                        )
                     stats = await MarketDataService(session).collect(provider)
                     logger.info("Market collection completed: %s", stats)
             except Exception:

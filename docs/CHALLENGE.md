@@ -23,6 +23,19 @@ précis restent à confirmer. Les taux, horaires et conventions de conversion ut
 par Bloomberg ne sont pas encore connus. L'utilisateur essaiera d'obtenir la liste
 WLS lundi ; aucun fichier ni date de livraison ferme n'est encore disponible.
 
+## Liens publics de l'indice
+
+Liens transmis le 4 octobre 2026 :
+[Bloomberg WORLD](https://www.bloomberg.com/professional/products/indices/quote/WORLD:IND)
+et [TradingView BBG:WLS](https://fr.tradingview.com/chart/?symbol=BBG%3AWLS).
+WORLD et WLS ne désignent pas le même périmètre : WLS inclut les petites
+capitalisations, contrairement à WORLD. Voir la
+[méthodologie Bloomberg](https://data.bloomberglp.com/professional/sites/10/Bloomberg-Global-Equity-Indices-Methodology.pdf).
+Le caractère public de ces pages ne fournit pas un export autorisé et daté des
+titres éligibles. L'univers du challenge reste à importer depuis la liste fournie
+par l'utilisateur. La variante exacte de benchmark (prix, rendement net ou total)
+et les règles de comparaison de performance restent à confirmer.
+
 ## Préparer les titres internationaux
 
 La prise en charge internationale devra conserver, pour chaque titre, son
