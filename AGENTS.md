@@ -11,6 +11,12 @@ les définitions de chiffre d'affaires ni attribuer un BPA d'émetteur à une co
 sans preuve. Ne pas comparer aux estimations sans conventions et antériorité vérifiées.
 Voir docs/FINANCIAL_RESULTS.md.
 
+Les soldes SEC de trésorerie/dette sont instantanés (`start=null`), les flux
+exigent un début de période. Ne pas additionner dette courante/non courante,
+crédit-bail ou fonds restreints sans correspondances exactes. Aucun total de dette,
+ratio ou flux libre n'est calculé par cette couverture. Les flux d'investissement
+ou financement négatifs ne prouvent pas une perte.
+
 La collecte SEC ciblée des titres suivis utilise les CIK vérifiés, sans deviner
 de cotations ni d'éligibilité WLS. Les dépôts restent des documents, datés par
 l'acceptation SEC ; le contexte de l'émetteur ne prouve pas un impact sur le titre.

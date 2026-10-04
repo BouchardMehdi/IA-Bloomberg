@@ -23,6 +23,7 @@ class CollectionRun(UUIDPrimaryKeyMixin, Base):
     inserted_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     duplicate_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     error_message: Mapped[str | None] = mapped_column(Text)
+    collector_version: Mapped[str | None] = mapped_column(String(32))
     __table_args__ = (Index("ix_collection_runs_source_started", source_id, started_at.desc()),)
 
     source = relationship("Source", back_populates="collection_runs")

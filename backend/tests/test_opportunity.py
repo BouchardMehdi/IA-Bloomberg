@@ -1,6 +1,6 @@
 from datetime import UTC, datetime, timedelta
 
-from app.services.opportunity import financial_arguments, upcoming_events
+from app.services.opportunity import financial_arguments, liquidity_observations, upcoming_events
 
 NOW = datetime(2026, 10, 4, 12, tzinfo=UTC)
 
@@ -106,3 +106,32 @@ def test_old_accounting_observation_is_flagged_not_called_new():
 def test_no_observations_means_empty_sections_not_zero_or_fabricated_signal():
     assert financial_arguments([], NOW) == ([], [])
     assert upcoming_events([], NOW) == []
+
+
+def test_operating_cash_flow_signs_do_not_classify_investments_as_losses():
+    positive, negative = financial_arguments(
+        [
+            fact(metric="operating_cash_flow", value="10"),
+            fact(metric="operating_cash_flow", value="-10", start="2026-07-01"),
+            fact(metric="investing_cash_flow", value="-100"),
+            fact(metric="cash", start=None, value="1000"),
+        ],
+        NOW,
+    )
+    assert len(positive) == len(negative) == 1
+    assert "exploitation" in positive[0]["label"]
+    assert "flux libre" in negative[0]["notice"]
+
+
+def test_balance_definitions_and_periods_are_not_summed_or_used_for_net_debt():
+    items = [
+        fact(metric="cash", concept="CashAndCashEquivalentsAtCarryingValue", start=None),
+        fact(metric="debt_current", concept="LongTermDebtCurrent", start=None),
+        fact(metric="debt_noncurrent", concept="LongTermDebtNoncurrent", start=None),
+        fact(metric="cash", end="2026-06-30", start=None),
+        fact(metric="debt_current", filed="2026-10-05", start=None),
+    ]
+    records = liquidity_observations(items, NOW)
+    assert len(records) == 3
+    assert all(record["start"] is None for record in records)
+    assert {record["value"] for record in records} == {"100"}

@@ -3,16 +3,15 @@
 import { useEffect, useRef, useState } from "react";
 
 const api = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
-const metrics: Record<string, string> = { revenue: "Chiffre d’affaires", net_income: "Résultat net", eps_basic: "BPA de base", eps_diluted: "BPA dilué" };
 type Fact = { id: string; metric: string; concept: string; taxonomy: string; value: string;
-  unit: string; start: string; end: string; filed: string; accession: string; form: string;
+  unit: string; start: string | null; end: string; filed: string; accession: string; form: string;
   filing_period: string | null; fiscal_year: number | null; frame: string | null;
   source_url: string; data_source_url: string; observed_at: string;
   comparison: { status: string; reasons: string[] } | null };
 type Results = { items: Fact[]; next_offset: number | null; notice: string;
-  available_metrics: string[]; supported_metrics: string[];
+  available_metrics: string[]; supported_metrics: string[]; metric_labels: Record<string, string>;
   collection: { supported: boolean; cik: string | null; scheduler_enabled: boolean;
-    status: string; error: string | null; source_url: string | null; started_at: string | null; fetched_count: number } };
+    status: string; coverage_current: boolean; error: string | null; source_url: string | null; started_at: string | null; fetched_count: number } };
 function amount(value: string) {
   const [integer, fraction] = value.split(".");
   return integer.replace(/\B(?=(\d{3})+(?!\d))/g, "\u202f") + (fraction ? `,${fraction}` : "");
@@ -66,12 +65,13 @@ export function FinancialResults({ instrumentId }: { instrumentId: string }) {
       <p className="mt-2 text-xs">{data.notice} {data.collection.scheduler_enabled ? "Collecte automatique activée, cache de 24 heures." : "Collecte automatique désactivée."}</p>
       <div className="my-3 flex flex-wrap gap-4 text-sm"><button disabled={busy || !data.collection.supported} onClick={() => void refresh(0, true)} className="rounded border border-signal/40 px-3 py-2 text-signal disabled:opacity-40">{busy ? "Chargement…" : "Collecter les chiffres SEC"}</button><button disabled={busy} onClick={() => void refresh(offset)} className="text-signal underline disabled:opacity-40">Actualiser l’affichage</button>{data.collection.source_url ? <a href={data.collection.source_url} target="_blank" rel="noreferrer" className="text-signal underline">Source des données XBRL</a> : null}</div>
       {!data.items.length ? <p className="text-sm">Aucune observation sur cette page. Cela ne prouve ni l’absence de résultats ni un montant nul.</p> : null}
-      {data.collection.status === "success" ? <p className="my-3 text-xs">Mesures absentes de l’historique conservé : {data.supported_metrics.filter((metric) => !data.available_metrics.includes(metric)).map((metric) => metrics[metric]).join(", ") || "aucune des mesures prises en charge"}.</p> : null}
+      {!data.collection.coverage_current && data.collection.supported ? <p className="my-3 text-xs text-amber-300">La nouvelle couverture trésorerie et dette n’a pas encore été consultée. Utilise le bouton de collecte ou attends le passage automatique.</p> : null}
+      {data.collection.status === "success" ? <p className="my-3 text-xs">Mesures absentes de l’historique conservé : {data.supported_metrics.filter((metric) => !data.available_metrics.includes(metric)).map((metric) => data.metric_labels[metric] ?? metric).join(", ") || "aucune des mesures prises en charge"}.</p> : null}
       <details className="mt-4"><summary className="cursor-pointer text-white">Observations détaillées ({data.items.length} sur cette page)</summary>
         <div className="mt-3 overflow-x-auto"><table className="w-full text-left text-sm"><thead><tr className="text-slate-400"><th className="p-2">Mesure et définition</th><th className="p-2">Valeur et unité</th><th className="p-2">Période exacte</th><th className="p-2">Dépôt et preuve</th></tr></thead><tbody>{data.items.map((fact) => <tr key={fact.id} className="border-t border-white/10 align-top">
-          <td className="p-2">{metrics[fact.metric]}<span className="mt-1 block max-w-72 break-words text-xs text-slate-400">{fact.taxonomy}:{fact.concept}</span></td>
+          <td className="p-2">{data.metric_labels[fact.metric] ?? fact.metric}<span className="mt-1 block max-w-72 break-words text-xs text-slate-400">{fact.taxonomy}:{fact.concept}</span></td>
           <td className="whitespace-nowrap p-2">{amount(fact.value)} {fact.unit}</td>
-          <td className="whitespace-nowrap p-2">{fact.start} → {fact.end}</td>
+          <td className="whitespace-nowrap p-2">{fact.start ? `${fact.start} → ${fact.end}` : `Solde au ${fact.end}`}</td>
           <td className="p-2"><a href={fact.source_url} target="_blank" rel="noreferrer" className="text-signal underline">{fact.form} · déposé le {fact.filed}</a><p className="mt-1 text-xs">Accession : {fact.accession}</p><p className="mt-1 text-xs text-slate-400">Contexte du dépôt : {fact.fiscal_year ?? "année inconnue"} / {fact.filing_period ?? "période inconnue"}. Consultation : {new Date(fact.observed_at).toLocaleString("fr-FR")}.</p>
             {fact.comparison ? <details className="mt-2 text-xs"><summary className="cursor-pointer text-amber-300">Écart aux estimations non calculé</summary><ul className="mt-2 list-disc space-y-1 pl-4">{fact.comparison.reasons.map((reason) => <li key={reason}>{reason}</li>)}</ul></details> : null}
           </td>

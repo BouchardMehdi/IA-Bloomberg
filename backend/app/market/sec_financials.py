@@ -1,4 +1,4 @@
-"""Issuer-wide duration facts only; no inference of quarterly or security EPS."""
+"""Issuer facts with explicit instant/duration conventions; no security EPS inference."""
 
 import asyncio
 import hashlib
@@ -21,6 +21,52 @@ CONCEPTS = {
     "NetIncomeLoss": "net_income",
     "EarningsPerShareBasic": "eps_basic",
     "EarningsPerShareDiluted": "eps_diluted",
+    "CashAndCashEquivalentsAtCarryingValue": "cash",
+    "CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalents": "cash_restricted",
+    "ShortTermBorrowings": "short_term_debt",
+    "LongTermDebtCurrent": "debt_current",
+    "LongTermDebtNoncurrent": "debt_noncurrent",
+    "LongTermDebt": "long_term_debt",
+    "LongTermDebtAndCapitalLeaseObligationsCurrent": "debt_leases_current",
+    "LongTermDebtAndCapitalLeaseObligationsNoncurrent": "debt_leases_noncurrent",
+    "NetCashProvidedByUsedInOperatingActivities": "operating_cash_flow",
+    "NetCashProvidedByUsedInInvestingActivities": "investing_cash_flow",
+    "NetCashProvidedByUsedInFinancingActivities": "financing_cash_flow",
+    "PaymentsToAcquirePropertyPlantAndEquipment": "capex",
+}
+INSTANT_CONCEPTS = frozenset(
+    concept
+    for concept, metric in CONCEPTS.items()
+    if metric
+    in {
+        "cash",
+        "cash_restricted",
+        "short_term_debt",
+        "debt_current",
+        "debt_noncurrent",
+        "long_term_debt",
+        "debt_leases_current",
+        "debt_leases_noncurrent",
+    }
+)
+COLLECTOR_VERSION = "financial-v2"
+METRIC_LABELS = {
+    "revenue": "chiffre d’affaires",
+    "net_income": "résultat net",
+    "eps_basic": "BPA de base",
+    "eps_diluted": "BPA dilué",
+    "cash": "trésorerie et équivalents",
+    "cash_restricted": "trésorerie incluant fonds restreints",
+    "short_term_debt": "emprunts à court terme",
+    "debt_current": "dette long terme, part courante",
+    "debt_noncurrent": "dette long terme, part non courante",
+    "long_term_debt": "dette long terme",
+    "debt_leases_current": "dette et crédit-bail, part courante",
+    "debt_leases_noncurrent": "dette et crédit-bail, part non courante",
+    "operating_cash_flow": "flux de trésorerie d’exploitation",
+    "investing_cash_flow": "flux de trésorerie d’investissement",
+    "financing_cash_flow": "flux de trésorerie de financement",
+    "capex": "paiements d’acquisition d’immobilisations corporelles",
 }
 FORMS = {
     "10-Q",
@@ -45,7 +91,7 @@ class FinancialRecord(BaseModel):
     concept: str
     unit: str
     value: Decimal = Field(gt=-(10**18), lt=10**18, decimal_places=10)
-    start: date
+    start: date | None = None
     end: date
     filed: date
     accession: str = Field(pattern=r"^[0-9]{10}-[0-9]{2}-[0-9]{6}$")
@@ -67,7 +113,12 @@ class FinancialRecord(BaseModel):
             "/shares" if self.metric.startswith("eps_") else ""
         ):
             raise ValueError("incompatible unit")
-        if not self.start <= self.end <= self.filed <= datetime.now(UTC).date():
+        instant = self.concept in INSTANT_CONCEPTS
+        if instant and (self.start is not None or self.value < 0):
+            raise ValueError("invalid instant balance")
+        if not instant and (self.start is None or self.start > self.end):
+            raise ValueError("duration requires explicit start")
+        if not self.end <= self.filed <= datetime.now(UTC).date():
             raise ValueError("invalid dates")
         return self
 
@@ -119,7 +170,7 @@ def parse_financials(payload: bytes, cik: str, today: date | None = None):
                         concept=concept,
                         unit=unit,
                         value=row["val"],
-                        start=row["start"],
+                        start=row.get("start") if concept in INSTANT_CONCEPTS else row["start"],
                         end=end,
                         filed=filed,
                         accession=row["accn"],

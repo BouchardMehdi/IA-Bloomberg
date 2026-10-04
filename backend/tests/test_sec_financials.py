@@ -65,6 +65,37 @@ def test_duplicate_rows_are_idempotent_without_selecting_a_latest_value():
     assert len(parse(payload([row(val=1), row(val=2)]))) == 2
 
 
+def test_cash_and_debt_are_instants_without_invented_start_dates():
+    instant = row(val=100)
+    instant.pop("start")
+    data = payload([instant], "CashAndCashEquivalentsAtCarryingValue", "USD")
+    data["facts"]["us-gaap"]["LongTermDebtCurrent"] = {"units": {"USD": [instant]}}
+    data["facts"]["us-gaap"]["LongTermDebtNoncurrent"] = {"units": {"USD": [instant]}}
+    records = parse(data)
+    assert len(records) == 3
+    assert all(record.start is None for record in records)
+    assert {record.metric for record in records} == {"cash", "debt_current", "debt_noncurrent"}
+
+
+def test_wrong_instant_duration_or_negative_balance_rejects_batch():
+    for concept, changes in [
+        ("CashAndCashEquivalentsAtCarryingValue", {}),
+        ("LongTermDebtCurrent", {"start": None, "val": -1}),
+        ("NetCashProvidedByUsedInOperatingActivities", {"start": None}),
+    ]:
+        with pytest.raises(CompanyPublicationError):
+            parse(payload([row(**changes)], concept, "USD"))
+
+
+def test_cash_flows_keep_negative_values_and_exact_cumulative_periods():
+    records = parse(
+        payload([row(val=-100), row(val=0)], "NetCashProvidedByUsedInOperatingActivities", "USD")
+    )
+    assert len(records) == 2
+    assert all(record.metric == "operating_cash_flow" and record.start for record in records)
+    assert {record.value for record in records} == {Decimal("-100"), Decimal("0")}
+
+
 @pytest.mark.parametrize(
     "changes",
     [

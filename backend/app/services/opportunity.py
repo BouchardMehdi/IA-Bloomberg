@@ -6,6 +6,7 @@ from uuid import UUID
 
 from sqlalchemy import select
 
+from app.market.sec_financials import METRIC_LABELS
 from app.models.earnings import EarningsObservation
 from app.services.financial_results import FinancialResultsService
 from app.services.instrument_research import InstrumentResearchService
@@ -76,14 +77,17 @@ def financial_arguments(items: list[dict], now: datetime) -> tuple[list, list]:
     net = [
         item
         for item in items
-        if item["metric"] == "net_income"
+        if item["metric"] in {"net_income", "operating_cash_flow"}
         and date.fromisoformat(item["filed"]) <= now.date()
         and date.fromisoformat(item["end"]) <= now.date()
     ]
-    end = max((item["end"] for item in net), default=None)
+    ends = {
+        metric: max(item["end"] for item in net if item["metric"] == metric)
+        for metric in {item["metric"] for item in net}
+    }
     favorable, risks = [], []
     for item in net:
-        if item["end"] != end or Decimal(item["value"]) == 0:
+        if item["end"] != ends[item["metric"]] or Decimal(item["value"]) == 0:
             continue
         positive = Decimal(item["value"]) > 0
         entry = {
@@ -102,8 +106,41 @@ def financial_arguments(items: list[dict], now: datetime) -> tuple[list, list]:
             "notice": "Observation comptable de l’émetteur ; ni croissance, ni "
             "valorisation attractive, ni effet sur ce titre ne sont établis.",
         }
+        if item["metric"] == "operating_cash_flow":
+            entry["label"] = (
+                "Flux de trésorerie d’exploitation positif"
+                if positive
+                else "Flux de trésorerie d’exploitation négatif"
+            )
+            entry["notice"] = (
+                "Flux sur la période indiquée ; ni trésorerie disponible "
+                "à une date, ni flux libre, ni rendement attendu."
+            )
         (favorable if positive else risks).append(entry)
     return favorable, risks
+
+
+def liquidity_observations(items: list[dict], now: datetime) -> list[dict]:
+    selected = [
+        item
+        for item in items
+        if item["metric"] not in {"net_income", "revenue", "eps_basic", "eps_diluted"}
+        and date.fromisoformat(item["end"]) <= now.date()
+        and date.fromisoformat(item["filed"]) <= now.date()
+    ]
+    ends = {
+        metric: max(item["end"] for item in selected if item["metric"] == metric)
+        for metric in {item["metric"] for item in selected}
+    }
+    return [
+        {
+            **item,
+            "label": METRIC_LABELS[item["metric"]],
+            "stale_period": (now.date() - date.fromisoformat(item["end"])).days > 180,
+        }
+        for item in selected
+        if item["end"] == ends[item["metric"]]
+    ]
 
 
 class OpportunityService:
@@ -115,7 +152,7 @@ class OpportunityService:
         research = await InstrumentResearchService(self.session).detail(instrument_id, 100, 0)
         if research is None:
             return None
-        financials = await FinancialResultsService(self.session).detail(instrument_id, 100, 0)
+        financials = await FinancialResultsService(self.session).detail(instrument_id, 2000, 0)
         # Most recent observed snapshots; coverage is explicit if the bound is hit.
         rows = (
             (
@@ -165,8 +202,8 @@ class OpportunityService:
             )
         instrument = research["instrument"]
         missing = [
-            "Valorisation, trésorerie, endettement et perspectives "
-            "à analyser avant toute décision.",
+            "Valorisation, échéances de dette, liquidité et perspectives "
+            "à analyser avant toute décision. Aucun total de dette ou ratio n’est déduit.",
             "Impact sur ce titre et horizon d’investissement non établis.",
             "Comparaison aux attentes : périodes, conventions et antériorité à vérifier.",
             "Frais, dates et limites du challenge restent à confirmer.",
@@ -177,17 +214,33 @@ class OpportunityService:
             missing.append("Clôture locale récente indisponible.")
         if instrument["usd_valuation"]["status"] != "available":
             missing.append("Valorisation en USD récente indisponible : contrôler cours et taux.")
-        absent = set(financials["supported_metrics"]) - set(financials["available_metrics"])
+        available = set(financials["available_metrics"])
+        absent = {
+            "revenue",
+            "net_income",
+            "eps_basic",
+            "eps_diluted",
+            "cash",
+            "operating_cash_flow",
+            "capex",
+        } - available
         if absent:
-            labels = {
-                "revenue": "chiffre d’affaires",
-                "net_income": "résultat net",
-                "eps_basic": "BPA de base",
-                "eps_diluted": "BPA dilué",
-            }
             missing.append(
                 "Mesures SEC absentes de la couverture : "
-                + ", ".join(labels[metric] for metric in sorted(absent))
+                + ", ".join(METRIC_LABELS[metric] for metric in sorted(absent))
+            )
+        if not available.intersection(
+            {
+                "short_term_debt",
+                "debt_current",
+                "debt_noncurrent",
+                "long_term_debt",
+                "debt_leases_current",
+                "debt_leases_noncurrent",
+            }
+        ):
+            missing.append(
+                "Aucune mesure d’endettement couverte ; absence ne signifie pas dette nulle."
             )
         if financials["collection"]["status"] != "success":
             missing.append(
@@ -217,13 +270,14 @@ class OpportunityService:
             "generated_at": now,
             "favorable": favorable,
             "risks": risks,
+            "liquidity": liquidity_observations(financials["items"], now),
             "checks": checks,
             "upcoming": upcoming,
             "missing_data": missing,
             "coverage": {
                 "limited": limited,
                 "document_candidates_limit": 100,
-                "financial_observations_limit": 100,
+                "financial_observations_limit": 2000,
                 "calendar_limit": 1000,
             },
             "notice": "Fiche d’opportunité à examiner, sans recommandation d’achat "

@@ -231,7 +231,8 @@ dans `/analysis` : éléments favorables à examiner, risques documentés et que
 les observations conservées, sans appel IA supplémentaire ni score d’achat.
 
 Les fiches collectent aussi des [observations chiffrées SEC XBRL](docs/FINANCIAL_RESULTS.md) :
-chiffre d'affaires, résultat net et BPA US-GAAP, avec périodes exactes, unités et
+chiffre d'affaires, résultat net, BPA, trésorerie, dette et flux de trésorerie US-GAAP,
+avec distinction entre soldes à une date et flux sur une période, unités et
 dépôts sourcés. Les définitions et valeurs republiées restent séparées ; aucun
 écart au consensus n'est inventé.
 

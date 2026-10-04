@@ -13,6 +13,21 @@ Taxonomie `us-gaap`, concepts explicitement pris en charge :
   `RevenueFromContractWithCustomerIncludingAssessedTax`, `Revenues`, `SalesRevenueNet`.
 - Résultat net : `NetIncomeLoss`.
 - BPA : `EarningsPerShareBasic` et `EarningsPerShareDiluted`.
+- Soldes instantanés : `CashAndCashEquivalentsAtCarryingValue`, trésorerie incluant
+  fonds restreints `CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalents`,
+  `ShortTermBorrowings`, `LongTermDebtCurrent`, `LongTermDebtNoncurrent`,
+  `LongTermDebt`, et dettes avec crédit-bail
+  `LongTermDebtAndCapitalLeaseObligationsCurrent/Noncurrent`.
+- Flux : `NetCashProvidedByUsedInOperatingActivities`,
+  `NetCashProvidedByUsedInInvestingActivities`, `NetCashProvidedByUsedInFinancingActivities`
+  et paiements d'immobilisations `PaymentsToAcquirePropertyPlantAndEquipment`.
+
+La distinction instant/durée suit les concepts sélectionnés : un solde conserve
+`start=null` et s'affiche « solde au ». Une durée exige un début explicite. Aucun
+début égal à la fin n'est inventé pour un solde. Les soldes négatifs sont rejetés,
+les flux négatifs et montants nuls conservés. Les définitions suivent la
+[taxonomie US-GAAP FASB](https://xbrl.fasb.org/impdocs/OCI_TIG/othercompincome.htm).
+Il n'est calculé ni total de dette, ni dette nette, ni ratio, ni flux libre.
 
 Ces définitions ne sont ni fusionnées ni additionnées. Les taxonomies IFRS, les
 extensions spécifiques et les autres concepts restent hors couverture. Une
@@ -20,7 +35,8 @@ absence n'est pas un zéro. Les montants restent décimaux exacts dans leur devi
 sans conversion FX ; les BPA gardent l'unité explicite `devise/shares`.
 Les pertes et montants nuls sont valides.
 
-Chaque mesure garde début et fin de période, valeur, unité, concept, accession,
+Chaque mesure garde sa date de fin et, pour une durée, son début de période,
+ainsi que valeur, unité, concept, accession,
 formulaire, date du dépôt, contexte fiscal `fy/fp` et éventuel `frame` fournisseur.
 `fp=Q3` désigne le contexte du dépôt : il ne prouve pas que la mesure couvre un
 trimestre plutôt que neuf mois. Aucun trimestre ou montant annuel n'est déduit
@@ -53,6 +69,12 @@ par trois émetteurs, en priorité les moins récemment consultés. Cache de 24 
 après succès, cinq minutes après erreur. La réservation persistante partage le
 verrou et l'exclusion de collecte active avec les publications ciblées SEC.
 Aucun quota Alpha Vantage consommé. `SEC_USER_AGENT` garde un contact valide.
+
+La version de couverture `financial-v2` est conservée sur chaque collecte. Un
+succès de l'ancienne couverture permet une première consultation de la nouvelle,
+sans modifier les observations ou dates historiques. Les erreurs gardent leur
+délai de cinq minutes, quelle que soit la version. Un nouveau succès applique
+ensuite le cache normal de 24 heures. Les autres collecteurs restent inchangés.
 
 Une réponse est bornée à 12 Mo et 60 secondes, sans redirection ; 50 000 lignes
 maximum examinées sur les concepts sélectionnés. Seules les dates de dépôt sur

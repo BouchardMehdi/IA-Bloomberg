@@ -4,12 +4,19 @@ import time
 from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
-from sqlalchemy import String, cast, func, or_, select
+from sqlalchemy import String, cast, func, or_, select, update
 from sqlalchemy.dialects.postgresql import insert
 
 from app.collectors.company_sec import CompanyPublicationError
 from app.core.config import get_settings
-from app.market.sec_financials import CONCEPTS, FinancialRecord, SecFinancialClient
+from app.market.sec_financials import (
+    COLLECTOR_VERSION,
+    CONCEPTS,
+    INSTANT_CONCEPTS,
+    METRIC_LABELS,
+    FinancialRecord,
+    SecFinancialClient,
+)
 from app.models.collection_run import CollectionRun
 from app.models.financial_fact import FinancialFact
 from app.models.market import MarketInstrument
@@ -89,6 +96,7 @@ class FinancialResultsService:
                 "id": row.id,
                 "observed_at": row.observed_at,
                 **row.data,
+                "period_type": "instant" if row.data["concept"] in INSTANT_CONCEPTS else "duration",
                 "comparison": eps_comparison_guard(row.data),
             }
             for row in rows[:limit]
@@ -98,11 +106,13 @@ class FinancialResultsService:
             "next_offset": offset + limit if len(rows) > limit else None,
             "available_metrics": sorted(metrics),
             "supported_metrics": sorted(set(CONCEPTS.values())),
+            "metric_labels": METRIC_LABELS,
             "collection": {
                 "supported": bool(instrument.cik),
                 "cik": instrument.cik,
                 "scheduler_enabled": get_settings().financial_results_enabled,
                 "status": run.status if run else "pending",
+                "coverage_current": bool(run and run.collector_version == COLLECTOR_VERSION),
                 "error": run.error_message if run else None,
                 "started_at": run.started_at if run else None,
                 "fetched_count": run.fetched_count if run else 0,
@@ -145,8 +155,11 @@ class FinancialResultsService:
         if active:
             await self.session.commit()
             return {"status": "collection_in_progress"}
-        if previous and previous.started_at > now - timedelta(
-            minutes=1440 if previous.status == "success" else 5
+        if (
+            previous
+            and (previous.status != "success" or previous.collector_version == COLLECTOR_VERSION)
+            and previous.started_at
+            > now - timedelta(minutes=1440 if previous.status == "success" else 5)
         ):
             await self.session.commit()
             return {"status": "cached_or_retry_pending"}
@@ -170,6 +183,11 @@ class FinancialResultsService:
         ).scalar_one()
         repository = CollectionRunRepository(self.session)
         run_id = await repository.start(source_id, trigger, now)
+        await self.session.execute(
+            update(CollectionRun)
+            .where(CollectionRun.id == run_id)
+            .values(collector_version=COLLECTOR_VERSION)
+        )
         await self.session.commit()
         started = time.perf_counter()
         try:

@@ -16,6 +16,13 @@ Le classement existant conserve sa seule fonction de priorité de recherche.
 - **Données manquantes et travail restant** : couverture financière/documentaire,
   calendrier, cours, conversion USD, WLS et analyses nécessaires avant décision.
 
+Les flux d'exploitation positifs et négatifs enrichissent respectivement les
+éléments favorables à examiner et les risques, en conservant la période. Les flux
+d'investissement ou de financement négatifs ne sont pas classés automatiquement
+comme pertes. La rubrique « Trésorerie, dette et flux publiés » présente les
+observations les plus récentes par mesure, avec toutes leurs définitions et dépôts,
+sans addition ni ratio. Des dates différentes ne forment pas un bilan synthétique.
+
 Les arguments comptables conservent la fin de période la plus récente du résultat
 net dans les observations examinées, et tous les débuts de période, unités et
 dépôts correspondants. Un cumul n’est jamais transformé en trimestre. Les valeurs
@@ -42,7 +49,7 @@ fait favorable ou un risque avéré. Les faits enfants doivent avoir une preuve,
 une mention exploitable et une source datée non future ; leurs rôles et la
 couverture du texte restent affichés pour contrôle.
 
-La fiche examine au maximum 100 candidats documentaires, 100 observations
+La fiche examine au maximum 100 candidats documentaires, 2 000 observations
 financières et 1 000 observations de calendrier. Elle signale explicitement toute
 borne atteinte et n’est jamais présentée comme exhaustive. Les historiques
 complets restent consultables dans les rubriques spécialisées. Une rubrique vide
