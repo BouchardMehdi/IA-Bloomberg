@@ -21,6 +21,7 @@ class CalendarRecord(BaseModel):
     fiscal_period_end: date
     estimate: Decimal | None = Field(default=None, gt=-1_000_000, lt=1_000_000, decimal_places=6)
     currency: str
+    time_of_day: str | None = Field(default=None, max_length=50)
 
     @field_validator("currency")
     @classmethod
@@ -49,14 +50,20 @@ def parse_calendar(content: str, symbol: str) -> list[CalendarRecord]:
             raise MarketDataError("provider_quota")
         raise MarketDataError("provider_rejected")
     reader = csv.DictReader(io.StringIO(content))
-    if reader.fieldnames != [
+    required_columns = {
         "symbol",
         "name",
         "reportDate",
         "fiscalDateEnding",
         "estimate",
         "currency",
-    ]:
+    }
+    columns = reader.fieldnames or []
+    if (
+        len(columns) != len(set(columns))
+        or not required_columns.issubset(columns)
+        or set(columns) - required_columns - {"timeOfTheDay"}
+    ):
         raise MarketDataError("provider_invalid_response")
     records, keys = [], set()
     try:
@@ -69,6 +76,7 @@ def parse_calendar(content: str, symbol: str) -> list[CalendarRecord]:
                 fiscal_period_end=row["fiscalDateEnding"],
                 estimate=None if row["estimate"] in {"", "None", "null"} else row["estimate"],
                 currency=row["currency"],
+                time_of_day=row.get("timeOfTheDay") or None,
             )
             if record.symbol != symbol:
                 raise MarketDataError("symbol_mismatch")

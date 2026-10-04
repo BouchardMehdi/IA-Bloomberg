@@ -266,6 +266,8 @@ class EarningsService:
                     "eps": None,
                     "currency": None,
                 }
+                if record.time_of_day is not None:
+                    base["time_of_day"] = record.time_of_day
                 inserted += bool(
                     await self.persist(
                         instrument_id, {**base, "kind": "schedule"}, policy.provider, now

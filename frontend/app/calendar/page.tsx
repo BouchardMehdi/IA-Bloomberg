@@ -8,6 +8,7 @@ type Instrument = { id: string; symbol: string; exchange: string; name: string }
 type Observation = { id: string; kind: "schedule" | "estimate" | "reported"; provider: string;
   report_date: string; fiscal_period_end: string; period_type: string; basis: string;
   eps: string | null; currency: string | null; source_url: string;
+  time_of_day?: string | null;
   published_at: string | null; observed_at: string;
   comparison?: { status: string; reason?: string; delta?: string; percent?: string | null;
     estimate_source?: string; estimate_published_at?: string; notice?: string } };
@@ -116,6 +117,7 @@ export default function CalendarPage() {
         <h3 className="text-lg text-white">{labels[item.kind]} · {item.report_date}</h3>
         <p className="mt-2 text-sm">Période terminée le {item.fiscal_period_end} · {periods[item.period_type]} · {item.provider === "manual" ? "Saisie déclarative" : "Calendrier fournisseur, rattachement par symbole"}.</p>
         {item.eps !== null ? <p className="mt-2">BPA : {item.eps} {item.currency} · {bases[item.basis]}</p> : null}
+        {item.time_of_day ? <p className="mt-2 text-sm">Créneau indiqué par le fournisseur : {item.time_of_day} · fuseau horaire non fourni.</p> : null}
         <p className="mt-2 text-sm"><a href={item.source_url} target="_blank" rel="noreferrer" className="text-signal underline">Source</a> · {item.published_at ? `publiée le ${dateTime(item.published_at)}` : "date de publication non fournie par le fournisseur"} · première consultation {dateTime(item.observed_at)}.</p>
         {item.comparison ? <p className="mt-3 text-sm">{item.comparison.status === "comparable" ? <>Écart à l’estimation : {item.comparison.delta} {item.currency}{item.comparison.percent !== null ? ` (${item.comparison.percent} %)` : " · pourcentage indéfini : estimation nulle"}. <a href={item.comparison.estimate_source} target="_blank" rel="noreferrer" className="text-signal underline">Estimation source</a> du {dateTime(item.comparison.estimate_published_at!)}. {item.comparison.notice}</> : item.comparison.reason}</p> : null}
       </article>)}

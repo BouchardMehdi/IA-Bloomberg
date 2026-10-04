@@ -32,6 +32,10 @@ du quota ; elle ne représente pas tout le WLS.
 
 CSV borné à 1 Mo et 1 000 lignes ; symbole, dates, devise, nombres finis et
 provenance publique sans clé sont validés avant écriture de toute la réponse.
+Les six colonnes requises sont reconnues par leur nom, indépendamment de l'ordre.
+La colonne optionnelle `timeOfTheDay` est conservée et affichée telle que fournie,
+sans inventer de fuseau horaire ni d'heure exacte. Les colonnes manquantes,
+dupliquées ou non prises en charge restent refusées.
 Une réponse vide est un succès sans observation ; elle n'efface pas l'historique.
 Les erreurs persistées sont des codes fermés, sans corps fournisseur ni clé.
 

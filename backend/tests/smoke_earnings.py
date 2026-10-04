@@ -76,9 +76,9 @@ async def main():
                     calls.append(request)
                     return httpx.Response(
                         200,
-                        text="symbol,name,reportDate,fiscalDateEnding,estimate,currency\n"
+                        text="symbol,name,reportDate,fiscalDateEnding,estimate,currency,timeOfTheDay\n"
                         f"{instrument.symbol},Fixture,{today + timedelta(days=20)},"
-                        f"{today - timedelta(days=10)},0,USD\n",
+                        f"{today - timedelta(days=10)},0,USD,post-market\n",
                     )
 
                 client = EarningsCalendarClient(
@@ -105,6 +105,7 @@ async def main():
                 automatic = (await service.detail(identifier, 50, 0))["items"]
                 assert len(automatic) == 2
                 assert all(item["published_at"] is None for item in automatic)
+                assert all(item["time_of_day"] == "post-market" for item in automatic)
                 assert all("fixture-secret" not in item["source_url"] for item in automatic)
                 assert next(item for item in automatic if item["kind"] == "estimate")["eps"] == "0"
                 # Calendar freshness must never suppress the price request.

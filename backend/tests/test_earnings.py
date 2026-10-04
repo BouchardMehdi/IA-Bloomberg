@@ -53,6 +53,37 @@ def test_header_only_calendar_is_not_fake_data():
     assert parse_calendar(HEADER, "IBM") == []
 
 
+@pytest.mark.parametrize("time", ["post-market", "pre-market", ""])
+def test_calendar_accepts_provider_time_column(time):
+    content = HEADER.rstrip("\n") + ",timeOfTheDay\r\n"
+    content += csv_body().splitlines()[1] + f",{time}\r\n"
+    record = parse_calendar(content, "IBM")[0]
+    assert record.time_of_day == (time or None)
+    assert record.estimate == Decimal("0")
+    validate_calendar_batch([record], SOURCE, "IBM")
+
+
+def test_calendar_columns_can_be_reordered_without_changing_meaning():
+    content = "currency,timeOfTheDay,estimate,fiscalDateEnding,reportDate,name,symbol\n"
+    content += f"USD,post-market,-1.23,{PERIOD},{REPORT},IBM,IBM\n"
+    record = parse_calendar(content, "IBM")[0]
+    assert record.estimate == Decimal("-1.23")
+    assert record.fiscal_period_end == PERIOD
+
+
+@pytest.mark.parametrize(
+    "header",
+    [
+        HEADER.rstrip("\n") + ",currency\n",
+        HEADER.replace("fiscalDateEnding,", ""),
+        HEADER.rstrip("\n") + ",unexpected\n",
+    ],
+)
+def test_ambiguous_missing_or_unknown_columns_rejected(header):
+    with pytest.raises(MarketDataError):
+        parse_calendar(header, "IBM")
+
+
 def test_revalidate_provenance_and_mutated_last_record():
     records = parse_calendar(csv_body(), "IBM")
     for url in [
