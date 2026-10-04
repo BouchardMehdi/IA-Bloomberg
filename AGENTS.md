@@ -1,5 +1,12 @@
 # Instructions pour les agents
 
+La valorisation `/analysis` exige un BPA annuel GAAP dilué par titre explicitement
+documenté pour la séance, sans attribution automatique d’un BPA SEC d’émetteur.
+Les preuves manuelles restent déclarées, pas certifiées par leur saisie. Ne pas
+annualiser un trimestre, inventer un ratio d’ADR ou qualifier un prix sans référence
+comparable sourcée. Le rendement bénéficiaire n’est pas un rendement futur.
+Voir docs/VALUATION.md.
+
 Les comparaisons temporelles SEC exigent même concept, unité, durée exacte et
 présentation dans le même dépôt. Ne pas revenir à un ancien dépôt pour contourner
 une comparaison manquante ou ambiguë. Base nulle/négative : aucun pourcentage.

@@ -9,8 +9,10 @@ from app.models.financial_fact import FinancialFact
 from app.models.market import DailyPrice, FxCollectionRun, FxRate, MarketFetchRun, MarketInstrument
 from app.models.portfolio import PaperPortfolio, PaperPosition, PaperTrade
 from app.models.source import Source
+from app.models.valuation import ValuationObservation
 
 __all__ = [
+    "ValuationObservation",
     "AnalysisPassage",
     "Article",
     "AnalysisRun",

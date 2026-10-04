@@ -225,6 +225,11 @@ Les pipelines BCE, Fed et SEC collectent les flux puis le texte des documents of
 
 ## Analyses des titres
 
+La [valorisation par les bénéfices](docs/VALUATION.md) calcule un PER annuel avec
+clôture locale et BPA dilué sourcé explicitement compatible avec le titre. Une
+référence sourcée permet de comparer les multiples ; données manquantes ou
+incompatibles bloquent le calcul. Aucun seuil universel de prix attractif.
+
 La [comparaison des résultats dans le temps](docs/FINANCIAL_TRENDS.md) présente
 les variations du chiffre d'affaires et du résultat net entre périodes de même
 durée dans le même dépôt SEC. Les unités, définitions et sources restent visibles ;

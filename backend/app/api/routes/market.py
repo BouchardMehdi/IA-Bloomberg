@@ -14,6 +14,7 @@ from app.market.earnings_calendar import EarningsCalendarClient
 from app.schemas.earnings import EarningsInput
 from app.schemas.international import FxRateCreate, InternationalInstrumentCreate, LocalPriceCreate
 from app.schemas.market import InstrumentCreate, PaperOrder, PortfolioCreate
+from app.schemas.valuation import ValuationInput
 from app.services.company_publications import CompanyPublicationService
 from app.services.earnings import EarningsService
 from app.services.financial_results import FinancialResultsService
@@ -25,6 +26,7 @@ from app.services.market_data import MarketDataService
 from app.services.opportunity import OpportunityService
 from app.services.paper_portfolio import PaperPortfolioService
 from app.services.research_ranking import ResearchRankingService
+from app.services.valuation import ValuationService
 
 router = APIRouter()
 Db = Annotated[AsyncSession, Depends(get_db_session)]
@@ -78,6 +80,25 @@ async def financial_trends(instrument_id: UUID, session: Db):
     if result is None:
         raise HTTPException(404, "Titre introuvable.")
     return market_response(result)
+
+
+@router.get("/instruments/{instrument_id}/valuation")
+async def valuation(instrument_id: UUID, session: Db):
+    result = await ValuationService(session).detail(instrument_id)
+    if result is None:
+        raise HTTPException(404, "Titre introuvable.")
+    return market_response(result)
+
+
+@router.post("/instruments/{instrument_id}/valuation", status_code=201)
+async def add_valuation(instrument_id: UUID, request: ValuationInput, session: Db):
+    try:
+        return market_response(await ValuationService(session).add(instrument_id, request), 201)
+    except LookupError as exc:
+        raise HTTPException(404, str(exc)) from None
+    except ValueError as exc:
+        await session.rollback()
+        raise HTTPException(400, str(exc)) from None
 
 
 @router.post("/instruments/{instrument_id}/publications/collect")

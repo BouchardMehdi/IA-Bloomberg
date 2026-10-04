@@ -7,6 +7,7 @@ import { ResearchRanking } from "./research-ranking";
 import { CompanyPublications } from "./company-publications";
 import { FinancialResults } from "./financial-results";
 import { FinancialTrends } from "./financial-trends";
+import { Valuation } from "./valuation";
 import { Opportunity } from "./opportunity";
 
 const api = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
@@ -79,6 +80,7 @@ export default function AnalysisPage() {
     {selected ? <CompanyPublications key={selected} instrumentId={selected} onCollected={() => navigate(selected, 0)} /> : null}
     {selected ? <FinancialResults key={`financial-${selected}`} instrumentId={selected} /> : null}
     {selected ? <FinancialTrends key={`trends-${selected}-${revision}`} instrumentId={selected} /> : null}
+    {selected ? <Valuation key={`valuation-${selected}-${revision}`} instrumentId={selected} /> : null}
     {result ? <>
       <section className="my-6 rounded-xl border border-white/10 p-5">
         <p className="text-sm text-amber-300">{result.instrument.wls_eligibility.status === "verified" ? "Titre présent dans l’export WLS importé." : "Éligibilité WLS non vérifiée : nouveaux achats simulés bloqués."}</p>
