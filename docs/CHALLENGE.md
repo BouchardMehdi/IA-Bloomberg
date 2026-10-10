@@ -1,7 +1,7 @@
 # Règles du challenge communiquées par l'utilisateur
 
-Informations reçues le 3 octobre 2026 ; le règlement et l'export officiel restent
-à fournir.
+Informations reçues depuis le 3 octobre 2026 ; le règlement reste à fournir.
+Une liste WLS partielle a été transmise le 10 octobre 2026 (voir ci-dessous).
 
 - Capital initial : 1 000 000 USD.
 - Actions uniquement, positions longues ; pas de levier, de vente à découvert,
@@ -20,8 +20,8 @@ Informations reçues le 3 octobre 2026 ; le règlement et l'export officiel rest
 
 Les frais, dates, plafonds par position, traitement des dividendes/splits et marchés
 précis restent à confirmer. Les taux, horaires et conventions de conversion utilisés
-par Bloomberg ne sont pas encore connus. L'utilisateur essaiera d'obtenir la liste
-WLS lundi ; aucun fichier ni date de livraison ferme n'est encore disponible.
+par Bloomberg ne sont pas encore connus. La liste complète et les dates de
+composition des exports restent à fournir.
 
 ## Liens publics de l'indice
 
@@ -57,6 +57,36 @@ désormais être fournis explicitement pour valoriser et simuler en USD. Leur
 collecte automatique reste à connecter ; aucun titre ni taux fictif n'est ajouté.
 
 ## Importer l'univers
+
+### Liste partielle reçue le 10 octobre 2026
+
+L'utilisateur confirme que le classeur transmis par son collègue est sa liste
+WLS disponible. Il contient 3 000 identifiants Bloomberg distincts dans
+`Feuil1!A1:A3000`, sans en-tête ni doublon. Cette origine est déclarée par
+l'utilisateur, sans authentification automatique du fichier. La date de
+composition et l'URL de l'export ne sont pas fournies. Les dates techniques du
+classeur ne sont pas utilisées comme dates de composition de l'indice.
+
+La préparation locale est conservée dans
+`private-data/wls/wls-partial-2026-10-10.json`, hors Git. Elle garde chaque
+identifiant original, sa cellule source, les zéros initiaux, le hash SHA-256 du
+classeur et la date de lecture. Elle indique explicitement sa couverture
+partielle et laisse les correspondances de cotation absentes.
+
+Ce fichier de préparation n'est pas encore un import d'éligibilité dans
+`wls_universe`. Un code Bloomberg comme `US` ne désigne pas automatiquement
+NYSE ou Nasdaq. Le champ Bloomberg `Equity` est conservé comme secteur Bloomberg,
+sans remplacer la validation du type d'instrument exigée par l'import.
+Le rapprochement doit conserver le titre et sa cotation exacts ; aucun CIK,
+marché, devise ou symbole fournisseur n'est deviné. L'absence d'un titre dans
+cette liste partielle ne prouve pas son exclusion du WLS.
+
+L'effectif d'environ 10 400 titres et la couverture de 99 % de la capitalisation
+mondiale restent des indications transmises par l'utilisateur sur l'univers
+complet, sans mesure déduite de ces 3 000 lignes. Les prochains exports devront
+garder leur propre date de composition et leur provenance.
+
+### Import de cotations rapprochées
 
 Ne pas reconstruire WLS depuis la SEC ni depuis une liste publique approximative.
 L'import utilise un export que l'utilisateur est autorisé à exploiter, normalisé
