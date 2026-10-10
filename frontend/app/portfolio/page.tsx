@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { UsdQuoteDetails, type UsdQuote } from "../usd-quote";
+import { WlsCandidates } from "./wls-candidates";
 
 const api = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
 type Money = string | number;
@@ -118,6 +119,7 @@ export default function PortfolioPage() {
       </tbody></table></div>
       {!market?.items.length ? <p className="mt-3 text-sm text-slate-500">Ajoute les tickers que tu souhaites observer. Cette liste n’est pas une recommandation d’investissement.</p> : null}
     </section>
+    <WlsCandidates instruments={market?.items ?? []} />
     <section className="mt-6 rounded-2xl border border-white/10 p-5">
       <h2 className="font-display text-xl text-white">Configurer une simulation</h2>
       <form className="mt-4 grid gap-3 sm:grid-cols-3" onSubmit={(e) => { e.preventDefault(); act(async () => {

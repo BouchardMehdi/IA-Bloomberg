@@ -88,6 +88,36 @@ garder leur propre date de composition et leur provenance.
 
 ### Import de cotations rapprochées
 
+La préparation est désormais consultable dans `/portfolio`, avec recherche,
+pagination et compteur de correspondances. Elle utilise un registre distinct
+`wls_candidates` en PostgreSQL et ne remplace jamais `wls_universe`.
+
+```powershell
+docker compose cp ./private-data/wls/wls-partial-2026-10-10.json backend:/tmp/wls-partial.json
+docker compose exec backend python -m app.cli.import_wls_candidates --file /tmp/wls-partial.json
+```
+
+L'import valide le manifeste et conserve le hash, la provenance déclarée et les
+cellules sources. Une reprise du même fichier conserve les correspondances déjà
+saisies. Un autre hash est refusé pour préserver cet instantané ; le remplacement
+par une nouvelle composition et son historique restent à implémenter. L'URN
+SHA-256 interne identifie le fichier local, sans prétendre être une URL officielle.
+
+`GET /api/v1/market/wls-candidates` accepte `search`, `offset` et `limit` (maximum
+100). `POST /api/v1/market/wls-candidates/mappings` déclare une correspondance avec
+un titre suivi : identifiant Bloomberg exact, identifiant du titre, URL sans
+paramètres secrets, date de la source, justification et confirmation explicite.
+Une suggestion vient uniquement d'un identifiant Bloomberg déjà saisi sur le
+titre ; aucun rapprochement par ticker seul ou émetteur n'est effectué. Les
+déclarations conservent l'identité exacte du titre et leur date de saisie. Une
+déclaration contradictoire ou un remplacement est refusé ; une identité modifiée
+est signalée en conflit. La saisie ne certifie pas le contenu des preuves.
+
+Ces correspondances préparent la normalisation. Elles ne modifient ni les
+identités suivies, ni les collecteurs, ni l'éligibilité des achats simulés. La date
+de la preuve de correspondance ne devient jamais la date de composition WLS.
+L'import d'éligibilité ci-dessous exige encore une composition datée et sa source.
+
 Ne pas reconstruire WLS depuis la SEC ni depuis une liste publique approximative.
 L'import utilise un export que l'utilisateur est autorisé à exploiter, normalisé
 en CSV UTF-8 avec les colonnes suivantes :

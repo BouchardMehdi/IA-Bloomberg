@@ -15,6 +15,7 @@ from app.schemas.earnings import EarningsInput
 from app.schemas.international import FxRateCreate, InternationalInstrumentCreate, LocalPriceCreate
 from app.schemas.market import InstrumentCreate, PaperOrder, PortfolioCreate
 from app.schemas.valuation import ValuationInput
+from app.schemas.wls_candidates import CandidateMapping
 from app.services.company_publications import CompanyPublicationService
 from app.services.earnings import EarningsService
 from app.services.financial_results import FinancialResultsService
@@ -27,6 +28,7 @@ from app.services.opportunity import OpportunityService
 from app.services.paper_portfolio import PaperPortfolioService
 from app.services.research_ranking import ResearchRankingService
 from app.services.valuation import ValuationService
+from app.services.wls_candidates import WlsCandidateService
 
 router = APIRouter()
 Db = Annotated[AsyncSession, Depends(get_db_session)]
@@ -42,6 +44,28 @@ def market_response(data: dict, status_code: int = 200) -> JSONResponse:
 @router.get("/instruments")
 async def instruments(session: Db):
     return market_response(await MarketDataService(session).list_instruments())
+
+
+@router.get("/wls-candidates")
+async def wls_candidates(
+    session: Db,
+    search: Annotated[str, Query(max_length=100)] = "",
+    offset: Annotated[int, Query(ge=0, le=20000)] = 0,
+    limit: Annotated[int, Query(ge=1, le=100)] = 50,
+):
+    return market_response(await WlsCandidateService(session).detail(search, offset, limit))
+
+
+@router.post("/wls-candidates/mappings")
+async def map_wls_candidate(request: CandidateMapping, session: Db):
+    try:
+        return market_response(await WlsCandidateService(session).map_listing(request))
+    except LookupError as exc:
+        await session.rollback()
+        raise HTTPException(404, str(exc)) from None
+    except ValueError as exc:
+        await session.rollback()
+        raise HTTPException(400, str(exc)) from None
 
 
 @router.get("/instruments/{instrument_id}/publications/collection")

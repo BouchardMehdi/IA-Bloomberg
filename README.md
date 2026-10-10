@@ -264,3 +264,10 @@ Elle propose aussi un [classement des titres à examiner](docs/RESEARCH_RANKING.
 avec score explicable, preuves et points à vérifier, sans appel IA supplémentaire.
 Les états des cours, taux et WLS sont affichés séparément ; ce classement ne
 constitue pas une recommandation d'achat ni une prévision de rentabilité.
+
+La page <http://localhost:3000/portfolio> permet aussi de consulter la
+[liste WLS partielle fournie](docs/CHALLENGE.md), rechercher ses identifiants
+Bloomberg et documenter leurs correspondances avec des cotations suivies.
+La date de composition reste inconnue ; cette préparation ne débloque pas les
+achats simulés. Le fichier privé reste hors Git et se charge avec la commande
+`app.cli.import_wls_candidates` décrite dans la documentation.
