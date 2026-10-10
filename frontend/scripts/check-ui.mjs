@@ -55,6 +55,17 @@ function payload(url) {
   const paged = items => ({ items: items.slice(offset, offset + limit), total: items.length, limit, offset,
     next_offset: offset + limit < items.length ? offset + limit : null });
   if (path === "/health/live") return { status: "ok" };
+  if (path === "/auth/me") return { auth_enabled: false, user: null };
+  if (path === "/auth/users") return { items: [] };
+  if (path === "/workspace/alerts") return { ...paged(mode === "empty" ? [] : many(29, i => ({
+    id: `alert-${i}`, kind: "publication", title: `Nouvelle publication ${i}`, message: "Source à examiner, sans signal d’achat.",
+    read: false, created_at: stamp, published_at: stamp, url: source, page: "/analysis",
+  }))), unread_count: mode === "empty" ? 0 : 29, notice: "Alertes de test." };
+  if (path === "/workspace/proposals") return { items: [], next_offset: null };
+  if (path === "/workspace/import-status") return { enabled: false, items: [] };
+  if (path.endsWith("/report")) return { allocation: { sector: [], country: [], currency: [], security: [],
+    cash: { value_usd: "1000000", weight_pct: "100" }, status: "available" }, profiles: {},
+    benchmark_series: [], history_limited: false, comparison: { status: "unavailable", reason: "Historique d’indice absent." }, notice: "Répartition de test." };
   if (path === "/collection-runs") return { items: [], total: 0 };
   if (path === "/articles") return paged(mode === "empty" ? [] : articles);
   if (path === "/events") return paged(mode === "empty" ? [] : events);
@@ -106,12 +117,13 @@ async function fixtureRoute(route) {
   const request = route.request(), url = new URL(request.url());
   requests.push(url);
   assert.equal(request.method(), "GET", "UI verification must never write to the API");
-  await route.fulfill({ status: mode === "error" ? 503 : 200, contentType: "application/json",
-    headers: { "Access-Control-Allow-Origin": "*" }, body: JSON.stringify(mode === "error" ? { detail: "Service indisponible." } : payload(url)) });
+  const error = mode === "error" && !url.pathname.endsWith("/auth/me");
+  await route.fulfill({ status: error ? 503 : 200, contentType: "application/json",
+    headers: { "Access-Control-Allow-Origin": new URL(base).origin, "Access-Control-Allow-Credentials": "true" }, body: JSON.stringify(error ? { detail: "Service indisponible." } : payload(url)) });
 }
 await page.route("**/api/v1/**", fixtureRoute);
-const paths = ["/", "/analysis", "/calendar", "/portfolio", "/coverage", "/international"];
-const names = ["Veille", "Analyser", "Calendrier", "Portefeuille", "Qualité des données", "International"];
+const paths = ["/", "/analysis", "/calendar", "/portfolio", "/coverage", "/international", "/alerts", "/settings"];
+const names = ["Veille", "Analyser", "Calendrier", "Portefeuille", "Qualité des données", "International", "Alertes", "Mon espace"];
 const widths = process.env.UI_CHECK_WIDTHS?.split(",").map(Number) ?? [1440, 768, 390, 320];
 let checked = 0;
 async function settled() { await page.waitForLoadState("networkidle"); }
@@ -178,13 +190,13 @@ try {
       assert.equal(await pageTutorial.locator("ol li").count(), 3);
       if (width >= 1024) {
         const nav = page.getByRole("navigation", { name: "Navigation principale", exact: true });
-        assert.equal(await nav.getByRole("link").count(), 6);
+        assert.equal(await nav.getByRole("link").count(), paths.length);
         assert.equal(await nav.locator('[aria-current="page"]').count(), 1);
       } else {
         await page.getByRole("button", { name: "Ouvrir la navigation" }).click();
         const nav = page.getByRole("navigation", { name: "Navigation mobile", exact: true });
-        assert.equal(await nav.getByRole("link").count(), 6);
-        assert.equal(await nav.locator('[aria-current="page"]').textContent().then(t => t.trim()), names[i]);
+        assert.equal(await nav.getByRole("link").count(), paths.length);
+        assert((await nav.locator('[aria-current="page"]').textContent()).trim().startsWith(names[i]));
         await nav.getByRole("link").first().focus(); await page.keyboard.press("Escape");
         assert.equal(await nav.isVisible(), false);
         assert.equal(await page.getByRole("button", { name: "Ouvrir la navigation" }).evaluate(e => e === document.activeElement), true);
@@ -244,14 +256,14 @@ try {
   await switchSection("Cours et taux"); await next("taux").click(); assert.match(await pager("taux").innerText(), /9–16 sur 19/); await screen("mobile-taux");
 
   mode = "empty";
-  for (const path of ["/", "/analysis", "/portfolio", "/calendar"]) { await page.goto(`${base}${path}`); await screen(`empty-${path.slice(1) || "veille"}`); }
+  for (const path of ["/", "/analysis", "/portfolio", "/calendar", "/alerts"]) { await page.goto(`${base}${path}`); await screen(`empty-${path.slice(1) || "veille"}`); }
   mode = "error";
   for (const path of paths) { await page.goto(`${base}${path}`); await screen(`error-${path.slice(1) || "veille"}`); }
   assert.deepEqual(unexpected, [], "All API requests have fixtures");
   assert.deepEqual(browserErrors, [], "No uncaught browser errors");
   for (const endpoint of ["articles", "events", "research-ranking", "wls-candidates", "financials", "earnings", "research"])
     assert(requests.some(u => u.pathname.endsWith(`/${endpoint}`) && Number(u.searchParams.get("offset")) > 0), `${endpoint}: server pagination exercised`);
-  console.log(`UI checks passed: ${checked} screens, six routes, ${widths.length} widths, tutorials (persistence, keyboard, tabs and blocked storage), navigation, pagination, filters and empty/error states. Screenshots: ${screenshotDir}`);
+  console.log(`UI checks passed: ${checked} screens, eight routes, ${widths.length} widths, tutorials (persistence, keyboard, tabs and blocked storage), navigation, pagination, filters and empty/error states. Screenshots: ${screenshotDir}`);
 } catch (error) {
   await page.screenshot({ path: `${screenshotDir}/failure.png` });
   console.error("Failed screen:", page.url(), await page.locator("main").innerText());

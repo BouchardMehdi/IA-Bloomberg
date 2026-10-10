@@ -1,0 +1,20 @@
+services:
+  backup:
+    build: ./deploy/backup
+    environment:
+      PGHOST: postgres
+      PGDATABASE: ${POSTGRES_DB:-market_ai}
+      PGUSER: ${POSTGRES_USER:-market_ai}
+      PGPASSWORD: ${POSTGRES_PASSWORD:-change-me}
+      BACKUP_RECIPIENT: ${BACKUP_RECIPIENT:?Set your public age recipient}
+      BACKUP_INTERVAL_SECONDS: ${BACKUP_INTERVAL_SECONDS:-86400}
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-14}
+      BACKUP_ONCE: ${BACKUP_ONCE:-false}
+    volumes:
+      - ./private-data/backups:/backups
+    tmpfs:
+      - /tmp:size=1g,mode=1777
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped

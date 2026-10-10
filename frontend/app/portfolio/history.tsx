@@ -1,9 +1,11 @@
 "use client";
 
+import { apiFetch } from "../lib/api";
+
 import { Pagination, usePagination } from "../components/ui";
 import { useEffect, useState } from "react";
 
-const api = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
+const api = process.env.NEXT_PUBLIC_API_URL ?? "/api/v1";
 type Point = { id: string; date: string; observed_at: string; status: string;
   total_value: string | null; return_pct: string | null; cash: string;
   positions: Array<{ symbol: string; exchange: string; quantity: number; source_url: string | null;
@@ -18,7 +20,7 @@ export function PortfolioHistory({ portfolioId, revision }: { portfolioId: strin
   const [refresh, setRefresh] = useState(0);
   useEffect(() => {
     const controller = new AbortController();
-    fetch(`${api}/market/portfolios/${portfolioId}/history`, { cache: "no-store", signal: controller.signal })
+    apiFetch(`${api}/market/portfolios/${portfolioId}/history`, { cache: "no-store", signal: controller.signal })
       .then(async r => { if (!r.ok) throw new Error("Historique indisponible."); return r.json(); })
       .then((d: History) => { setData(d); setError(""); })
       .catch((e: Error) => { if (!controller.signal.aborted) setError(e.message); });
@@ -45,7 +47,7 @@ export function PortfolioHistory({ portfolioId, revision }: { portfolioId: strin
     <div className="flex flex-wrap items-center justify-between gap-3"><h3 className="text-lg text-white">Historique de la simulation</h3>
       <button disabled={busy} className="text-sm text-signal underline disabled:opacity-40" onClick={async () => {
         setBusy(true); setError("");
-        try { const r = await fetch(`${api}/market/portfolios/${portfolioId}/history`, { method: "POST" });
+        try { const r = await apiFetch(`${api}/market/portfolios/${portfolioId}/history`, { method: "POST" });
           if (!r.ok) throw new Error("Enregistrement impossible."); setRefresh(v => v + 1);
         } catch (e) { setError(e instanceof Error ? e.message : "Erreur."); } finally { setBusy(false); }
       }}>Enregistrer un instantané maintenant</button></div>

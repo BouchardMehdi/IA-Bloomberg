@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 
 import "./globals.css";
+import { AccessProvider } from "./components/access-provider";
 import { AppShell } from "./components/app-shell";
 
 export const metadata: Metadata = {
@@ -16,7 +17,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="fr">
-      <body><AppShell>{children}</AppShell></body>
+      <body><AccessProvider><AppShell>{children}</AppShell></AccessProvider></body>
     </html>
   );
 }

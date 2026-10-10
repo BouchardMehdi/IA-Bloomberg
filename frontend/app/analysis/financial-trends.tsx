@@ -1,8 +1,10 @@
 "use client";
 
+import { apiFetch } from "../lib/api";
+
 import { useEffect, useState } from "react";
 
-const api = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
+const api = process.env.NEXT_PUBLIC_API_URL ?? "/api/v1";
 type Snapshot = { value: string | null; start: string; end: string;
   sources: { id: string; url: string; filed: string; accession: string; value: string }[] };
 type Trend = { metric: string; concept: string; unit: string; status: string;
@@ -19,7 +21,7 @@ export function FinancialTrends({ instrumentId }: { instrumentId: string }) {
   const [revision, setRevision] = useState(0);
   useEffect(() => {
     const controller = new AbortController();
-    fetch(`${api}/market/instruments/${instrumentId}/financial-trends`, { cache: "no-store", signal: controller.signal })
+    apiFetch(`${api}/market/instruments/${instrumentId}/financial-trends`, { cache: "no-store", signal: controller.signal })
       .then(async (r) => { if (!r.ok) throw new Error("Comparaisons indisponibles."); return r.json() as Promise<Data>; })
       .then((result) => { if (!controller.signal.aborted) setData(result); })
       .catch((e: Error) => { if (!controller.signal.aborted) setError(e.message); });

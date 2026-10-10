@@ -1,10 +1,12 @@
 "use client";
 
+import { apiFetch } from "../lib/api";
+
 import { Pagination } from "../components/ui";
 import { useEffect, useState } from "react";
 import { UsdQuoteDetails, type UsdQuote } from "../usd-quote";
 
-const api = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
+const api = process.env.NEXT_PUBLIC_API_URL ?? "/api/v1";
 type RankedFact = { event_id: string; title: string; summary: string | null; evidence: string;
   published_at: string; relationship: { basis: string; role: string };
   date_reference: { url: string; published_at: string };
@@ -33,7 +35,7 @@ export function ResearchRanking({ onSelect }: { onSelect: (id: string) => void }
   }
   useEffect(() => {
     const controller = new AbortController();
-    fetch(`${api}/market/research-ranking?limit=5&offset=${offset}`, { cache: "no-store", signal: controller.signal })
+    apiFetch(`${api}/market/research-ranking?limit=5&offset=${offset}`, { cache: "no-store", signal: controller.signal })
       .then(async (response) => {
         if (!response.ok) throw new Error("Impossible de charger le classement.");
         return response.json() as Promise<Ranking>;

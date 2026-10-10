@@ -1,14 +1,17 @@
 "use client";
 
+import { apiFetch } from "../lib/api";
+
 import Link from "next/link";
 import { PageHeader, Guide, SectionSwitch, Pagination, usePagination } from "../components/ui";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { UsdQuoteDetails, type UsdQuote } from "../usd-quote";
 import { WlsCandidates } from "./wls-candidates";
+import { PortfolioReport } from "./report";
 import { PortfolioHistory } from "./history";
 import { PortfolioActions } from "./actions";
 
-const api = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
+const api = process.env.NEXT_PUBLIC_API_URL ?? "/api/v1";
 type Money = string | number;
 type Instrument = { id: string; symbol: string; name: string; exchange: string; currency: string;
   quote_multiplier: string; price_provider: string; usd_valuation: UsdQuote;
@@ -33,7 +36,7 @@ const button = "rounded-lg bg-signal px-4 py-2 text-sm font-semibold text-slate-
 const usd = (v: Money | null) => v === null ? "Indisponible" : new Intl.NumberFormat("fr-FR", { style: "currency", currency: "USD" }).format(Number(v));
 
 async function request<T>(path: string, body?: unknown): Promise<T> {
-  const response = await fetch(`${api}/market${path}`, body === undefined ? { cache: "no-store" } : {
+  const response = await apiFetch(`${api}/market${path}`, body === undefined ? { cache: "no-store" } : {
     method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
   });
   const payload = await response.json();
@@ -178,6 +181,7 @@ export default function PortfolioPage() {
         <h3 id="portfolio-positions" className="mb-2 text-white">Positions</h3><div className="overflow-x-auto"><table className="responsive-table w-full text-left text-sm"><thead className="text-slate-500"><tr><th>Titre</th><th>Quantité</th><th>Coût frais inclus</th><th>Valeur</th><th>Gain/perte latent</th></tr></thead><tbody>{positions.items.map((p) => <tr key={p.instrument_id} className="border-t border-white/10"><td data-label="Titre" className="py-2"><div>{p.symbol} · {p.exchange}</div></td><td data-label="Quantité"><div>{p.quantity}</div></td><td data-label="Coût frais inclus"><div>{usd(p.cost_basis)}</div></td><td data-label="Valeur"><div>{usd(p.value)}</div></td><td data-label="Gain/perte latent"><div>{usd(p.unrealized_pnl)}</div></td></tr>)}</tbody></table></div>
         <Pagination page={positions.page} pageSize={10} total={positions.total} onChange={positions.onChange} label="positions" targetId="portfolio-positions" />
         {!portfolio.positions.length ? <p className="text-sm text-slate-500">Aucune position ouverte.</p> : null}
+        <PortfolioReport portfolioId={selected} revision={JSON.stringify([portfolio.cash, portfolio.total_value, portfolio.trades[0]?.id])} />
         <PortfolioHistory key={selected} portfolioId={selected} revision={JSON.stringify([portfolio.cash, portfolio.total_value, portfolio.trades[0]?.id])} />
         <PortfolioActions key={`${selected}-actions`} portfolioId={selected} instruments={market?.items ?? []} onChange={async () => { setPortfolio(await request<Portfolio>(`/portfolios/${selected}`)); }} />
         <h3 id="portfolio-trades" className="mb-2 mt-5 text-white">Dernières opérations</h3><ul className="space-y-2 text-sm">{trades.items.map((t) => <li key={t.id} className="border-t border-white/10 pt-2">{t.side === "buy" ? "Achat" : "Vente"} simulé · {t.quantity} {t.symbol} × {usd(t.price)} · Frais {usd(t.fee)}<span className="block text-xs text-slate-500">Enregistré le {new Date(t.executed_at).toLocaleString("fr-FR")} · <a className="underline" href={t.quote_source_url} target="_blank" rel="noreferrer">Clôture du {t.quote_date}</a></span>{t.conversion ? <span className="block text-xs text-slate-400">Cours local {t.conversion.local_close} × {t.conversion.quote_multiplier} {t.conversion.currency} · 1 {t.conversion.currency} = {t.conversion.usd_per_unit} USD · {t.conversion.fx_source_url ? <a href={t.conversion.fx_source_url} target="_blank" rel="noreferrer" className="underline">taux du {t.conversion.fx_date}</a> : "devise USD"}</span> : null}</li>)}</ul>

@@ -1,9 +1,11 @@
 "use client";
 
+import { apiFetch } from "../lib/api";
+
 import { Pagination, usePagination } from "../components/ui";
 import { useEffect, useState } from "react";
 
-const api = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
+const api = process.env.NEXT_PUBLIC_API_URL ?? "/api/v1";
 const input = "w-full rounded-lg border border-white/15 bg-slate-950 p-2 text-sm text-white";
 type Action = { id: string; symbol: string; exchange: string; kind: string; effective_date: string;
   quantity_entitled: number; quantity_after?: number; cash_delta: string;
@@ -22,7 +24,7 @@ export function PortfolioActions({ portfolioId, instruments, onChange }: {
   const [revision, setRevision] = useState(0);
   useEffect(() => {
     const controller = new AbortController();
-    fetch(`${api}/market/portfolios/${portfolioId}/actions`, { cache: "no-store", signal: controller.signal })
+    apiFetch(`${api}/market/portfolios/${portfolioId}/actions`, { cache: "no-store", signal: controller.signal })
       .then(async r => { if (!r.ok) throw new Error("Opérations sur titres indisponibles."); return r.json(); })
       .then(d => setActions(d.items)).catch((e: Error) => { if (!controller.signal.aborted) setError(e.message); });
     return () => controller.abort();
@@ -39,7 +41,7 @@ export function PortfolioActions({ portfolioId, instruments, onChange }: {
         published_at: new Date(String(f.get("published_at"))).toISOString(), note: f.get("note"), confirmed: true,
         ...(kind === "dividend" ? { payment_date: f.get("payment_date"), currency: i?.currency,
           net_amount_per_security: f.get("amount") } : { numerator: Number(f.get("numerator")), denominator: Number(f.get("denominator")) }) };
-      try { const r = await fetch(`${api}/market/portfolios/${portfolioId}/actions/${instrument}`, {
+      try { const r = await apiFetch(`${api}/market/portfolios/${portfolioId}/actions/${instrument}`, {
         method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
         const d = await r.json(); if (!r.ok) throw new Error(typeof d.detail === "string" ? d.detail : "Vérifie les données et dates.");
         setNotice(d.inserted ? "Opération enregistrée, portefeuille actualisé." : "Opération déjà enregistrée, aucun doublon.");

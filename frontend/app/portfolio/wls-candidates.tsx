@@ -1,10 +1,12 @@
 "use client";
 
+import { apiFetch } from "../lib/api";
+
 import Link from "next/link";
 import { Pagination } from "../components/ui";
 import { useEffect, useState } from "react";
 
-const api = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
+const api = process.env.NEXT_PUBLIC_API_URL ?? "/api/v1";
 type Instrument = { id: string; symbol: string; exchange: string; name: string };
 type Mapping = { instrument: Instrument; source_url: string; as_of: string; note: string; observed_at: string };
 type Row = { bloomberg_identifier: string; source_cell: string; mapping_status: string;
@@ -35,7 +37,7 @@ export function WlsCandidates({ instruments, onRefresh }: { instruments: Instrum
   const [batch, setBatch] = useState("");
   useEffect(() => {
     const controller = new AbortController();
-    fetch(`${api}/market/wls-candidates?search=${encodeURIComponent(query)}&offset=${offset}&limit=10`,
+    apiFetch(`${api}/market/wls-candidates?search=${encodeURIComponent(query)}&offset=${offset}&limit=10`,
       { signal: controller.signal, cache: "no-store" }).then(async (response) => {
         if (!response.ok) throw new Error("Liste WLS indisponible.");
         return response.json() as Promise<Snapshot>;
@@ -56,7 +58,7 @@ export function WlsCandidates({ instruments, onRefresh }: { instruments: Instrum
       <div className="mt-3 flex gap-4 text-sm text-signal"><button disabled={busy} className="underline disabled:opacity-40" onClick={async () => {
         setBusy(true); setError(""); setMessage("");
         try {
-          const response = await fetch(`${api}/market/wls-candidates/collect`, { method: "POST" });
+          const response = await apiFetch(`${api}/market/wls-candidates/collect`, { method: "POST" });
           const payload = await response.json();
           if (!response.ok) throw new Error(typeof payload.detail === "string" ? payload.detail : "Collecte indisponible.");
           setMessage(payload.status === "waiting" ? "Une collecte est déjà en cours ou une reprise est planifiée." : payload.status === "failed" ? "Le fournisseur n’a pas répondu correctement ; reprise automatique planifiée." : `Lot terminé : ${payload.attempted} requêtes d’identification.`);
@@ -108,7 +110,7 @@ export function WlsCandidates({ instruments, onRefresh }: { instruments: Instrum
           setBusy(true); setError(""); setMessage("");
           try {
             const body = JSON.parse(batch);
-            const response = await fetch(`${api}/market/wls-candidates/mappings/batch`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+            const response = await apiFetch(`${api}/market/wls-candidates/mappings/batch`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
             const payload = await response.json();
             if (!response.ok) throw new Error(typeof payload.detail === "string" ? payload.detail : "Lot invalide : vérifier les champs, sources et dates.");
             setMessage(`${payload.saved} correspondance(s) conservée(s). ` + payload.items.filter((r: { status: string }) => r.status === "rejected").map((r: { bloomberg_identifier: string; reason: string }) => `${r.bloomberg_identifier} : ${r.reason}`).join(" ; "));
@@ -122,7 +124,7 @@ export function WlsCandidates({ instruments, onRefresh }: { instruments: Instrum
       event.preventDefault(); const form = new FormData(event.currentTarget);
       setBusy(true); setError("");
       try {
-        const response = await fetch(`${api}/market/wls-candidates/mappings`, { method: "POST",
+        const response = await apiFetch(`${api}/market/wls-candidates/mappings`, { method: "POST",
           headers: { "Content-Type": "application/json" }, body: JSON.stringify({
             bloomberg_identifier: selected.bloomberg_identifier, instrument_id: instrumentId,
             source_url: form.get("source_url"), as_of: form.get("as_of"), note: form.get("note"),

@@ -1,5 +1,7 @@
 "use client";
 
+import { apiFetch } from "../lib/api";
+
 import Link from "next/link";
 import { PageHeader, Guide, SectionSwitch, Pagination } from "../components/ui";
 import { useEffect, useState } from "react";
@@ -11,7 +13,7 @@ import { FinancialTrends } from "./financial-trends";
 import { Valuation } from "./valuation";
 import { Opportunity } from "./opportunity";
 
-const api = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
+const api = process.env.NEXT_PUBLIC_API_URL ?? "/api/v1";
 type Instrument = { id: string; symbol: string; exchange: string; name: string;
   currency: string; quote_multiplier: string; usd_valuation: UsdQuote;
   wls_eligibility: { status: string };
@@ -23,7 +25,7 @@ type Card = { event_id: string; title: string; kind: string; summary: string | n
   impact: string; horizon: string; checks: string[] };
 type Research = { instrument: Instrument; items: Card[]; next_offset: number | null; notice: string };
 async function read<T>(path: string, signal?: AbortSignal): Promise<T> {
-  const response = await fetch(`${api}/market${path}`, { cache: "no-store", signal });
+  const response = await apiFetch(`${api}/market${path}`, { cache: "no-store", signal });
   if (!response.ok) throw new Error("Impossible de charger les analyses.");
   return response.json();
 }

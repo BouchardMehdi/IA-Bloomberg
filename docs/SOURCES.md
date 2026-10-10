@@ -61,3 +61,10 @@ La SEC demande aux outils automatisés de déclarer leur identité et un contact
 Le client `OfficialDocumentClient` ne suit que les chemins publics `/press/` de la BCE, `/newsevents/` de la Fed et `/Archives/edgar/data/` de la SEC. Les redirections sont vérifiées avant chaque requête. Le texte utile est séparé des menus, scripts et champs XBRL cachés. Pour la SEC, les index servent à trouver le rapport principal ; les liens vers les exhibits restent hors de cette première version. Les requêtes SEC sont espacées d'au moins 250 ms et déclarent `SEC_USER_AGENT`, conformément aux [règles d'accès EDGAR](https://www.sec.gov/search-filings/edgar-search-assistance/accessing-edgar-data).
 
 Les fixtures HTML locales et les transports HTTP simulés couvrent l'extraction, les index SEC, les redirections, les types non pris en charge et les limites de taille. Les échecs n'arrêtent pas les collectes RSS.
+
+## Flux internationaux officiels
+
+Les collecteurs Airbus et AMF sont activ?s par d?faut, toutes les 30 minutes,
+avec limites de taille, extraits RSS seulement et redirections sur le domaine
+HTTPS officiel. Ils ne donnent pas de r?sultats financiers structur?s ou de
+correspondances de cotation automatiques. Voir [sources et limites](WORKSPACE.md).

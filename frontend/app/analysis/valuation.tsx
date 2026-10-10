@@ -1,8 +1,10 @@
 "use client";
 
+import { apiFetch } from "../lib/api";
+
 import { useEffect, useState } from "react";
 
-const api = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
+const api = process.env.NEXT_PUBLIC_API_URL ?? "/api/v1";
 type Reference = { value: string; label: string; rationale: string; as_of: string; source_url: string; published_at: string };
 type Observation = { id: string; observed_at: string; valuation_date: string; eps_per_security: string;
   currency: string; period_start: string; period_end: string; source_url: string; published_at: string;
@@ -25,7 +27,7 @@ export function Valuation({ instrumentId }: { instrumentId: string }) {
   const [withReference, setWithReference] = useState(false);
   useEffect(() => {
     const controller = new AbortController();
-    fetch(`${api}/market/instruments/${instrumentId}/valuation`, { cache: "no-store", signal: controller.signal })
+    apiFetch(`${api}/market/instruments/${instrumentId}/valuation`, { cache: "no-store", signal: controller.signal })
       .then(async (response) => { if (!response.ok) throw new Error("Valorisation indisponible."); return response.json() as Promise<Data>; })
       .then((result) => { if (!controller.signal.aborted) setData(result); })
       .catch((e: Error) => { if (!controller.signal.aborted) setError(e.message); });
@@ -48,7 +50,7 @@ export function Valuation({ instrumentId }: { instrumentId: string }) {
           rationale: value("reference_rationale"), basis: "annual_gaap_diluted",
           as_of: value("reference_date"), source_url: value("reference_source"),
           published_at: timestamp("reference_published") } : null };
-      const response = await fetch(`${api}/market/instruments/${instrumentId}/valuation`, { method: "POST",
+      const response = await apiFetch(`${api}/market/instruments/${instrumentId}/valuation`, { method: "POST",
         headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       const result = await response.json();
       if (!response.ok) throw new Error(typeof result.detail === "string" ? result.detail : "Saisie incompatible : vérifier dates, sources, période annuelle et conventions.");

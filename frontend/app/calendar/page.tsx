@@ -1,10 +1,12 @@
 "use client";
 
+import { apiFetch } from "../lib/api";
+
 import Link from "next/link";
 import { PageHeader, Pagination } from "../components/ui";
 import { useEffect, useState, type FormEvent } from "react";
 
-const api = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
+const api = process.env.NEXT_PUBLIC_API_URL ?? "/api/v1";
 type Instrument = { id: string; symbol: string; exchange: string; name: string };
 type Observation = { id: string; kind: "schedule" | "estimate" | "reported"; provider: string;
   report_date: string; fiscal_period_end: string; period_type: string; basis: string;
@@ -21,7 +23,7 @@ const labels = { schedule: "Date prévue", estimate: "Estimation de BPA", report
 const bases: Record<string, string> = { unknown: "Convention inconnue", gaap_basic: "GAAP de base", gaap_diluted: "GAAP dilué", adjusted_basic: "Ajusté de base", adjusted_diluted: "Ajusté dilué" };
 const periods: Record<string, string> = { unknown: "Périodicité inconnue", quarterly: "Trimestriel", annual: "Annuel" };
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const response = await fetch(`${api}/market${path}`, { cache: "no-store", ...options });
+  const response = await apiFetch(`${api}/market${path}`, { cache: "no-store", ...options });
   if (!response.ok) {
     const payload = await response.json().catch(() => ({}));
     throw new Error(typeof payload.detail === "string" ? payload.detail : "Données invalides ou service indisponible. Vérifie les dates, la source et le BPA.");

@@ -149,6 +149,7 @@ async def run_semantic_analyzer(
 async def serve() -> None:
     settings = get_settings()
     tasks = [
+        run_workspace(),
         run_portfolio_history(),
         run_market_collector(),
         run_entity_resolver(),
@@ -175,6 +176,10 @@ async def serve() -> None:
             settings.scheduler_run_on_start,
         ),
     ]
+    if settings.international_news_enabled:
+        from app.collectors.international import AirbusPressCollector, AMFNewsCollector
+        for collector in (AirbusPressCollector, AMFNewsCollector):
+            tasks.append(run_collector(collector.__name__, collector, 30, settings.scheduler_run_on_start))
     if settings.document_collection_enabled:
         tasks.append(run_document_fetcher())
     if settings.wls_identity_enabled:
@@ -206,6 +211,15 @@ async def serve() -> None:
 async def run_wls_identity_collector() -> None:
     if not get_settings().scheduler_run_on_start:
         await asyncio.sleep(5)
+    while True:
+        try:
+            async with async_session_factory() as session:
+                stats = await WlsAutomationService(session).collect()
+            if stats["attempted"]:
+                logger.info("WLS identity collection completed: %s", stats)
+        except Exception:
+            logger.exception("WLS identity collection failed; reservation retained")
+        await asyncio.sleep(5)
 
 
 async def run_portfolio_history() -> None:
@@ -219,15 +233,23 @@ async def run_portfolio_history() -> None:
         except Exception:
             logger.exception("Portfolio observation failed; previous history retained")
         await asyncio.sleep(3600)
+
+
+async def run_workspace() -> None:
+    from app.services.alerts import AlertService
+    from app.services.data_inbox import process_inbox
+    if not get_settings().scheduler_run_on_start:
+        await asyncio.sleep(60)
     while True:
         try:
             async with async_session_factory() as session:
-                stats = await WlsAutomationService(session).collect()
-            if stats["attempted"]:
-                logger.info("WLS identity collection completed: %s", stats)
+                if get_settings().alerts_enabled:
+                    await AlertService(session).collect()
+            if get_settings().data_inbox_directory:
+                await process_inbox(get_settings().data_inbox_directory)
         except Exception:
-            logger.exception("WLS identity collection failed; reservation retained")
-        await asyncio.sleep(5)
+            logger.exception("Workspace cycle failed; previous data retained")
+        await asyncio.sleep(60)
 
 
 async def run_document_fetcher() -> None:

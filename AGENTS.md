@@ -162,3 +162,15 @@ faits sourcés des 30 derniers jours. Ne pas confondre ce score avec rendement,
 signal d'achat ou éligibilité. Une seule contribution par publication parente,
 sources non futures, bornes de couverture visibles et données de marché séparées.
 Il reste sans appel LLM supplémentaire. Voir docs/RESEARCH_RANKING.md.
+
+Les alertes `/alerts` sont historiques et idempotentes, sans signal d’achat ni
+publication inventée. Les marqueurs de lecture sont propres au compte, partagés
+en mode local sans comptes. Les flux Airbus/AMF conservent seulement les extraits
+RSS officiels bornés. Les imports autorisés ne certifient pas leurs preuves ;
+les dividendes/splits importés restent des propositions avant validation explicite.
+Les répartitions ne devinent ni secteur ni pays. Une comparaison de benchmark
+exige les mêmes dates et une série USD aux conventions immuables, sans reconstruire
+le WLS. Les comptes partagent l’espace ; les rôles sont imposés côté serveur.
+L’authentification reste désactivée par défaut en local. Les sauvegardes sont
+chiffrées avec une clé publique utilisateur et les restaurations de vérification
+exigent une nouvelle base dédiée. Voir docs/WORKSPACE.md et docs/DEPLOYMENT.md.

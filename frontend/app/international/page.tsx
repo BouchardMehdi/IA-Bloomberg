@@ -1,10 +1,12 @@
 "use client";
 
+import { apiFetch } from "../lib/api";
+
 import { PageHeader, Guide, SectionSwitch, Pagination, usePagination } from "../components/ui";
 import { useEffect, useState } from "react";
 import { UsdQuoteDetails, type UsdQuote } from "../usd-quote";
 
-const api = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
+const api = process.env.NEXT_PUBLIC_API_URL ?? "/api/v1";
 const currencies = ["EUR", "GBP", "HKD", "JPY", "CHF", "CAD", "AUD", "CNY", "SGD", "NZD", "SEK", "NOK", "DKK", "INR", "KRW", "TWD", "BRL", "ZAR", "MXN"];
 const input = "mt-1 w-full rounded border border-white/15 bg-slate-950 p-2 text-sm";
 const button = "rounded bg-signal px-4 py-2 text-sm font-semibold text-slate-950 disabled:opacity-40";
@@ -16,7 +18,7 @@ type Rate = { currency: string; date: string; usd_per_unit: string; source_url: 
 type FxRun = { status: string; finished_at: string | null; latest_reference_date: string | null; available_currencies: string[] | null };
 type FxStatus = { enabled: boolean; interval_minutes: number; latest_run: FxRun | null; last_success: FxRun | null; source_url: string };
 async function request<T>(path: string, body?: unknown): Promise<T> {
-  const response = await fetch(`${api}/market${path}`, body === undefined ? { cache: "no-store" } : {
+  const response = await apiFetch(`${api}/market${path}`, body === undefined ? { cache: "no-store" } : {
     method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
   });
   const data = await response.json();

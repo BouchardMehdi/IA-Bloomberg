@@ -1,8 +1,10 @@
 "use client";
 
+import { apiFetch } from "../lib/api";
+
 import { useEffect, useState } from "react";
 
-const api = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
+const api = process.env.NEXT_PUBLIC_API_URL ?? "/api/v1";
 type Source = { url: string; published_at: string };
 type Argument = { id: string; label: string; value: string; unit: string; start: string; end: string;
   concept: string; accession: string; sources: Source[]; stale_period: boolean; notice: string };
@@ -33,7 +35,7 @@ export function Opportunity({ instrumentId }: { instrumentId: string }) {
   const [revision, setRevision] = useState(0);
   useEffect(() => {
     const controller = new AbortController();
-    fetch(`${api}/market/instruments/${instrumentId}/opportunity`, { cache: "no-store", signal: controller.signal })
+    apiFetch(`${api}/market/instruments/${instrumentId}/opportunity`, { cache: "no-store", signal: controller.signal })
       .then(async (response) => { if (!response.ok) throw new Error("Fiche d’opportunité indisponible."); return response.json() as Promise<Dossier>; })
       .then((result) => { if (!controller.signal.aborted) setData(result); })
       .catch((e: Error) => { if (!controller.signal.aborted) setError(e.message); });

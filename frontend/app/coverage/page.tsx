@@ -1,10 +1,12 @@
 "use client";
 
+import { apiFetch } from "../lib/api";
+
 import Link from "next/link";
 import { PageHeader, Pagination, usePagination } from "../components/ui";
 import { useEffect, useState } from "react";
 
-const api = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
+const api = process.env.NEXT_PUBLIC_API_URL ?? "/api/v1";
 const input = "w-full rounded-lg border border-white/15 bg-slate-950 p-2 text-sm text-white";
 type Row = { instrument_id: string; symbol: string; exchange: string; name: string; currency: string;
   missing: string[]; usd_status: string; collection_error: string | null; retry_at: string | null;
@@ -21,7 +23,7 @@ const labels: Record<string, string> = { missing_price: "Cours manquant", missin
   price_collection_error: "Erreur de collecte de cours" };
 
 async function request<T>(path: string, body?: unknown): Promise<T> {
-  const r = await fetch(`${api}/market${path}`, body === undefined ? { cache: "no-store" } : {
+  const r = await apiFetch(`${api}/market${path}`, body === undefined ? { cache: "no-store" } : {
     method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
   });
   const d = await r.json();

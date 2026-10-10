@@ -150,7 +150,8 @@ class EventRepository:
         event_type = (
             "regulatory_filing"
             if source.source_type == "regulator"
-            else "central_bank_announcement"
+            else "central_bank_announcement" if source.source_type == "central_bank"
+            else "official_publication"
         )
         event = Event(
             deduplication_key=f"primary-article:{article.id}",
@@ -158,7 +159,7 @@ class EventRepository:
             title=article.title,
             description=article.content,
             event_datetime=article.published_at or article.fetched_at,
-            event_time_type="published",
+            event_time_type="published" if article.published_at else "observed",
             status="detected",
             confidence_score=1.0,
             country=source.country,

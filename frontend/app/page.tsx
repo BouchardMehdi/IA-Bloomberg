@@ -1,5 +1,7 @@
 "use client";
 
+import { apiFetch } from "./lib/api";
+
 import { useEffect, useState } from "react";
 import { EntityDetails, type EntityResolution } from "./entity-details";
 import Link from "next/link";
@@ -119,20 +121,20 @@ export default function Home() {
   const [eventOffset, setEventOffset] = useState(0);
   const [articleError, setArticleError] = useState(false);
   const [eventError, setEventError] = useState(false);
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "/api/v1";
 
   useEffect(() => {
     const controller = new AbortController();
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "/api/v1";
 
-    fetch(`${apiUrl}/health/live`, { signal: controller.signal })
+    apiFetch(`${apiUrl}/health/live`, { signal: controller.signal })
       .then((response) => setApiState(response.ok ? "online" : "offline"))
       .catch((error: unknown) => {
         if (error instanceof DOMException && error.name === "AbortError") return;
         setApiState("offline");
       });
 
-    fetch(`${apiUrl}/collection-runs?limit=1`, { signal: controller.signal })
+    apiFetch(`${apiUrl}/collection-runs?limit=1`, { signal: controller.signal })
       .then((response) => {
         if (!response.ok) throw new Error("Collection history unavailable");
         return response.json() as Promise<CollectionRunPage>;
@@ -148,7 +150,7 @@ export default function Home() {
 
   useEffect(() => {
     const controller = new AbortController();
-    fetch(`${apiUrl}/articles?limit=6&offset=${articleOffset}`, { signal: controller.signal })
+    apiFetch(`${apiUrl}/articles?limit=6&offset=${articleOffset}`, { signal: controller.signal })
       .then(async r => { if (!r.ok) throw new Error(); return r.json() as Promise<ArticlePage>; })
       .then(d => { if (!controller.signal.aborted) { setArticles(d); setArticleError(false); } })
       .catch(() => { if (!controller.signal.aborted) setArticleError(true); });
@@ -156,7 +158,7 @@ export default function Home() {
   }, [apiUrl, articleOffset]);
   useEffect(() => {
     const controller = new AbortController();
-    fetch(`${apiUrl}/events?limit=6&offset=${eventOffset}`, { signal: controller.signal })
+    apiFetch(`${apiUrl}/events?limit=6&offset=${eventOffset}`, { signal: controller.signal })
       .then(async r => { if (!r.ok) throw new Error(); return r.json() as Promise<EventPage>; })
       .then(d => { if (!controller.signal.aborted) { setEvents(d); setEventError(false); } })
       .catch(() => { if (!controller.signal.aborted) setEventError(true); });

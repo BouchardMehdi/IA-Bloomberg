@@ -71,6 +71,22 @@ const tutorials: Record<string, Tutorial> = {
     ],
     remember: "Convertir la valeur d’une action en dollars n’est pas une opération Forex. Les taux de référence BCE peuvent différer de ceux de Bloomberg ; une identité internationale ne prouve pas l’appartenance au WLS.",
   },
+  "/alerts": {
+    page: "Alertes", purpose: "Retrouvez ce qui a changé : publications, faits extraits, calendrier et problèmes de collecte.",
+    steps: [
+      { title: "Filtrer", text: "Choisissez un type d’alerte ou affichez seulement celles qui restent à lire." },
+      { title: "Vérifier la source", text: "Ouvrez le document et la page concernée pour examiner le contexte et les dates." },
+      { title: "Marquer comme lue", text: "Votre lecture est mémorisée pour votre compte. En mode local sans comptes, elle est partagée." },
+    ], remember: "Une alerte informe d’une observation ; elle ne recommande pas un achat. La date de détection est distincte de la publication. Le traitement automatique se fait par lots.",
+  },
+  "/settings": {
+    page: "Mon espace", purpose: "Complétez les données depuis des exports autorisés et gérez votre accès à l’espace partagé.",
+    steps: [
+      { title: "Importer un fichier", text: "Choisissez le type de données et un export complet, avec les sources et les conventions requises." },
+      { title: "Examiner les propositions", text: "Les dividendes et splits importés attendent votre vérification avant application à une simulation." },
+      { title: "Gérer les accès", text: "Un administrateur peut créer des comptes en lecture, édition ou administration. Chaque compte connecté peut changer son mot de passe." },
+    ], remember: "L’import ne certifie pas une preuve et ne passe aucun ordre. Les comptes partagent les données. L’authentification et les sauvegardes nécessitent une activation explicite.",
+  },
 };
 
 const storageKey = "market-ai:tutorials:v1";

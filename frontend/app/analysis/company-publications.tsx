@@ -1,8 +1,10 @@
 "use client";
 
+import { apiFetch } from "../lib/api";
+
 import { useEffect, useRef, useState } from "react";
 
-const api = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
+const api = process.env.NEXT_PUBLIC_API_URL ?? "/api/v1";
 type Status = { supported: boolean; cik: string | null; scheduler_enabled: boolean;
   source_url: string | null; status: string; started_at: string | null;
   fetched_count: number; inserted_count: number; error: string | null; notice: string };
@@ -17,7 +19,7 @@ export function CompanyPublications({ instrumentId, onCollected }: { instrumentI
   const controller = useRef<AbortController | null>(null);
   useEffect(() => {
     const request = new AbortController(); controller.current = request;
-    fetch(`${api}/market/instruments/${instrumentId}/publications/collection`, { cache: "no-store", signal: request.signal })
+    apiFetch(`${api}/market/instruments/${instrumentId}/publications/collection`, { cache: "no-store", signal: request.signal })
       .then(async (response) => { if (!response.ok) throw new Error("État de collecte indisponible."); return response.json() as Promise<Status>; })
       .then((data) => { if (!request.signal.aborted) setStatus(data); })
       .catch((e: Error) => { if (!request.signal.aborted) setError(e.message); });
@@ -26,7 +28,7 @@ export function CompanyPublications({ instrumentId, onCollected }: { instrumentI
   async function collect() {
     const signal = controller.current?.signal; setBusy(true); setError(""); setMessage("");
     try {
-      const response = await fetch(`${api}/market/instruments/${instrumentId}/publications/collect`, { method: "POST", signal });
+      const response = await apiFetch(`${api}/market/instruments/${instrumentId}/publications/collect`, { method: "POST", signal });
       if (!response.ok) throw new Error("Impossible de collecter les publications.");
       const result = await response.json() as { status: string; error?: string; inserted?: number };
       if (signal?.aborted) return;
@@ -36,7 +38,7 @@ export function CompanyPublications({ instrumentId, onCollected }: { instrumentI
         collection_in_progress: "Une collecte SEC ciblée est déjà en cours. Réessaie dans quelques instants.",
         unsupported_identity: "Aucun CIK vérifié disponible pour cet émetteur." };
       setMessage(messages[result.status] ?? result.status);
-      const updated = await fetch(`${api}/market/instruments/${instrumentId}/publications/collection`, { cache: "no-store", signal });
+      const updated = await apiFetch(`${api}/market/instruments/${instrumentId}/publications/collection`, { cache: "no-store", signal });
       if (!updated.ok) throw new Error("État de collecte indisponible.");
       const data = await updated.json() as Status;
       if (!signal?.aborted) { setStatus(data); if (result.status === "success") onCollected(); }

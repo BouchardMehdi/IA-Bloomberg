@@ -1,6 +1,6 @@
 from functools import lru_cache
 
-from pydantic import Field, SecretStr
+from pydantic import Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -47,6 +47,17 @@ class Settings(BaseSettings):
     ollama_model: str = "qwen3:4b-instruct"
     ollama_timeout_seconds: int = Field(default=600, ge=30, le=1800)
     scheduler_run_on_start: bool = True
+    auth_enabled: bool = False
+    auth_cookie_secure: bool = False
+    international_news_enabled: bool = True
+    alerts_enabled: bool = True
+    data_inbox_directory: str = ""
+
+    @model_validator(mode="after")
+    def production_access(self):
+        if self.environment == "production" and (not self.auth_enabled or not self.auth_cookie_secure):
+            raise ValueError("Production requires AUTH_ENABLED=true and AUTH_COOKIE_SECURE=true.")
+        return self
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

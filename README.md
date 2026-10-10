@@ -299,3 +299,25 @@ des cartes sur téléphone. Les contrôles navigateur se lancent avec
 Chaque page propose aussi un encart **Mode d’emploi** pour les nouveaux utilisateurs,
 affiché par défaut et désactivable. Le choix d’affichage est mémorisé dans le navigateur
 et s’applique à toutes les pages ; le bouton permet de réactiver l’aide à tout moment.
+
+## Alertes et espace partagé
+
+La page `/alerts` conserve les nouvelles publications, faits, observations de
+calendrier et erreurs de collecte, avec filtres, pagination et suivi de lecture.
+Les flux officiels Airbus et AMF complètent la veille internationale. Voir
+[les fonctionnalités et limites](docs/WORKSPACE.md).
+
+`/portfolio` présente aussi les répartitions par titre, secteur, pays et devise,
+avec les classifications documentées et les inconnues visibles. Une comparaison
+à un historique d'indice USD importé exige les mêmes dates et conventions ; le
+WLS privé n'est pas reconstitué.
+
+`/settings` permet l'import de résultats, preuves de valorisation, cours/taux et
+propositions de dividendes/splits. Un dossier local d'exports autorisés peut être
+traité automatiquement ; les opérations sur titres exigent toujours une validation
+explicite avant application à une simulation.
+
+Les comptes en lecture, édition ou administration et les sauvegardes PostgreSQL
+chiffrées sont prêts à activer. L'authentification reste désactivée par défaut en
+local et le service de sauvegarde exige votre clé publique. Voir
+[l'activation des accès, sauvegardes et restauration](docs/DEPLOYMENT.md).

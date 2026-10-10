@@ -14,6 +14,8 @@ est disponible au clavier.
 | `/portfolio` — Portefeuille | Simulation, titres suivis, univers WLS et création d’une simulation |
 | `/coverage` — Qualité des données | Filtres sur les données manquantes et préparation de preuves |
 | `/international` — International | Cotations internationales, ajout d’identité, cours et taux |
+| `/alerts` — Alertes | Nouvelles observations et échecs de collecte |
+| `/settings` — Mon espace | Imports sourcés, propositions et comptes |
 
 Les sections d’une page sont sélectionnées avec des boutons. Les explications
 longues et les formulaires avancés sont repliables. Les limites essentielles
@@ -24,7 +26,7 @@ une date de publication.
 
 ## Tutoriels pour les nouveaux utilisateurs
 
-Sous le titre de chacune des six pages, un encart **Mode d’emploi** présente
+Sous le titre de chacune des huit pages, un encart **Mode d’emploi** présente
 le rôle de la page, trois étapes pour commencer et les limites à retenir. Son
 contenu dépend de la page ouverte et utilise les noms des sections et boutons
 de l’interface, sans demander de connaître l’architecture technique.
@@ -84,7 +86,7 @@ Pour une autre URL : `$env:UI_BASE_URL='http://localhost:3001'`.
 
 Les contrôles utilisent exclusivement des réponses API simulées dans le navigateur,
 sans modifier la base, passer d’ordre ni consommer de quota fournisseur. Ils
-vérifient les six routes à 320, 390, 768 et 1 440 pixels, la navigation au clavier,
+vérifient les huit routes à 320, 390, 768 et 1 440 pixels, la navigation au clavier,
 les changements de section, les filtres, les paginations et les états vides/erreur.
 Ils contrôlent aussi le contenu des tutoriels sur chaque page, leur activation
 au clavier, la persistance après rechargement, la synchronisation entre onglets
@@ -95,3 +97,13 @@ non interceptée ou de requête d’écriture.
 
 Cette refonte ne modifie aucun calcul financier, règle d’éligibilité, quota ou
 contrôle d’opération du backend. Aucune donnée de démonstration n’est insérée en base.
+
+Les pages Alertes et Mon espace ont le même tutoriel et la navigation commune.
+Le compteur d’alertes et la connexion utilisent le client API partagé avec cookies
+et reconnexion après expiration. Les imports et comptes restent soumis aux droits
+serveur. Les répartitions du portefeuille affichent leurs sources et inconnues.
+Voir [l’espace partagé](WORKSPACE.md).
+
+`node scripts/check-workspace.mjs` vérifie aussi la connexion, l’expiration de
+session, les rôles, les imports et la confirmation des propositions avec des
+réponses entièrement simulées, sans écriture réelle.

@@ -36,6 +36,11 @@ services:
       REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
       BACKEND_CORS_ORIGINS: ${BACKEND_CORS_ORIGINS:-http://localhost:3000,http://localhost}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      AUTH_ENABLED: ${AUTH_ENABLED:-false}
+      AUTH_COOKIE_SECURE: ${AUTH_COOKIE_SECURE:-false}
+      INTERNATIONAL_NEWS_ENABLED: ${INTERNATIONAL_NEWS_ENABLED:-true}
+      ALERTS_ENABLED: ${ALERTS_ENABLED:-true}
       ALPHA_VANTAGE_API_KEY: ${ALPHA_VANTAGE_API_KEY:-}
       MARKET_DAILY_REQUEST_BUDGET: ${MARKET_DAILY_REQUEST_BUDGET:-20}
       EARNINGS_CALENDAR_ENABLED: ${EARNINGS_CALENDAR_ENABLED:-true}
@@ -59,7 +64,7 @@ services:
       DOCUMENT_MAX_CHARS: ${DOCUMENT_MAX_CHARS:-60000}
     command: ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"]
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     depends_on:
       postgres:
         condition: service_healthy
@@ -79,6 +84,11 @@ services:
       DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://market_ai:change-me@postgres:5432/market_ai}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      AUTH_ENABLED: ${AUTH_ENABLED:-false}
+      AUTH_COOKIE_SECURE: ${AUTH_COOKIE_SECURE:-false}
+      INTERNATIONAL_NEWS_ENABLED: ${INTERNATIONAL_NEWS_ENABLED:-true}
+      ALERTS_ENABLED: ${ALERTS_ENABLED:-true}
       ECB_COLLECTION_INTERVAL_MINUTES: ${ECB_COLLECTION_INTERVAL_MINUTES:-15}
       ALPHA_VANTAGE_API_KEY: ${ALPHA_VANTAGE_API_KEY:-}
       MARKET_DAILY_REQUEST_BUDGET: ${MARKET_DAILY_REQUEST_BUDGET:-20}
@@ -110,7 +120,10 @@ services:
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
       OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen3:4b-instruct}
       OLLAMA_TIMEOUT_SECONDS: ${OLLAMA_TIMEOUT_SECONDS:-600}
+      DATA_INBOX_DIRECTORY: ${DATA_INBOX_DIRECTORY:-}
       SCHEDULER_RUN_ON_START: ${SCHEDULER_RUN_ON_START:-true}
+    volumes:
+      - ./private-data/imports:/imports:ro
     command: ["python", "-m", "app.scheduler.main"]
     init: true
     depends_on:
@@ -122,7 +135,7 @@ services:
     image: ollama/ollama:latest
     profiles: ["ai"]
     ports:
-      - "11434:11434"
+      - "127.0.0.1:11434:11434"
     volumes:
       - ollama_data:/root/.ollama
     restart: unless-stopped
@@ -131,11 +144,12 @@ services:
     build:
       context: ./frontend
       args:
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000/api/v1}
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-/api/v1}
     environment:
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000/api/v1}
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-/api/v1}
+      API_INTERNAL_URL: http://backend:8000
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     depends_on:
       backend:
         condition: service_healthy

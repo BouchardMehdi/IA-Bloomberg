@@ -1,9 +1,11 @@
 "use client";
 
+import { apiFetch } from "../lib/api";
+
 import { Pagination } from "../components/ui";
 import { useEffect, useRef, useState } from "react";
 
-const api = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
+const api = process.env.NEXT_PUBLIC_API_URL ?? "/api/v1";
 type Fact = { id: string; metric: string; concept: string; taxonomy: string; value: string;
   unit: string; start: string | null; end: string; filed: string; accession: string; form: string;
   filing_period: string | null; fiscal_year: number | null; frame: string | null;
@@ -28,7 +30,7 @@ export function FinancialResults({ instrumentId }: { instrumentId: string }) {
   const controller = useRef<AbortController | null>(null);
   useEffect(() => {
     const request = new AbortController(); controller.current = request;
-    fetch(`${api}/market/instruments/${instrumentId}/financials?limit=10`, { cache: "no-store", signal: request.signal })
+    apiFetch(`${api}/market/instruments/${instrumentId}/financials?limit=10`, { cache: "no-store", signal: request.signal })
       .then(async (response) => { if (!response.ok) throw new Error("Données financières indisponibles."); return response.json() as Promise<Results>; })
       .then((result) => { if (!request.signal.aborted) setData(result); })
       .catch((e: Error) => { if (!request.signal.aborted) setError(e.message); });
@@ -38,7 +40,7 @@ export function FinancialResults({ instrumentId }: { instrumentId: string }) {
     const signal = controller.current?.signal; setBusy(true); setError(""); setMessage("");
     try {
       if (collect) {
-        const response = await fetch(`${api}/market/instruments/${instrumentId}/financials/collect`, { method: "POST", signal });
+        const response = await apiFetch(`${api}/market/instruments/${instrumentId}/financials/collect`, { method: "POST", signal });
         if (!response.ok) throw new Error("Collecte des données financières indisponible.");
         const result = await response.json() as { status: string; inserted?: number; error?: string };
         if (signal?.aborted) return;
@@ -48,7 +50,7 @@ export function FinancialResults({ instrumentId }: { instrumentId: string }) {
           failed: `Collecte échouée (${result.error ?? "erreur"}). L’historique est conservé.`, unsupported_identity: "Aucun CIK vérifié disponible." };
         setMessage(labels[result.status] ?? result.status);
       }
-      const response = await fetch(`${api}/market/instruments/${instrumentId}/financials?limit=10&offset=${page}`, { cache: "no-store", signal });
+      const response = await apiFetch(`${api}/market/instruments/${instrumentId}/financials?limit=10&offset=${page}`, { cache: "no-store", signal });
       if (!response.ok) throw new Error("Données financières indisponibles.");
       const result = await response.json() as Results;
       if (!signal?.aborted) { setData(result); setOffset(page); }

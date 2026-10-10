@@ -41,3 +41,5 @@ __all__ = [
     "PaperTrade",
 ]
 from app.models.analysis_passage import AnalysisPassage
+
+from app.models.workspace import WorkspaceUser, WorkspaceSession, WorkspaceAlert, AlertReceipt, WorkspaceCursor, InstrumentProfile, BenchmarkPoint, DataProposal
