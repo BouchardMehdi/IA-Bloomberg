@@ -67,3 +67,12 @@ class AMFNewsCollector(OfficialInternationalCollector):
     feed_url = "https://www.amf-france.org/fr/flux-rss/display/21"
     language = "fr"
     country = "FR"
+
+
+class BankOfEnglandNewsCollector(OfficialInternationalCollector):
+    source_name = "Bank of England official news"
+    source_url = "https://www.bankofengland.co.uk/news"
+    feed_url = "https://www.bankofengland.co.uk/rss/news"
+    language = "en"
+    country = "GB"
+    # Kept as official_publication: no issuer/listing or market impact inferred.

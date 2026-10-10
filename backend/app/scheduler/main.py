@@ -177,8 +177,8 @@ async def serve() -> None:
         ),
     ]
     if settings.international_news_enabled:
-        from app.collectors.international import AirbusPressCollector, AMFNewsCollector
-        for collector in (AirbusPressCollector, AMFNewsCollector):
+        from app.collectors.international import AirbusPressCollector, AMFNewsCollector, BankOfEnglandNewsCollector
+        for collector in (AirbusPressCollector, AMFNewsCollector, BankOfEnglandNewsCollector):
             tasks.append(run_collector(collector.__name__, collector, 30, settings.scheduler_run_on_start))
     if settings.document_collection_enabled:
         tasks.append(run_document_fetcher())
@@ -238,11 +238,13 @@ async def run_portfolio_history() -> None:
 async def run_workspace() -> None:
     from app.services.alerts import AlertService
     from app.services.data_inbox import process_inbox
+    from app.services.collection_health import heartbeat
     if not get_settings().scheduler_run_on_start:
         await asyncio.sleep(60)
     while True:
         try:
             async with async_session_factory() as session:
+                await heartbeat(session)
                 if get_settings().alerts_enabled:
                     await AlertService(session).collect()
             if get_settings().data_inbox_directory:

@@ -15,6 +15,9 @@ const pages = [
   { href: "/international", label: "International", detail: "Cotations et devises", icon: "M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0 M3 12h18 M12 3c5 5 5 13 0 18 M12 3c-5 5-5 13 0 18" },
   { href: "/alerts", label: "Alertes", detail: "Nouveautés et suivi", icon: "M6 9a6 6 0 0 1 12 0v6l2 3H4l2-3z M10 21h4" },
   { href: "/settings", label: "Mon espace", detail: "Imports et accès", icon: "M4 4h16v16H4z M8 9h8 M8 15h8 M10 7v4 M14 13v4" },
+  { href: "/briefing", label: "Briefing quotidien", detail: "Votre liste de lecture", icon: "M5 3h14v18H5z M8 8h8 M8 12h8 M8 16h5" },
+  { href: "/journal", label: "Journal des décisions", detail: "Hypothèses et suivi", icon: "M4 4h16v16H4z M8 8h8 M8 12h8 M8 16h4" },
+  { href: "/collections", label: "Suivi des collectes", detail: "État et reprises", icon: "M4 18V6 M4 18h16 M8 14v-4 M12 14V5 M16 14V8 M20 14v-3" },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {

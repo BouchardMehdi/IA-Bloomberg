@@ -59,7 +59,7 @@ export function FinancialResults({ instrumentId }: { instrumentId: string }) {
   }
   return <section className="my-5 rounded-xl border border-white/10 p-5">
     <h2 className="text-xl text-white">Chiffres financiers publiés — SEC XBRL</h2>
-    <p className="my-3 text-sm">Mesures de l’émetteur issues des dépôts US-GAAP. Les périodes cumulées, définitions différentes et valeurs republiées restent séparées. Aucun montant manquant n’est remplacé par zéro et aucun chiffre n’est converti en USD automatiquement.</p>
+    <p className="my-3 text-sm">Mesures de l’émetteur issues des dépôts US-GAAP et des concepts IFRS pris en charge. Les taxonomies, périodes, définitions et valeurs republiées restent séparées. Aucun montant manquant n’est remplacé par zéro et aucun chiffre n’est converti en USD automatiquement. Les variations temporelles restent limitées aux concepts US-GAAP compatibles.</p>
     {error ? <p role="alert" className="my-3 text-rose-300">{error}</p> : null}
     {message ? <p role="status" className="my-3 text-sm text-signal">{message}</p> : null}
     {data ? <>

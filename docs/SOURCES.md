@@ -64,7 +64,13 @@ Les fixtures HTML locales et les transports HTTP simulés couvrent l'extraction,
 
 ## Flux internationaux officiels
 
-Les collecteurs Airbus et AMF sont activ?s par d?faut, toutes les 30 minutes,
+Les collecteurs Airbus et AMF sont activés par défaut, toutes les 30 minutes,
 avec limites de taille, extraits RSS seulement et redirections sur le domaine
-HTTPS officiel. Ils ne donnent pas de r?sultats financiers structur?s ou de
+HTTPS officiel. Ils ne donnent pas de résultats financiers structurés ou de
 correspondances de cotation automatiques. Voir [sources et limites](WORKSPACE.md).
+
+## Extension quotidienne
+
+Le flux officiel `https://www.bankofengland.co.uk/rss/news` est raccordé avec les
+mêmes bornes que les flux internationaux existants. Les chiffres SEC incluent
+trois concepts IFRS explicitement sélectionnés. Voir [les limites](DAILY_WORKSPACE.md).

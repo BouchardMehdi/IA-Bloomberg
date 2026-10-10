@@ -116,7 +116,9 @@ def test_invalid_last_selected_row_rejects_entire_batch(changes):
 def test_unsupported_taxonomies_units_and_future_rows_do_not_invent_values():
     assert parse(payload(unit="USD")) == []
     assert parse(payload(unit="BAD/shares")) == []
-    assert parse({"cik": 320193, "facts": {"ifrs-full": {"ProfitLoss": {}}}}) == []
+    assert parse({"cik": 320193, "facts": {"custom-extension": {"ProfitLoss": {}}}}) == []
+    with pytest.raises(CompanyPublicationError):
+        parse({"cik": 320193, "facts": {"ifrs-full": {"ProfitLoss": {}}}})
     assert parse(payload([row(filed=str(TODAY + timedelta(days=1)))])) == []
     assert (
         parse(

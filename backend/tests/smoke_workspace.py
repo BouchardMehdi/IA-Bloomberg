@@ -123,6 +123,7 @@ async def main():
                         assert (await client.get("/api/v1/workspace/alerts")).status_code == 200
                         assert (await client.post(f"/api/v1/workspace/alerts/{alert_id}/read", json={})).status_code == 200
                         assert (await client.post("/api/v1/workspace/imports", json={"items": []})).status_code == 403
+                        assert (await client.post("/api/v1/workspace/journal", json={})).status_code == 403
                         assert (await client.get("/api/v1/auth/users")).status_code == 403
                         assert (await client.post("/api/v1/auth/logout", json={})).status_code == 200
                         assert (await client.get("/api/v1/workspace/alerts")).status_code == 401
@@ -144,6 +145,9 @@ async def main():
                         assert not (await client.post("/api/v1/workspace/benchmarks", json=declaration)).json()["inserted"]
                         assert (await client.post("/api/v1/workspace/benchmarks", json={**declaration, "level": "105"})).status_code == 400
                         assert (await client.post("/api/v1/workspace/benchmarks", json={**declaration, "convention": "price"})).status_code == 400
+                        from tests.smoke_research_workspace import verify
+                        await session.refresh(instrument)
+                        await verify(session, client, instrument)
                 print("Workspace PostgreSQL/API checks passed: sessions, roles, CSRF, revocation, last admin, alerts, receipts, imports, proposals and benchmark conflicts. Fixtures rolled back.")
             finally:
                 app.dependency_overrides.clear()

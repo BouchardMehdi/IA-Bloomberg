@@ -1,0 +1,66 @@
+// All writes intercepted and simulated; no database, account or order modifications.
+import assert from "node:assert/strict";
+import { existsSync } from "node:fs";
+import { chromium } from "playwright";
+const base=process.env.UI_BASE_URL ?? "http://localhost:3000";
+const executablePath=["C:/Program Files/Google/Chrome/Application/chrome.exe","C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe"].find(existsSync);
+const browser=await chromium.launch({headless:true,...(executablePath?{executablePath}:{})});
+const page=await browser.newPage({viewport:{width:390,height:950}});
+const errors=[],writes=[];
+page.on("pageerror",e=>errors.push(e.message));
+let viewer=false, history=[];
+const instrument="00000000-0000-4000-8000-000000000001", decision="00000000-0000-4000-8000-000000000002";
+await page.route("**/api/v1/**",async route=>{
+  const r=route.request(),path=new URL(r.url()).pathname.replace("/api/v1","");
+  let data;
+  if(r.method()!=="GET") writes.push(path);
+  if(path==="/auth/me") data={auth_enabled:viewer,user:viewer?{id:"viewer",username:"lecture",role:"viewer",enabled:true}:null};
+  else if(path==="/workspace/alerts") data={items:[],unread_count:0,total:0};
+  else if(path==="/market/instruments") data={items:[{id:instrument,symbol:"QA",exchange:"XPAR"}]};
+  else if(path==="/market/portfolios") data={items:[]};
+  else if(path==="/workspace/journal" && r.method()==="GET") data={items:history.length?[{id:decision,instrument_id:instrument,portfolio_id:null,symbol:"QA",exchange:"XPAR",latest:history[0]}]:[],total:history.length?1:0,notice:"Hypothèses déclarées."};
+  else if(path===`/workspace/journal/${decision}`) data={id:decision,instrument_id:instrument,portfolio_id:null,items:history,next_offset:null,notice:"Historique conservé."};
+  else if(path==="/workspace/journal" || path===`/workspace/journal/${decision}/revisions`){
+    assert(!viewer);
+    const body=r.postDataJSON();
+    assert.equal(body.acknowledged,true); assert.equal(body.evidence[0].url,"https://example.org/proof");
+    if(history.length) assert.equal(body.expected_version,1);
+    history.unshift({...body,id:`revision-${history.length+1}`,version:history.length+1,author:"local",recorded_at:"2026-10-10T12:00:00Z"});
+    data={decision_id:decision,inserted:true};
+  } else throw new Error(`Unexpected fixture request: ${r.method()} ${path}`);
+  await route.fulfill({status:200,contentType:"application/json",body:JSON.stringify(data)});
+});
+try {
+  await page.goto(base+"/journal");
+  await page.getByRole("button",{name:"Nouvelle hypothèse",exact:true}).click();
+  await page.getByLabel(/^Titre suivi/).selectOption(instrument);
+  await page.getByLabel("Titre du dossier",{exact:true}).fill("Hypothèse de test");
+  await page.getByLabel("Hypothèse à examiner",{exact:true}).fill("Une hypothèse déclarée, à vérifier dans la source.");
+  await page.getByLabel("Risques identifiés",{exact:true}).fill("Des risques à examiner.");
+  await page.getByLabel("Ce qui invaliderait cette hypothèse",{exact:true}).fill("Des résultats contradictoires.");
+  await page.getByLabel("Horizon envisagé",{exact:true}).fill("Trois mois");
+  await page.getByLabel("URL publique",{exact:true}).fill("https://example.org/proof");
+  await page.getByLabel("Publication (heure locale)",{exact:true}).fill("2025-10-01T12:00");
+  await page.getByLabel("Ce que cette source documente",{exact:true}).fill("Observation de test.");
+  await page.getByRole("button",{name:"Enregistrer la révision",exact:true}).click();
+  assert.equal(writes.length,0,"Missing acknowledgment must prevent submission");
+  await page.getByRole("checkbox").check();
+  await page.getByRole("button",{name:"Enregistrer la révision",exact:true}).click();
+  await page.getByRole("heading",{name:"Hypothèse de test · Révision 1",exact:true}).waitFor();
+  await page.getByRole("button",{name:"Ajouter une révision",exact:true}).click();
+  await page.getByLabel("Observations de suivi",{exact:true}).fill("Nouvelle lecture : hypothèse invalidée.");
+  await page.getByLabel(/^Statut/).selectOption("invalidated");
+  await page.getByRole("checkbox").check();
+  await page.getByRole("button",{name:"Enregistrer la révision",exact:true}).click();
+  await page.getByRole("heading",{name:"Hypothèse de test · Révision 2",exact:true}).waitFor();
+  assert.equal(await page.getByRole("heading",{name:"Hypothèse de test · Révision 1",exact:true}).count(),1);
+  assert.equal(writes.length,2);
+  await page.screenshot({path:".ui-check/journal-revisions-mobile.png",fullPage:true});
+  viewer=true; await page.reload(); await page.waitForLoadState("networkidle");
+  assert.equal(await page.getByRole("button",{name:"Nouvelle hypothèse",exact:true}).count(),0);
+  await page.getByRole("button",{name:"Ouvrir le dossier",exact:true}).click();
+  await page.getByRole("heading",{name:"Historique du dossier",exact:true}).waitFor();
+  assert.equal(await page.getByRole("button",{name:"Ajouter une révision",exact:true}).count(),0);
+  assert.deepEqual(errors,[]);
+  console.log("Daily workspace browser checks passed: journal creation, acknowledgment, revisions/history and read-only access. All writes simulated.");
+} finally {await browser.close();}

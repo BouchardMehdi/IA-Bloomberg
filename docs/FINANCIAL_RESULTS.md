@@ -29,8 +29,8 @@ les flux négatifs et montants nuls conservés. Les définitions suivent la
 [taxonomie US-GAAP FASB](https://xbrl.fasb.org/impdocs/OCI_TIG/othercompincome.htm).
 Il n'est calculé ni total de dette, ni dette nette, ni ratio, ni flux libre.
 
-Ces définitions ne sont ni fusionnées ni additionnées. Les taxonomies IFRS, les
-extensions spécifiques et les autres concepts restent hors couverture. Une
+Ces définitions ne sont ni fusionnées ni additionnées. La couverture IFRS limitée
+est précisée ci-dessous ; extensions spécifiques et autres concepts restent exclus. Une
 absence n'est pas un zéro. Les montants restent décimaux exacts dans leur devise,
 sans conversion FX ; les BPA gardent l'unité explicite `devise/shares`.
 Les pertes et montants nuls sont valides.
@@ -97,5 +97,15 @@ faits extraits `Event`. Le JSON stocké est validé par Pydantic et contrôlé p
 
 Le GET parcourt l'historique conservé, par fin de période puis date de dépôt,
 avec pagination jusqu'à 100 observations par page. La couverture du dernier
-appel ne doit pas être confondue avec tout l'historique. Les sociétés sans CIK,
-IFRS et données propriétaires restent à connecter à une source autorisée.
+appel ne doit pas être confondue avec tout l'historique. Les sociétés sans CIK
+et données propriétaires restent à connecter à une source autorisée.
+
+## Concepts IFRS sélectionnés
+
+`financial-v3-ifrs` ajoute `ifrs-full:Revenue`, `ProfitLoss` (mesure distincte
+`ifrs_profit_loss`) et le solde instantané `CashAndCashEquivalents`. Un CIK vérifié
+reste exigé, avec les mêmes fenêtres, plafonds, unités et validation avant écriture.
+Les taxonomies et dépôts ne sont pas fusionnés. Aucun BPA IFRS, ratio ADR ou
+comparaison temporelle IFRS n’est ajouté. Une nouvelle version permet une collecte
+après un ancien succès, sans raccourcir les reprises d’erreur. Voir
+[la couverture quotidienne](DAILY_WORKSPACE.md).

@@ -12,6 +12,7 @@ from app.core.config import get_settings
 from app.market.sec_financials import (
     COLLECTOR_VERSION,
     CONCEPTS,
+    IFRS_CONCEPTS,
     INSTANT_CONCEPTS,
     METRIC_LABELS,
     FinancialRecord,
@@ -105,7 +106,7 @@ class FinancialResultsService:
             "items": items,
             "next_offset": offset + limit if len(rows) > limit else None,
             "available_metrics": sorted(metrics),
-            "supported_metrics": sorted(set(CONCEPTS.values())),
+            "supported_metrics": sorted(set(CONCEPTS.values()) | set(IFRS_CONCEPTS.values())),
             "metric_labels": METRIC_LABELS,
             "collection": {
                 "supported": bool(instrument.cik),
@@ -120,11 +121,11 @@ class FinancialResultsService:
                 if instrument.cik
                 else None,
             },
-            "notice": "Observations US-GAAP de l'émetteur, pas chiffres propres à la cotation. "
+            "notice": "Observations US-GAAP et concepts IFRS sélectionnés de l'émetteur, pas chiffres propres à la cotation. "
             "Historique conservé sans fusion des définitions ou dépôts. "
             "fp/fy décrivent le dépôt, pas la durée de chaque mesure. "
             "Collecte bornée : dépôts des 365 derniers jours, fins de période sur 730 jours, "
-            "2 000 observations maximum par réponse. IFRS et extensions non couverts.",
+            "2 000 observations maximum par réponse. IFRS : Revenue, ProfitLoss, CashAndCashEquivalents uniquement. Extensions non couvertes ; comparaisons temporelles limitées aux concepts US-GAAP existants.",
         }
 
     async def collect(self, instrument_id: UUID, *, client=None, trigger="manual"):

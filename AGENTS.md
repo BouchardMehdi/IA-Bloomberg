@@ -174,3 +174,13 @@ le WLS. Les comptes partagent l’espace ; les rôles sont imposés côté serve
 L’authentification reste désactivée par défaut en local. Les sauvegardes sont
 chiffrées avec une clé publique utilisateur et les restaurations de vérification
 exigent une nouvelle base dédiée. Voir docs/WORKSPACE.md et docs/DEPLOYMENT.md.
+
+Le briefing `/briefing` est une liste de lecture par détection UTC, sans signal
+d’achat ni classement d’impact déduit. Ne pas réactiver les anciennes prévisions
+ou reconstruire des positions historiques depuis les positions actuelles. Le
+journal `/journal` conserve des hypothèses déclarées et leurs révisions immuables,
+datées par le serveur ; aucun ordre n’est généré. Le suivi `/collections` distingue
+publication, consultation, séance et reprise au plus tôt, sans promesse d’exécution.
+La couverture SEC IFRS ajoute Revenue, ProfitLoss et CashAndCashEquivalents ;
+ProfitLoss reste distinct du résultat net US-GAAP, sans BPA, comparaisons IFRS ou
+ratios implicites. Voir docs/DAILY_WORKSPACE.md.

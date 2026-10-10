@@ -291,7 +291,7 @@ Elle permet aussi de raccorder une cotation internationale à Alpha Vantage avec
 une [correspondance fournisseur explicite et sourcée](docs/PRICE_PROVIDERS.md),
 sans nouvelle clé ni suffixe deviné, dans le quota partagé existant.
 
-L’[interface et sa navigation](docs/FRONTEND.md) donnent accès aux six pages depuis
+L’[interface et sa navigation](docs/FRONTEND.md) donnent accès aux pages depuis
 un menu commun, adapté au mobile. L’analyse et le portefeuille sont organisés en
 sections ; les longues listes sont paginées, les tableaux principaux deviennent
 des cartes sur téléphone. Les contrôles navigateur se lancent avec
@@ -321,3 +321,18 @@ Les comptes en lecture, édition ou administration et les sauvegardes PostgreSQL
 chiffrées sont prêts à activer. L'authentification reste désactivée par défaut en
 local et le service de sauvegarde exige votre clé publique. Voir
 [l'activation des accès, sauvegardes et restauration](docs/DEPLOYMENT.md).
+
+## Lecture quotidienne et suivi des décisions
+
+- `/collections` : historique technique, réussites/erreurs, dates des données
+  et reprises au plus tôt, sans consommer de quota.
+- `/briefing` : nouveautés détectées pour une journée UTC, résultats prévisionnels,
+  chiffres découverts et dossiers à revoir ; filtre des positions actuelles.
+- `/journal` : hypothèses sourcées, risques, invalidation, horizon et révisions
+  datées ; référence facultative à une opération simulée, sans ordre automatique.
+
+Le flux officiel de la Banque d’Angleterre et trois concepts IFRS SEC complètent
+la collecte, sans couverture mondiale annoncée ni mélange US-GAAP/IFRS.
+Voir [les règles et limites](docs/DAILY_WORKSPACE.md).
+L’[assistant d’activation locale](docs/DEPLOYMENT.md) configure comptes et sauvegardes
+dans un override Docker privé, sans modifier `.env`.

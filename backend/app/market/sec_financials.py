@@ -34,7 +34,9 @@ CONCEPTS = {
     "NetCashProvidedByUsedInFinancingActivities": "financing_cash_flow",
     "PaymentsToAcquirePropertyPlantAndEquipment": "capex",
 }
-INSTANT_CONCEPTS = frozenset(
+IFRS_CONCEPTS = {"Revenue": "revenue", "ProfitLoss": "ifrs_profit_loss", "CashAndCashEquivalents": "cash"}
+TAXONOMIES = {"us-gaap": CONCEPTS, "ifrs-full": IFRS_CONCEPTS}
+INSTANT_CONCEPTS = frozenset({"CashAndCashEquivalents"}) | frozenset(
     concept
     for concept, metric in CONCEPTS.items()
     if metric
@@ -49,10 +51,11 @@ INSTANT_CONCEPTS = frozenset(
         "debt_leases_noncurrent",
     }
 )
-COLLECTOR_VERSION = "financial-v2"
+COLLECTOR_VERSION = "financial-v3-ifrs"
 METRIC_LABELS = {
     "revenue": "chiffre d’affaires",
     "net_income": "résultat net",
+    "ifrs_profit_loss": "résultat IFRS (ProfitLoss, attribution distincte du résultat US-GAAP)",
     "eps_basic": "BPA de base",
     "eps_diluted": "BPA dilué",
     "cash": "trésorerie et équivalents",
@@ -103,8 +106,8 @@ class FinancialRecord(BaseModel):
     @model_validator(mode="after")
     def consistent(self):
         if (
-            self.taxonomy != "us-gaap"
-            or CONCEPTS.get(self.concept) != self.metric
+            self.taxonomy not in TAXONOMIES
+            or TAXONOMIES.get(self.taxonomy, {}).get(self.concept) != self.metric
             or self.form not in FORMS
         ):
             raise ValueError("unsupported concept")
@@ -133,12 +136,12 @@ def parse_financials(payload: bytes, cik: str, today: date | None = None):
         facts = data["facts"]
         if not isinstance(facts, dict):
             raise ValueError("invalid facts")
-        gaap = facts.get("us-gaap", {})
-        if not isinstance(gaap, dict):
+        if any(not isinstance(facts.get(taxonomy, {}), dict) for taxonomy in TAXONOMIES):
             raise ValueError("invalid taxonomy")
         records = {}
         row_count = 0
-        for concept, metric in CONCEPTS.items():
+        for taxonomy, concept, metric in [(t, c, m) for t, concepts in TAXONOMIES.items() for c, m in concepts.items()]:
+            gaap = facts.get(taxonomy, {})
             if concept not in gaap:
                 continue
             units = gaap[concept]["units"]
@@ -166,6 +169,7 @@ def parse_financials(payload: bytes, cik: str, today: date | None = None):
                     ):
                         continue
                     record = FinancialRecord(
+                        taxonomy=taxonomy,
                         metric=metric,
                         concept=concept,
                         unit=unit,

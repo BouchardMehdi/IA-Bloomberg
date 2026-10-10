@@ -20,6 +20,35 @@ Une ancienne valeur explicite `NEXT_PUBLIC_API_URL` reste prioritaire ; utiliser
 
 ## Comptes et rôles
 
+### Activation locale accompagnée
+
+Sous Windows, depuis le projet :
+
+```powershell
+powershell -ExecutionPolicy Bypass -File deploy/Enable-LocalWorkspace.ps1 -Username administrateur
+```
+
+Le script crée un premier administrateur avec un mot de passe aléatoire conservé
+uniquement dans `private-data/local-access/first-login.json` (jamais affiché),
+une clé age dans `private-data/local-access/backup-identity.key`, puis active les
+comptes et sauvegardes via `docker-compose.override.yml`, ignoré par Git.
+Le dossier des secrets est limité au compte Windows courant et SYSTEM.
+Il conserve comptes et clés existants et refuse d’écraser un override.
+`.env` n’est pas modifié. `-PrepareOnly` prépare sans redémarrer les services.
+Docker Compose charge ensuite cet override avec `docker compose up -d --build`.
+L’option explicite `-f docker-compose.yml` seule ignore l’override : ne pas
+l’utiliser pour démarrer cet espace activé.
+
+Ouvrir les identifiants localement, se connecter puis changer le mot de passe
+dans Mon espace. Conserver la clé privée et une copie des archives chiffrées
+hors de la machine. Retirer le fichier initial après conservation sûre des
+identifiants. Les sauvegardes restent dans `private-data/backups/`.
+La configuration vise HTTP local (`development`, cookie non Secure).
+Pour un partage réseau/production, suivre la procédure HTTPS ci-dessous.
+Ce script ne déploie aucun site publiquement.
+
+### Activation manuelle et HTTPS
+
 L'authentification reste **désactivée par défaut en local** pour ne pas verrouiller
 les installations existantes. Avant d'exposer des données sur un réseau partagé :
 

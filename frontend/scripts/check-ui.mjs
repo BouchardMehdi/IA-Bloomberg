@@ -56,6 +56,9 @@ function payload(url) {
     next_offset: offset + limit < items.length ? offset + limit : null });
   if (path === "/health/live") return { status: "ok" };
   if (path === "/auth/me") return { auth_enabled: false, user: null };
+  if (path === "/workspace/collection-health") return { generated_at: stamp, scheduler: { last_seen_at: stamp, status: "recent" }, ...paged(mode === "empty" ? [] : many(24, i => ({id:`collect-${i}`,name:`Source officielle ${i}`,status:i===0?"failed":"healthy",last_attempt_at:stamp,last_success_at:stamp,last_publication_at:stamp,last_observed_at:stamp,next_eligible_at:stamp,cadence_minutes:30,error_code:i===0?"sec_http_error":null,notice:"Reprise au plus tôt, sans garantie.",url:source}))), notice:"État technique de test." };
+  if (path === "/workspace/briefing") return { day:"2026-10-10",generated_at:stamp,...paged(mode === "empty" ? [] : many(25,i=>({id:`brief-${i}`,kind:"publication",title:`Nouveauté ${i}`,message:"Observation à examiner.",detected_at:stamp,published_at:stamp,url:source,page:"/analysis",held:false}))),counts:{publication:25},research:[],upcoming:[],financials:[],reviews:[],limited:false,notice:"Journée UTC, sans signal d’achat.",holdings_notice:"Positions actuelles." };
+  if (path === "/workspace/journal") return {items:[],total:0,notice:"Hypothèses déclarées, pas des ordres."};
   if (path === "/auth/users") return { items: [] };
   if (path === "/workspace/alerts") return { ...paged(mode === "empty" ? [] : many(29, i => ({
     id: `alert-${i}`, kind: "publication", title: `Nouvelle publication ${i}`, message: "Source à examiner, sans signal d’achat.",
@@ -122,8 +125,8 @@ async function fixtureRoute(route) {
     headers: { "Access-Control-Allow-Origin": new URL(base).origin, "Access-Control-Allow-Credentials": "true" }, body: JSON.stringify(error ? { detail: "Service indisponible." } : payload(url)) });
 }
 await page.route("**/api/v1/**", fixtureRoute);
-const paths = ["/", "/analysis", "/calendar", "/portfolio", "/coverage", "/international", "/alerts", "/settings"];
-const names = ["Veille", "Analyser", "Calendrier", "Portefeuille", "Qualité des données", "International", "Alertes", "Mon espace"];
+const paths = ["/", "/analysis", "/calendar", "/portfolio", "/coverage", "/international", "/alerts", "/settings", "/collections", "/briefing", "/journal"];
+const names = ["Veille", "Analyser", "Calendrier", "Portefeuille", "Qualité des données", "International", "Alertes", "Mon espace", "Suivi des collectes", "Briefing quotidien", "Journal des décisions"];
 const widths = process.env.UI_CHECK_WIDTHS?.split(",").map(Number) ?? [1440, 768, 390, 320];
 let checked = 0;
 async function settled() { await page.waitForLoadState("networkidle"); }
@@ -263,7 +266,7 @@ try {
   assert.deepEqual(browserErrors, [], "No uncaught browser errors");
   for (const endpoint of ["articles", "events", "research-ranking", "wls-candidates", "financials", "earnings", "research"])
     assert(requests.some(u => u.pathname.endsWith(`/${endpoint}`) && Number(u.searchParams.get("offset")) > 0), `${endpoint}: server pagination exercised`);
-  console.log(`UI checks passed: ${checked} screens, eight routes, ${widths.length} widths, tutorials (persistence, keyboard, tabs and blocked storage), navigation, pagination, filters and empty/error states. Screenshots: ${screenshotDir}`);
+  console.log(`UI checks passed: ${checked} screens, eleven routes, ${widths.length} widths, tutorials (persistence, keyboard, tabs and blocked storage), navigation, pagination, filters and empty/error states. Screenshots: ${screenshotDir}`);
 } catch (error) {
   await page.screenshot({ path: `${screenshotDir}/failure.png` });
   console.error("Failed screen:", page.url(), await page.locator("main").innerText());

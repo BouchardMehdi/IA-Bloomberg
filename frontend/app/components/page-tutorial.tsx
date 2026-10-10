@@ -11,6 +11,30 @@ type Tutorial = {
 };
 
 const tutorials: Record<string, Tutorial> = {
+  "/collections": {
+    page: "Suivi des collectes", purpose: "Vérifiez quelles sources fonctionnent et distinguez les consultations récentes des publications réellement datées.",
+    steps: [
+      { title: "Choisissez une famille", text: "Documents et résultats, cours et calendrier, ou taux de change : chaque rubrique présente son historique technique." },
+      { title: "Examinez les dates", text: "Une réussite récente peut contenir des informations anciennes. Comparez consultation, publication, séance et date de référence." },
+      { title: "Comprenez la reprise", text: "Le prochain passage dépend du cache, des quotas et du scheduler. Actualiser l’état recharge ce tableau sans interroger les fournisseurs." },
+    ], remember: "Les reprises affichées sont des possibilités au plus tôt, pas des promesses d’exécution. Une source jamais consultée peut ne pas encore figurer dans l’historique.",
+  },
+  "/briefing": {
+    page: "Briefing quotidien", purpose: "Préparez votre lecture de la journée avec les nouvelles observations, les échéances et les dossiers à revoir.",
+    steps: [
+      { title: "Choisissez la journée", text: "Le briefing suit une journée UTC. Une information collectée ce jour peut avoir été publiée auparavant." },
+      { title: "Parcourez les rubriques", text: "Nouveautés, prochains résultats, chiffres collectés et hypothèses à réexaminer regroupent les informations déjà conservées." },
+      { title: "Ouvrez les preuves", text: "Consultez la publication et sa date avant de modifier une hypothèse. Le filtre des positions utilise vos détentions actuelles." },
+    ], remember: "Cette liste de lecture ne prédit ni hausse ni rendement. Les dates de résultats restent prévisionnelles ; les bornes de couverture sont affichées.",
+  },
+  "/journal": {
+    page: "Journal des décisions", purpose: "Conservez vos hypothèses et leurs révisions pour pouvoir relire les raisons de vos décisions.",
+    steps: [
+      { title: "Documentez une hypothèse", text: "Choisissez un titre puis indiquez les éléments à examiner, les risques, votre horizon et une date de réexamen." },
+      { title: "Prévoyez l’invalidation", text: "Écrivez ce qui vous ferait changer d’avis et citez les publications qui soutiennent votre réflexion." },
+      { title: "Ajoutez des révisions", text: "Enregistrez les nouvelles observations et, si utile, référencez une opération simulée. Chaque version précédente reste visible." },
+    ], remember: "Vos notes sont des déclarations, pas des analyses certifiées. Un statut de suivi ne prouve pas une détention et le journal ne transmet aucun ordre.",
+  },
   "/": {
     page: "Veille",
     purpose: "Cette page rassemble les publications collectées et les faits qui en ont été extraits. Elle vous aide à repérer les informations à examiner.",

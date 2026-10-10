@@ -124,7 +124,7 @@ def liquidity_observations(items: list[dict], now: datetime) -> list[dict]:
     selected = [
         item
         for item in items
-        if item["metric"] not in {"net_income", "revenue", "eps_basic", "eps_diluted"}
+        if item["metric"] not in {"net_income", "ifrs_profit_loss", "revenue", "eps_basic", "eps_diluted"}
         and date.fromisoformat(item["end"]) <= now.date()
         and date.fromisoformat(item["filed"]) <= now.date()
     ]

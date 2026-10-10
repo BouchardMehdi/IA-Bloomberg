@@ -16,6 +16,9 @@ est disponible au clavier.
 | `/international` — International | Cotations internationales, ajout d’identité, cours et taux |
 | `/alerts` — Alertes | Nouvelles observations et échecs de collecte |
 | `/settings` — Mon espace | Imports sourcés, propositions et comptes |
+| `/collections` — Suivi des collectes | Historique technique et reprises au plus tôt |
+| `/briefing` — Briefing quotidien | Nouveautés, échéances et dossiers à revoir |
+| `/journal` — Journal des décisions | Hypothèses et révisions sourcées |
 
 Les sections d’une page sont sélectionnées avec des boutons. Les explications
 longues et les formulaires avancés sont repliables. Les limites essentielles
@@ -26,7 +29,7 @@ une date de publication.
 
 ## Tutoriels pour les nouveaux utilisateurs
 
-Sous le titre de chacune des huit pages, un encart **Mode d’emploi** présente
+Sous le titre de chacune des onze pages, un encart **Mode d’emploi** présente
 le rôle de la page, trois étapes pour commencer et les limites à retenir. Son
 contenu dépend de la page ouverte et utilise les noms des sections et boutons
 de l’interface, sans demander de connaître l’architecture technique.
@@ -86,7 +89,7 @@ Pour une autre URL : `$env:UI_BASE_URL='http://localhost:3001'`.
 
 Les contrôles utilisent exclusivement des réponses API simulées dans le navigateur,
 sans modifier la base, passer d’ordre ni consommer de quota fournisseur. Ils
-vérifient les huit routes à 320, 390, 768 et 1 440 pixels, la navigation au clavier,
+vérifient les onze routes à 320, 390, 768 et 1 440 pixels, la navigation au clavier,
 les changements de section, les filtres, les paginations et les états vides/erreur.
 Ils contrôlent aussi le contenu des tutoriels sur chaque page, leur activation
 au clavier, la persistance après rechargement, la synchronisation entre onglets
@@ -107,3 +110,7 @@ Voir [l’espace partagé](WORKSPACE.md).
 `node scripts/check-workspace.mjs` vérifie aussi la connexion, l’expiration de
 session, les rôles, les imports et la confirmation des propositions avec des
 réponses entièrement simulées, sans écriture réelle.
+
+`node scripts/check-daily-workspace.mjs` vérifie la création du journal,
+la confirmation, la conservation des versions et l’accès en lecture seule,
+avec toutes les écritures simulées.
