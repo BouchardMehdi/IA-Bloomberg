@@ -11,6 +11,7 @@ from app.market.wls import eligibility
 from app.models.entity_registry import EntityRegistry
 from app.models.market import MarketInstrument
 from app.models.portfolio import PaperPortfolio, PaperPosition, PaperTrade
+from app.models.portfolio_tracking import PortfolioAction
 from app.schemas.market import PaperOrder, PortfolioCreate
 from app.services.market_data import MarketDataService
 from app.services.usd_valuation import UsdValuationService
@@ -26,6 +27,10 @@ class PaperPortfolioService:
     async def create(self, request: PortfolioCreate) -> dict:
         portfolio = PaperPortfolio(**request.model_dump(), cash=request.initial_capital)
         self.session.add(portfolio)
+        await self.session.flush()
+        from app.services.portfolio_history import PortfolioHistoryService
+
+        await PortfolioHistoryService(self.session).capture(portfolio.id, commit=False)
         await self.session.commit()
         return {"id": portfolio.id, "name": portfolio.name}
 
@@ -59,6 +64,7 @@ class PaperPortfolioService:
                     MarketInstrument.id == PaperPosition.instrument_id,
                 )
                 .where(PaperPosition.portfolio_id == portfolio_id, PaperPosition.quantity > 0)
+                .order_by(PaperPosition.instrument_id)
             )
         ).all()
         holdings = []
@@ -112,6 +118,20 @@ class PaperPortfolioService:
                 .limit(50)
             )
         ).all()
+        actions = (
+            (
+                await self.session.execute(
+                    select(PortfolioAction)
+                    .where(PortfolioAction.portfolio_id == portfolio_id)
+                    .order_by(PortfolioAction.id)
+                )
+            )
+            .scalars()
+            .all()
+        )
+        dividend_income = sum(
+            (Decimal(a.data["cash_delta"]) for a in actions if a.kind == "dividend"), Decimal("0")
+        )
         return {
             "id": portfolio.id,
             "name": portfolio.name,
@@ -130,6 +150,8 @@ class PaperPortfolioService:
             if all_priced
             else None,
             "realized_pnl": realized,
+            "dividend_income": dividend_income,
+            "action_ids": [a.id for a in actions],
             "valuation_stale": any(h["stale"] for h in holdings),
             "positions": holdings,
             "trades": [self.trade_read(t, symbol, exchange) for t, symbol, exchange in trades],
@@ -220,6 +242,17 @@ class PaperPortfolioService:
         if portfolio.allowed_symbols and instrument.symbol not in portfolio.allowed_symbols:
             raise ValueError("Titre non autorisé dans ce portefeuille.")
         quote = await self.market.latest_price(instrument.id)
+        last_split = (
+            await self.session.execute(
+                select(func.max(PortfolioAction.effective_date)).where(
+                    PortfolioAction.portfolio_id == portfolio_id,
+                    PortfolioAction.instrument_id == instrument.id,
+                    PortfolioAction.kind == "split",
+                )
+            )
+        ).scalar_one()
+        if last_split and (quote is None or quote.session_date < last_split):
+            raise ValueError("Cours antérieur au split enregistré : actualiser la clôture brute.")
         if (
             quote is None
             or not 0
@@ -284,5 +317,9 @@ class PaperPortfolioService:
             else None,
         )
         self.session.add(trade)
+        await self.session.flush()
+        from app.services.portfolio_history import PortfolioHistoryService
+
+        await PortfolioHistoryService(self.session).capture(portfolio_id, commit=False)
         await self.session.commit()
         return self.trade_read(trade, instrument.symbol, instrument.exchange)

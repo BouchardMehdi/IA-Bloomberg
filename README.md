@@ -166,7 +166,8 @@ selon les précisions reçues ; Bloomberg assure la conversion pour le challenge
 La page <http://localhost:3000/international> permet de fournir des identités,
 clôtures locales et taux sourcés pour une valorisation et simulation en USD.
 Voir [la procédure internationale](docs/INTERNATIONAL_MARKET.md). La collecte
-automatique des cotations internationales reste à connecter. Le
+automatique des cotations internationales exige désormais une correspondance
+fournisseur explicite et sourcée, à enregistrer depuis `/coverage`. Le
 [contrat commun des fournisseurs de cours](docs/PRICE_PROVIDERS.md) est prêt,
 avec contrôles de cotation/devise/unité, quotas persistants et reprises après erreur. Les
 [taux de référence BCE sont désormais collectés automatiquement](docs/FX_COLLECTION.md),
@@ -186,8 +187,9 @@ Les anciennes clôtures ne sont pas du temps réel ; une opération simulée con
 son prix, sa date de cours et sa source. Il n'y a pas encore de recommandations IA.
 
 Voir [la procédure et les limites](docs/MARKET_PORTFOLIO.md) pour le quota, les cours
-bruts, les opérations idempotentes et les frais. Les dividendes et splits ne sont
-pas comptabilisés automatiquement.
+bruts, les opérations idempotentes et les frais. Les dividendes et splits sourcés
+peuvent être appliqués explicitement à une simulation ; ils ne sont pas collectés
+automatiquement.
 
 ## Développement local
 
@@ -279,3 +281,12 @@ liste déclarée une fois la cotation résolue ; les portefeuilles existants res
 stricts. Les sources, inconnues et preuves sont conservées. La composition WLS
 n'est pas datée artificiellement et les données financières absentes restent
 indisponibles.
+
+Le [suivi historique du portefeuille](docs/PORTFOLIO_TRACKING.md) conserve des
+instantanés datés et sourcés, avec courbe quotidienne et saisie contrôlée de
+dividendes nets et splits. Les jours manquants ne sont pas reconstitués.
+La page <http://localhost:3000/coverage> permet de filtrer les données manquantes,
+préparer les preuves de valorisation et importer des observations complètes en lot.
+Elle permet aussi de raccorder une cotation internationale à Alpha Vantage avec
+une [correspondance fournisseur explicite et sourcée](docs/PRICE_PROVIDERS.md),
+sans nouvelle clé ni suffixe deviné, dans le quota partagé existant.

@@ -100,9 +100,11 @@ portefeuille/identifiant d'ordre rend une reprise idempotente : le même ordre
 renvoie sa ligne existante ; réutiliser son identifiant pour un ordre différent est
 refusé. Les conversions USD sont désormais sourcées et conservées dans chaque
 opération convertie. Les conventions exactes de Bloomberg ne sont pas connues.
-Les dividendes, splits, frais de change, taxes, glissement de prix,
-frais minimaux et liquidité ne sont pas modélisés. Il faut les ajouter avant de
-présenter la simulation comme une reproduction fidèle du challenge.
+Les [dividendes nets et splits déclarés](PORTFOLIO_TRACKING.md) sont désormais
+appliqués explicitement avec leurs preuves, sans collecte automatique ni règles
+Bloomberg supposées. Frais de change, taxes, glissement de prix, frais minimaux
+et liquidité ne sont pas modélisés. La simulation ne reproduit donc pas fidèlement
+le challenge. Les instantanés quotidiens conservent les prix et taux observés.
 
 ## API et vérifications
 

@@ -14,7 +14,8 @@ from app.market.earnings_calendar import EarningsCalendarClient
 from app.schemas.earnings import EarningsInput
 from app.schemas.international import FxRateCreate, InternationalInstrumentCreate, LocalPriceCreate
 from app.schemas.market import InstrumentCreate, PaperOrder, PortfolioCreate
-from app.schemas.valuation import ValuationInput
+from app.schemas.portfolio_tracking import CorporateActionInput, PriceMappingInput
+from app.schemas.valuation import ValuationBatch, ValuationInput
 from app.schemas.wls_candidates import CandidateMapping, CandidateMappingBatch
 from app.services.company_publications import CompanyPublicationService
 from app.services.earnings import EarningsService
@@ -23,9 +24,13 @@ from app.services.financial_trends import FinancialTrendsService
 from app.services.fx_collection import FxCollectionService
 from app.services.instrument_research import InstrumentResearchService
 from app.services.international_market import InternationalMarketService
+from app.services.market_coverage import MarketCoverageService
 from app.services.market_data import MarketDataService
 from app.services.opportunity import OpportunityService
 from app.services.paper_portfolio import PaperPortfolioService
+from app.services.portfolio_actions import PortfolioActionService
+from app.services.portfolio_history import PortfolioHistoryService
+from app.services.price_mappings import PriceMappingService
 from app.services.research_ranking import ResearchRankingService
 from app.services.valuation import ValuationService
 from app.services.wls_automation import WlsAutomationService
@@ -40,6 +45,77 @@ def market_response(data: dict, status_code: int = 200) -> JSONResponse:
     return JSONResponse(
         jsonable_encoder(data, custom_encoder={Decimal: str}), status_code=status_code
     )
+
+
+@router.get("/coverage")
+async def market_coverage(session: Db):
+    return market_response(await MarketCoverageService(session).detail())
+
+
+@router.get("/price-mappings")
+async def price_mappings(session: Db):
+    return market_response(await PriceMappingService(session).detail())
+
+
+@router.post("/price-mappings")
+async def add_price_mapping(request: PriceMappingInput, session: Db):
+    try:
+        return market_response(await PriceMappingService(session).add(request))
+    except (LookupError, ValueError) as exc:
+        await session.rollback()
+        raise HTTPException(404 if isinstance(exc, LookupError) else 400, str(exc)) from None
+
+
+@router.get("/instruments/{instrument_id}/valuation-preparation")
+async def valuation_preparation(instrument_id: UUID, session: Db):
+    result = await MarketCoverageService(session).valuation_preparation(instrument_id)
+    if result is None:
+        raise HTTPException(404, "Titre introuvable.")
+    return market_response(result)
+
+
+@router.post("/valuations/batch")
+async def add_valuation_batch(request: ValuationBatch, session: Db):
+    return market_response(await ValuationService(session).add_batch(request))
+
+
+@router.get("/portfolios/{portfolio_id}/history")
+async def portfolio_history(
+    portfolio_id: UUID, session: Db, limit: Annotated[int, Query(ge=1, le=1000)] = 365
+):
+    result = await PortfolioHistoryService(session).detail(portfolio_id, limit)
+    if result is None:
+        raise HTTPException(404, "Portefeuille introuvable.")
+    return market_response(result)
+
+
+@router.post("/portfolios/{portfolio_id}/history")
+async def capture_portfolio(portfolio_id: UUID, session: Db):
+    try:
+        return market_response(await PortfolioHistoryService(session).capture(portfolio_id))
+    except LookupError as exc:
+        raise HTTPException(404, str(exc)) from None
+
+
+@router.get("/portfolios/{portfolio_id}/actions")
+async def portfolio_actions(portfolio_id: UUID, session: Db):
+    result = await PortfolioActionService(session).detail(portfolio_id)
+    if result is None:
+        raise HTTPException(404, "Portefeuille introuvable.")
+    return market_response(result)
+
+
+@router.post("/portfolios/{portfolio_id}/actions/{instrument_id}")
+async def add_portfolio_action(
+    portfolio_id: UUID, instrument_id: UUID, request: CorporateActionInput, session: Db
+):
+    try:
+        return market_response(
+            await PortfolioActionService(session).apply(portfolio_id, instrument_id, request)
+        )
+    except (LookupError, ValueError) as exc:
+        await session.rollback()
+        raise HTTPException(404 if isinstance(exc, LookupError) else 400, str(exc)) from None
 
 
 @router.get("/instruments")

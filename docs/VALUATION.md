@@ -81,3 +81,7 @@ PostgreSQL/API sans réseau, toutes les fixtures annulées :
 ```powershell
 docker compose run --rm --no-deps backend python -m tests.smoke_valuation
 ```
+
+`/coverage` expose désormais les blocages, les documents SEC candidats et un
+import JSON de preuves complètes. Aucun BPA candidat n'est injecté automatiquement.
+Voir [préparation et import en lot](PORTFOLIO_TRACKING.md).

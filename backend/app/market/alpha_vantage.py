@@ -66,11 +66,23 @@ class AlphaVantageClient:
     def __init__(self, api_key: str, *, transport=None, daily_request_budget: int = 20):
         self.api_key = api_key
         self.transport = transport
+        self.mappings = {}
         self.policy = ProviderPolicy(
             provider="alpha_vantage", daily_request_budget=min(daily_request_budget, 25)
         )
 
     def supports(self, identity: QuoteIdentity) -> bool:
+        if identity.exchange not in {"NYSE", "Nasdaq"}:
+            mapping = self.mappings.get(str(identity.instrument_id))
+            if not mapping:
+                return False
+            try:
+                mapped = QuoteIdentity.model_validate(
+                    {k: mapping.get(k) for k in QuoteIdentity.model_fields}
+                )
+                return mapped == identity
+            except ValueError:
+                return False
         return (
             identity.exchange in {"NYSE", "Nasdaq"}
             and identity.currency == "USD"
@@ -80,11 +92,14 @@ class AlphaVantageClient:
     async def fetch(self, identity: QuoteIdentity) -> QuoteBatch:
         if not self.supports(identity):
             raise MarketDataError("unsupported_listing")
-        records, source_url = await self.daily(identity.symbol)
+        mapping = self.mappings.get(str(identity.instrument_id))
+        symbol = mapping["provider_symbol"] if mapping else identity.symbol
+        records, source_url = await self.daily(symbol)
         return QuoteBatch(
             identity=identity,
             provider=self.policy.provider,
-            provider_symbol=identity.symbol,
+            provider_symbol=symbol,
+            mapping_evidence=mapping,
             source_url=source_url,
             records=records,
         )

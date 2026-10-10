@@ -54,7 +54,10 @@ comme identique à celle du challenge.
 L'application collecte automatiquement les titres NYSE/Nasdaq suivis en USD.
 Les [cotations internationales et taux sourcés](INTERNATIONAL_MARKET.md) peuvent
 désormais être fournis explicitement pour valoriser et simuler en USD. Leur
-collecte automatique reste à connecter ; aucun titre ni taux fictif n'est ajouté.
+collecte automatique peut être raccordée à Alpha Vantage après déclaration d'une
+correspondance exacte et sourcée depuis `/coverage` ; aucun titre ni taux fictif
+n'est ajouté. Les [instantanés et opérations sur titres](PORTFOLIO_TRACKING.md)
+de simulation ne certifient pas le traitement Bloomberg des dividendes ou splits.
 
 ## Importer l'univers
 

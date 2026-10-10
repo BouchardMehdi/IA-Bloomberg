@@ -8,11 +8,15 @@ from app.models.event import Event, EventArticle
 from app.models.financial_fact import FinancialFact
 from app.models.market import DailyPrice, FxCollectionRun, FxRate, MarketFetchRun, MarketInstrument
 from app.models.portfolio import PaperPortfolio, PaperPosition, PaperTrade
+from app.models.portfolio_tracking import PortfolioAction, PortfolioObservation, PriceListingMapping
 from app.models.source import Source
 from app.models.valuation import ValuationObservation
 from app.models.wls_identity import WlsIdentityObservation
 
 __all__ = [
+    "PortfolioAction",
+    "PortfolioObservation",
+    "PriceListingMapping",
     "WlsIdentityObservation",
     "ValuationObservation",
     "AnalysisPassage",

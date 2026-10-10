@@ -2,9 +2,10 @@
 
 La collecte et PostgreSQL utilisent désormais une interface commune pour les
 fournisseurs de cours. **Alpha Vantage est le seul adaptateur connecté** ; sa
-couverture reste NYSE/Nasdaq, USD, facteur d'unité 1. Les clôtures internationales
-restent fournies manuellement depuis `/international`. Cette infrastructure ne
-reconstitue pas le WLS et n'active aucune nouvelle source de données.
+couverture implicite reste NYSE/Nasdaq, USD, facteur d'unité 1. Une cotation
+internationale peut désormais être raccordée avec une correspondance explicite,
+datée et sourcée depuis `/coverage` ; sans correspondance elle reste manuelle
+depuis `/international`. Cette infrastructure ne reconstitue pas le WLS.
 
 ## Contrat et contrôles
 
@@ -19,7 +20,7 @@ exact (zéros initiaux conservés), marché, devise principale et facteur d'unit
 Le lot retourné doit correspondre exactement à cette identité et au fournisseur.
 Il conserve aussi le symbole propre au fournisseur. Le contrat accepte les
 devises prises en charge par la simulation et les facteurs explicites, notamment
-0,01 pour des cours en pence ; aucun adaptateur international n'est encore activé.
+0,01 pour des cours en pence, à condition de documenter l'unité fournisseur.
 
 Avant toute écriture, le service revalide le lot entier avec Pydantic :
 
@@ -36,8 +37,12 @@ Alpha Vantage vérifie le symbole de ses métadonnées. Le marché, la devise et
 l'unité sont des conventions déclarées pour la cotation suivie ; la réponse
 `TIME_SERIES_DAILY` ne les certifie pas indépendamment. Ce contrat contrôle les
 incohérences d'un adaptateur, pas la véracité des données de son fournisseur.
-Un nouvel adaptateur devra vérifier ses métadonnées et ses correspondances
-explicites avant de construire ce lot ; recopier l'identité ne constitue pas une preuve.
+Le mode international exige une correspondance déclarée du symbole fournisseur,
+MIC, devise et unité, enregistrée séparément avec ses preuves. Alpha Vantage
+vérifie ensuite le symbole de réponse ; son endpoint ne certifie pas la devise
+ou le MIC. Les preuves manuelles restent déclarées, non certifiées. Un nouvel
+adaptateur devra vérifier ses métadonnées et correspondances explicites avant
+de construire ce lot ; recopier l'identité ne constitue pas une preuve.
 
 ## Quotas et reprises
 
@@ -86,14 +91,32 @@ La page `/portfolio` affiche le budget et la suspension. L'historique
 `GET /instruments/{id}/prices` expose fournisseur et contexte par observation ;
 `GET /instruments` expose aussi `retry_at` pour le titre.
 
-## Raccorder l'international ensuite
+## Raccordement international explicite
 
-Lorsque l'export WLS et une source de cours autorisée seront disponibles, il
-faudra choisir un fournisseur couvrant les cotations concernées, enregistrer et
-vérifier ses correspondances exactes par titre/marché, puis ajouter son adaptateur
-et sa configuration serveur. Ni suffixe de ticker, ni MIC, ni symbole Bloomberg,
-ni devise/unité ne doivent être devinés. Aucun abonnement n'est requis pour
-préparer ce socle ; aucune clé n'est exposée au navigateur.
+La [documentation officielle Alpha Vantage](https://www.alphavantage.co/documentation/)
+décrit `TIME_SERIES_DAILY` comme une série mondiale brute. Sa disponibilité
+effective reste celle du fournisseur et du compte ; aucun abonnement n'est pris.
+Le formulaire `/coverage` ou `POST /api/v1/market/price-mappings` exige
+`PriceMappingInput` : identité interne exacte, symbole fournisseur exact, devise,
+facteur d'unité, URL et date de publication de la preuve, date de validité,
+justification et confirmation. `GET /price-mappings` conserve ces déclarations.
+La cotation internationale doit d'abord exister dans `/international`.
+
+La preuve doit documenter la cotation, devise et unité **du fournisseur**. Ni
+suffixe, MIC, symbole Bloomberg, ni devise/unité ne sont déduits d'un nom ou ISIN.
+La saisie ne certifie pas la preuve. Un enregistrement contradictoire est refusé ;
+une reprise identique ne le remplace pas. Le fournisseur du titre devient
+`alpha_vantage` et le scheduler charge les correspondances à chaque collecte.
+L'identité courante doit toujours correspondre exactement à la déclaration.
+Les titres US suivent leur voie existante ; aucune correspondance implicite
+internationale n'est ajoutée et aucune correspondance réelle n'est préchargée.
+
+Le symbole fournisseur est validé contre les métadonnées de réponse. Le lot
+garde l'identité locale et les preuves dans `quote_context.mapping_evidence`.
+La même clé serveur et le **même quota persistant** servent les cours US,
+internationaux et le calendrier. Une suspension existante reste respectée.
+Les règles FX, fraîcheur, WLS et simulation ne sont pas modifiées. Sans preuve
+ou disponibilité du marché, le cours reste absent ; aucune valeur n'est inventée.
 
 ## Vérifications
 

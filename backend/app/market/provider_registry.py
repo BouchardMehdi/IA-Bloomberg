@@ -22,5 +22,6 @@ def price_provider_catalog(settings: Settings) -> list[dict]:
             "currencies": ["USD"],
             "quote_multipliers": ["1"],
             "adjusted": False,
+            "international": "explicit_sourced_mapping_required",
         }
     ]

@@ -83,6 +83,7 @@ class QuoteBatch(ImmutableModel):
     source_url: HttpUrl
     adjusted: Literal[False] = False
     records: tuple[DailyClose, ...] = Field(min_length=1, max_length=1000)
+    mapping_evidence: dict | None = None
 
     @field_validator("source_url")
     @classmethod
@@ -110,11 +111,14 @@ class QuoteBatch(ImmutableModel):
         return self
 
     def context(self) -> dict:
-        return {
+        context = {
             **self.identity.model_dump(mode="json"),
             "provider_symbol": self.provider_symbol,
             "adjusted": self.adjusted,
         }
+        if self.mapping_evidence is not None:
+            context["mapping_evidence"] = self.mapping_evidence
+        return context
 
 
 class ProviderPolicy(ImmutableModel):

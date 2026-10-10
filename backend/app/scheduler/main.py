@@ -24,6 +24,7 @@ from app.services.financial_results import FinancialResultsService
 from app.services.fx_collection import FxCollectionService
 from app.services.ingestion import ArticleIngestionService
 from app.services.market_data import MarketDataService
+from app.services.portfolio_history import PortfolioHistoryService
 from app.services.semantic_analysis import SemanticAnalysisService
 from app.services.wls_automation import WlsAutomationService
 
@@ -148,6 +149,7 @@ async def run_semantic_analyzer(
 async def serve() -> None:
     settings = get_settings()
     tasks = [
+        run_portfolio_history(),
         run_market_collector(),
         run_entity_resolver(),
         run_collector(
@@ -204,6 +206,19 @@ async def serve() -> None:
 async def run_wls_identity_collector() -> None:
     if not get_settings().scheduler_run_on_start:
         await asyncio.sleep(5)
+
+
+async def run_portfolio_history() -> None:
+    if not get_settings().scheduler_run_on_start:
+        await asyncio.sleep(3600)
+    while True:
+        try:
+            async with async_session_factory() as session:
+                stats = await PortfolioHistoryService(session).collect()
+            logger.info("Portfolio observations completed: %s", stats)
+        except Exception:
+            logger.exception("Portfolio observation failed; previous history retained")
+        await asyncio.sleep(3600)
     while True:
         try:
             async with async_session_factory() as session:

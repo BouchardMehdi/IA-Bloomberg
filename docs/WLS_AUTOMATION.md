@@ -117,8 +117,9 @@ manifeste privé restent hors Git ; la source originale et son hash sont conserv
 L'automatisation ne reconstitue pas les quelque 7 400 titres manquants. Elle ne
 connecte pas de nouveau fournisseur de cours internationaux et n'invente ni prix,
 devise, unité, ratio ADR, BPA par titre ou référence de valorisation. La couverture
-automatique de cours reste NYSE/Nasdaq USD ; les cotations internationales restent
-fournies par une source autorisée avec leurs conventions exactes. Les contrôles de
+automatique implicite de cours reste NYSE/Nasdaq USD ; les cotations internationales
+exigent une [correspondance fournisseur sourcée](PRICE_PROVIDERS.md) ou une saisie
+manuelle avec leurs conventions exactes. Les contrôles de
 valorisation et des comparaisons financières restent ceux de leurs documentations.
 La performance est celle de notre simulation, sans équivalence certifiée avec le
 challenge ou son benchmark privé.

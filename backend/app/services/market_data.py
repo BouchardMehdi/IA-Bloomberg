@@ -12,6 +12,7 @@ from app.market.providers import MarketDataError, PriceProvider, QuoteIdentity, 
 from app.market.wls import eligibility
 from app.models.entity_registry import EntityRegistry
 from app.models.market import DailyPrice, MarketFetchRun, MarketInstrument
+from app.models.portfolio_tracking import PriceListingMapping
 from app.schemas.market import InstrumentCreate
 from app.services.usd_valuation import UsdValuationService
 from app.services.wls_automation import WlsAutomationService
@@ -82,7 +83,11 @@ class MarketDataService:
             "items": items,
             "quota_day": day_start.date(),
             "quota_timezone": "UTC",
-            "international_quotes_connected": False,
+            "international_quotes_connected": bool(
+                (
+                    await self.session.execute(select(PriceListingMapping.instrument_id).limit(1))
+                ).first()
+            ),
         }
 
     async def add_instrument(self, request: InstrumentCreate) -> dict:
@@ -248,6 +253,18 @@ class MarketDataService:
         }
 
     async def collect(self, client: PriceProvider, limit: int = 5) -> dict:
+        from app.market.alpha_vantage import AlphaVantageClient
+        from app.schemas.portfolio_tracking import PriceMappingInput
+
+        if isinstance(client, AlphaVantageClient):
+            rows = (await self.session.execute(select(PriceListingMapping))).scalars().all()
+            client.mappings = {
+                str(r.instrument_id): PriceMappingInput.model_validate(r.data).model_dump(
+                    mode="json"
+                )
+                | {"observed_at": r.observed_at.isoformat()}
+                for r in rows
+            }
         policy = client.policy
         ids = (
             (

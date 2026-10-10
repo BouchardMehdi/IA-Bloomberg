@@ -1,6 +1,7 @@
 from datetime import UTC, date, datetime
 from decimal import Decimal
 from typing import Literal
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator, model_validator
 
@@ -77,3 +78,14 @@ class ValuationInput(BaseModel):
         if self.published_at.astimezone(UTC).date() < self.period_end:
             raise ValueError("La publication du résultat doit suivre la fin de période.")
         return self
+
+
+class ValuationBatchItem(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    instrument_id: UUID
+    observation: ValuationInput
+
+
+class ValuationBatch(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    items: list[ValuationBatchItem] = Field(min_length=1, max_length=100)

@@ -5,9 +5,9 @@ clôtures locales et taux provenant de sources que l’utilisateur est autorisé
 exploiter. Aucun exemple de titre, composition WLS ou taux n’est chargé dans la
 base réelle. L’import WLS reste une opération séparée. Les
 [taux de référence BCE sont collectés automatiquement](FX_COLLECTION.md).
-La collecte automatique des clôtures internationales reste à connecter. Le
-[socle commun des fournisseurs](PRICE_PROVIDERS.md) prépare ce raccordement,
-sans activer de fournisseur ni inventer de correspondances de titres.
+La collecte automatique Alpha Vantage est désormais disponible pour les cotations
+internationales avec une [correspondance fournisseur explicite et sourcée](PRICE_PROVIDERS.md).
+Sans cette preuve ou disponibilité du marché, les clôtures restent manuelles.
 
 ## Identifier une cotation
 
@@ -92,7 +92,9 @@ la concentration du portefeuille, calculée sur les valeurs USD. Une cotation
 internationale fournie ne consomme pas le quota du collecteur américain.
 
 Les règles de conversion Bloomberg (heure, taux et arrondi), frais de change,
-calendriers, tailles de lots, dividendes et splits restent à confirmer ou intégrer.
+calendriers et tailles de lots restent à confirmer. La simulation accepte des
+[dividendes nets et splits déclarés](PORTFOLIO_TRACKING.md), sans supposer leur
+traitement officiel dans le challenge.
 Les dates quotidiennes ne permettent pas d’établir un ordre intrajournalier précis
 entre publication du taux et clôture. Cette simulation n’est pas une reproduction
 exacte du challenge ni un backtest historique.

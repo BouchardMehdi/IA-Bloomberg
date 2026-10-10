@@ -114,6 +114,19 @@ class ValuationService:
     def __init__(self, session):
         self.session = session
 
+    async def add_batch(self, request):
+        results = []
+        for item in request.items:
+            try:
+                result = await self.add(item.instrument_id, item.observation)
+                results.append({"instrument_id": item.instrument_id, "status": "saved", **result})
+            except (LookupError, ValueError) as exc:
+                await self.session.rollback()
+                results.append(
+                    {"instrument_id": item.instrument_id, "status": "rejected", "reason": str(exc)}
+                )
+        return {"items": results, "saved_count": sum(r["status"] == "saved" for r in results)}
+
     async def add(self, instrument_id: UUID, request: ValuationInput):
         instrument = await self.session.get(MarketInstrument, instrument_id)
         if instrument is None:

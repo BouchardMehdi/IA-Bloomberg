@@ -11,6 +11,8 @@ node_modules/
 .next/
 out/
 coverage/
+!frontend/app/coverage/
+!frontend/app/coverage/**
 *.log
 .DS_Store
 .idea/

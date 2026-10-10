@@ -137,6 +137,21 @@ Les cotations internationales restent manuelles jusqu'au raccordement d'une
 source autorisée et de correspondances exactes ; ne pas inventer de suffixes.
 Conserver fournisseur et conventions de chaque cours. Voir docs/PRICE_PROVIDERS.md.
 
+Le raccordement international Alpha Vantage utilise désormais uniquement des
+correspondances explicitement documentées dans `price_listing_mappings`, avec
+MIC, devise, unité et symbole fournisseur exacts. La saisie reste déclarée ; les
+métadonnées de réponse certifient seulement le symbole, pas ces conventions.
+Conserver les preuves dans le contexte de cours et respecter le quota partagé.
+Aucune correspondance internationale réelle n'est devinée ou préchargée.
+
+L'historique du portefeuille conserve des instantanés réellement observés, sans
+écrasement ni reconstitution des jours passés. Les cours/FX absents ou anciens
+restent signalés, sans interpolation de performance. Dividendes nets et splits
+sont déclarés par cotation et simulation, atomiques et idempotents ; ne pas
+inventer d'impôts, fractions compensées, réinvestissement ou règles Bloomberg.
+Les splits rétroactifs incompatibles avec le registre sont refusés et les
+preuves des ordres passés restent immuables. Voir docs/PORTFOLIO_TRACKING.md.
+
 Les fiches `/analysis` rapprochent les titres suivis des documents et faits sans
 appel LLM supplémentaire. Distinguer la mention du titre et de sa cotation du
 contexte de l’émetteur. Ne pas transformer ce rapprochement en impact financier
