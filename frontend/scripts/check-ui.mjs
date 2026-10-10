@@ -98,16 +98,18 @@ function payload(url) {
   unexpected.push(path); return {};
 }
 
-const page = await browser.newPage();
+const context = await browser.newContext();
+const page = await context.newPage();
 page.setDefaultTimeout(15000);
 page.on("pageerror", error => browserErrors.push(error.message));
-await page.route("**/api/v1/**", async route => {
+async function fixtureRoute(route) {
   const request = route.request(), url = new URL(request.url());
   requests.push(url);
   assert.equal(request.method(), "GET", "UI verification must never write to the API");
   await route.fulfill({ status: mode === "error" ? 503 : 200, contentType: "application/json",
     headers: { "Access-Control-Allow-Origin": "*" }, body: JSON.stringify(mode === "error" ? { detail: "Service indisponible." } : payload(url)) });
-});
+}
+await page.route("**/api/v1/**", fixtureRoute);
 const paths = ["/", "/analysis", "/calendar", "/portfolio", "/coverage", "/international"];
 const names = ["Veille", "Analyser", "Calendrier", "Portefeuille", "Qualité des données", "International"];
 const widths = process.env.UI_CHECK_WIDTHS?.split(",").map(Number) ?? [1440, 768, 390, 320];
@@ -125,10 +127,55 @@ const pager = label => page.getByRole("navigation", { name: `Pagination : ${labe
 const next = label => pager(label).getByRole("button", { name: `Page suivante : ${label}`, exact: true });
 const switchSection = name => page.getByRole("group").getByRole("button", { name, exact: true }).click();
 try {
+  // Tutorials remain available on every page and remember the browser preference.
+  await page.goto(base); await settled();
+  const tutorial = page.getByRole("region", { name: /^Tutoriel :/ });
+  const hideTutorial = () => page.getByRole("button", { name: "Masquer le tutoriel", exact: true });
+  const showTutorial = () => page.getByRole("button", { name: "Afficher le tutoriel", exact: true });
+  assert.equal(await hideTutorial().getAttribute("aria-expanded"), "true");
+  assert.equal(await tutorial.locator("ol li").count(), 3);
+  await hideTutorial().focus(); await page.keyboard.press("Enter");
+  assert.equal(await showTutorial().getAttribute("aria-expanded"), "false");
+  assert.equal(await tutorial.locator("ol").isVisible(), false);
+  assert.equal(await page.evaluate(() => localStorage.getItem("market-ai:tutorials:v1")), "hidden");
+  await page.reload(); await settled(); assert.equal(await showTutorial().isVisible(), true);
+  await page.goto(`${base}/calendar`); await settled();
+  assert.equal(await showTutorial().isVisible(), true);
+  assert.equal(await page.getByRole("region", { name: "Tutoriel : Calendrier", exact: true }).count(), 1);
+  await showTutorial().click(); await page.reload(); await settled(); assert.equal(await hideTutorial().isVisible(), true);
+
+  const otherTab = await page.context().newPage();
+  await otherTab.route("**/api/v1/**", fixtureRoute);
+  otherTab.on("pageerror", error => browserErrors.push(error.message));
+  await otherTab.goto(`${base}/analysis`); await otherTab.waitForLoadState("networkidle");
+  await otherTab.getByRole("button", { name: "Masquer le tutoriel", exact: true }).click();
+  await showTutorial().waitFor(); // Browser storage events synchronize tabs.
+  await showTutorial().click();
+  await otherTab.getByRole("button", { name: "Masquer le tutoriel", exact: true }).waitFor();
+  await otherTab.close();
+
+  const blockedStorage = await page.context().newPage();
+  await blockedStorage.route("**/api/v1/**", fixtureRoute);
+  blockedStorage.on("pageerror", error => browserErrors.push(error.message));
+  await blockedStorage.addInitScript(() => {
+    for (const method of ["getItem", "setItem"]) Object.defineProperty(Storage.prototype, method, {
+      configurable: true, value() { throw new DOMException("Storage unavailable", "SecurityError"); },
+    });
+  });
+  await blockedStorage.goto(base); await blockedStorage.waitForLoadState("networkidle");
+  await blockedStorage.getByRole("button", { name: "Masquer le tutoriel", exact: true }).click();
+  assert.equal(await blockedStorage.getByRole("button", { name: "Afficher le tutoriel", exact: true }).getAttribute("aria-expanded"), "false");
+  await blockedStorage.getByRole("button", { name: "Afficher le tutoriel", exact: true }).click();
+  assert.equal(await blockedStorage.getByRole("button", { name: "Masquer le tutoriel", exact: true }).getAttribute("aria-expanded"), "true");
+  await blockedStorage.close();
+
   for (const width of widths) {
     await page.setViewportSize({ width, height: 950 });
     for (let i = 0; i < paths.length; i++) {
       await page.goto(`${base}${paths[i]}`); await settled();
+      const pageTutorial = page.getByRole("region", { name: `Tutoriel : ${names[i]}`, exact: true });
+      assert.equal(await pageTutorial.locator("ol").isVisible(), true);
+      assert.equal(await pageTutorial.locator("ol li").count(), 3);
       if (width >= 1024) {
         const nav = page.getByRole("navigation", { name: "Navigation principale", exact: true });
         assert.equal(await nav.getByRole("link").count(), 6);
@@ -204,7 +251,7 @@ try {
   assert.deepEqual(browserErrors, [], "No uncaught browser errors");
   for (const endpoint of ["articles", "events", "research-ranking", "wls-candidates", "financials", "earnings", "research"])
     assert(requests.some(u => u.pathname.endsWith(`/${endpoint}`) && Number(u.searchParams.get("offset")) > 0), `${endpoint}: server pagination exercised`);
-  console.log(`UI checks passed: ${checked} screens, six routes, ${widths.length} widths, navigation, pagination, filters and empty/error states. Screenshots: ${screenshotDir}`);
+  console.log(`UI checks passed: ${checked} screens, six routes, ${widths.length} widths, tutorials (persistence, keyboard, tabs and blocked storage), navigation, pagination, filters and empty/error states. Screenshots: ${screenshotDir}`);
 } catch (error) {
   await page.screenshot({ path: `${screenshotDir}/failure.png` });
   console.error("Failed screen:", page.url(), await page.locator("main").innerText());

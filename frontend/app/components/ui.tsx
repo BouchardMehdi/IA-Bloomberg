@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { PageTutorial } from "./page-tutorial";
 
 export function PageHeader({ title, description, eyebrow = "Market AI", children }: {
   title: string; description: string; eyebrow?: string; children?: React.ReactNode;
 }) {
-  return <header className="page-header"><div className="min-w-0"><p className="eyebrow">{eyebrow}</p><h1>{title}</h1><p className="page-description">{description}</p></div>{children && <div className="flex shrink-0 flex-wrap gap-2">{children}</div>}</header>;
+  return <><header className="page-header"><div className="min-w-0"><p className="eyebrow">{eyebrow}</p><h1>{title}</h1><p className="page-description">{description}</p></div>{children && <div className="flex shrink-0 flex-wrap gap-2">{children}</div>}</header><PageTutorial /></>;
 }
 
 export function Guide({ title = "Comment utiliser cette page", children }: { title?: string; children: React.ReactNode }) {

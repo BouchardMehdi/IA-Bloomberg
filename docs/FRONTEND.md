@@ -22,6 +22,25 @@ prévisionnelles) restent visibles dans leur contexte. Les liens vers les source
 et les preuves sont conservés. Une date de consultation n’est pas présentée comme
 une date de publication.
 
+## Tutoriels pour les nouveaux utilisateurs
+
+Sous le titre de chacune des six pages, un encart **Mode d’emploi** présente
+le rôle de la page, trois étapes pour commencer et les limites à retenir. Son
+contenu dépend de la page ouverte et utilise les noms des sections et boutons
+de l’interface, sans demander de connaître l’architecture technique.
+
+Les tutoriels sont affichés par défaut. **Masquer le tutoriel** replie le contenu ;
+**Afficher le tutoriel** reste accessible dans l’encart pour le réactiver.
+Ce choix est commun à toutes les pages et conservé dans le `localStorage` du
+navigateur sous `market-ai:tutorials:v1`. Il se synchronise entre les onglets
+du même site et navigateur. Si le stockage est indisponible, le bouton fonctionne
+quand même, mais le choix ne peut pas être conservé après rechargement.
+
+Le bouton est utilisable au clavier et expose son état par `aria-expanded` et
+`aria-controls`. Masquer un tutoriel ne masque aucun avertissement, blocage ou
+preuve affichés dans le reste de la page. Cette aide ne déclenche aucun appel
+API, aucune collecte ni opération.
+
 ## Listes et mobile
 
 - Veille : six publications et six événements par page, pagination par l’API.
@@ -67,6 +86,9 @@ Les contrôles utilisent exclusivement des réponses API simulées dans le navig
 sans modifier la base, passer d’ordre ni consommer de quota fournisseur. Ils
 vérifient les six routes à 320, 390, 768 et 1 440 pixels, la navigation au clavier,
 les changements de section, les filtres, les paginations et les états vides/erreur.
+Ils contrôlent aussi le contenu des tutoriels sur chaque page, leur activation
+au clavier, la persistance après rechargement, la synchronisation entre onglets
+et le fonctionnement lorsque le stockage du navigateur est bloqué.
 Les captures sont enregistrées dans `frontend/.ui-check/`, hors Git et hors image
 Docker. Le script échoue en cas de débordement horizontal, d’erreur JavaScript
 non interceptée ou de requête d’écriture.

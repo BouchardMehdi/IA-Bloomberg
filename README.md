@@ -296,3 +296,6 @@ un menu commun, adapté au mobile. L’analyse et le portefeuille sont organisé
 sections ; les longues listes sont paginées, les tableaux principaux deviennent
 des cartes sur téléphone. Les contrôles navigateur se lancent avec
 `npm run check:ui` depuis `frontend` et utilisent uniquement des données de test.
+Chaque page propose aussi un encart **Mode d’emploi** pour les nouveaux utilisateurs,
+affiché par défaut et désactivable. Le choix d’affichage est mémorisé dans le navigateur
+et s’applique à toutes les pages ; le bouton permet de réactiver l’aide à tout moment.
