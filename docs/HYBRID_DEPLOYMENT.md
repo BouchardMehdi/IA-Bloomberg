@@ -20,18 +20,19 @@ flowchart LR
 
 ## 1. Préparer les fichiers depuis Windows
 
-Prérequis : Docker Desktop démarré, dépôt à jour, domaine pointant vers le VPS,
-Docker Compose **2.24.4+** sur les deux machines. Prévoir plusieurs Go pour le modèle
-et suffisamment de RAM (le modèle par défaut fait 4 milliards de paramètres ;
-l'exécution CPU fonctionne, mais sa vitesse dépend du PC). Le PC doit rester éveillé.
+Sur le VPS, Docker Compose **2.24.4+** est requis. Sur le PC d'analyse, utiliser
+la [distribution portable sans Docker](PORTABLE_AI.md), préparée par
+`Preparer-Cle-USB.bat`. Elle embarque Python et Ollama et conserve les modèles.
+Le PC doit rester éveillé et disposer d'assez de RAM.
 
-Double-cliquer `Configurer-IA.bat` et indiquer `https://votre-domaine.fr`, ou :
+Pour préparer **initialement les paramètres du VPS** depuis le dépôt Windows,
+la commande historique reste disponible :
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File deploy/Configure-Hybrid.ps1 -SiteUrl https://votre-domaine.fr
 ```
 
-Le script conserve les configurations existantes et ne modifie pas `.env` :
+Ce script serveur conserve les configurations existantes et ne modifie pas `.env` :
 
 - `private-data/worker.env` : URL, modèle et jeton **brut**, uniquement sur le PC ;
 - `private-data/hybrid/vps.env` : configuration serveur avec mot de passe PostgreSQL
@@ -41,6 +42,12 @@ Ces fichiers sont ignorés par Git et protégés par les ACL Windows. Ne pas cop
 le jeton brut dans le frontend, les logs, le serveur ou un message. Le jeton autorise
 uniquement la prise de tâches, les résultats et le heartbeat ; il n'ouvre pas les
 pages protégées ni les fonctions de portefeuille. Une session web ne l'autorise pas.
+
+Le dossier portable utilise désormais `config/worker.json` pour son jeton et
+`config/vps-worker.txt` pour l'empreinte. `Configurer-IA.bat` configure ce dossier,
+sans générer de mot de passe PostgreSQL. Reporter cette empreinte dans le fichier
+VPS préparé ci-dessus avant son démarrage. Ne pas exporter `.env` ou les paramètres
+serveur sur la clé USB. Pour garder le jeton historique, suivre PORTABLE_AI.md.
 
 Compléter dans `vps.env` : `ACME_EMAIL`, `SEC_USER_AGENT`, éventuellement la clé
 Alpha Vantage et le destinataire public `BACKUP_RECIPIENT`. Le modèle doit être
@@ -97,17 +104,16 @@ sauvegardes. L'arrêt du VPS interrompt ses services mais conserve leurs volumes
 
 ## 3. Lancer et arrêter le PC
 
-- `Demarrer-IA.bat` : démarre Ollama, télécharge le modèle si absent, construit
-  le worker puis le démarre en arrière-plan. Fermer la fenêtre ne l'arrête pas.
-- `Arreter-IA.bat` : arrête **uniquement** les deux services du projet worker,
-  sans supprimer les modèles, les données ou les services web locaux/VPS.
-- `Etat-IA.bat` : affiche l'état Docker et les derniers messages du worker.
+- `Demarrer-IA.bat` : lance les exécutables autonomes du dossier portable et
+  télécharge le modèle s'il manque. Fermer la fenêtre ne l'arrête pas.
+- `Arreter-IA.bat` : arrête uniquement le worker et son groupe Ollama, sans
+  supprimer les modèles ou arrêter les services web.
+- `Etat-IA.bat` : affiche l'état du processus local et les derniers messages.
 
-Le premier téléchargement peut durer plusieurs minutes. Aucune carte graphique
-n'est exigée par cette configuration CPU ; l'accélération GPU nécessite une
-configuration Docker adaptée et n'est pas activée par ces lanceurs.
-Les conteneurs n'ont pas de redémarrage automatique après redémarrage Docker/PC :
-relancer `Demarrer-IA.bat`. Pour suivre côté site, ouvrir **Suivi des collectes**.
+Le premier téléchargement peut durer plusieurs minutes. La version autonome
+peut utiliser le GPU si les bibliothèques et pilotes de la machine le permettent ;
+aucun pilote n'est installé par nos scripts. Après redémarrage du PC, relancer
+`Demarrer-IA.bat`. Pour suivre côté site, ouvrir **Suivi des collectes**.
 Un heartbeat récent indique le contact du worker, sans garantir un résultat correct.
 
 ## Coupures et contrôles
@@ -146,7 +152,8 @@ interprétations du modèle : les sorties restent des faits extraits à examiner
 ## Mise à jour et arrêt du VPS
 
 Après mise à jour du dépôt : `sh deploy/vps.sh up` reconstruit et applique les migrations.
-Puis relancer `Demarrer-IA.bat` depuis le dépôt mis à jour sur le PC.
+Reconstruire aussi la distribution portable dans un nouveau dossier sur le PC,
+puis transférer `config` et `data/models` après arrêt, et relancer `Demarrer-IA.bat`.
 `sh deploy/vps.sh stop` arrête le projet sans supprimer les volumes.
 Ne pas lancer le Compose local sur le VPS ni copier `.env` ou l'override du PC.
 
@@ -156,8 +163,8 @@ Ne pas lancer le Compose local sur le VPS ni copier `.env` ou l'override du PC.
 indépendants de l'activation des comptes. Les tests d'accès fixent leurs propres
 paramètres ; les services démarrés ne sont pas modifiés par cette configuration.
 
-`deploy/Test-HybridLaunchers.ps1` exerce la génération de secrets et les opérations
-des lanceurs avec Docker simulé, dans un dossier temporaire privé. Le test refuse
+`deploy/Test-HybridLaunchers.ps1` exerce la génération des paramètres serveur
+dans un dossier temporaire privé. Le test refuse
 d'écraser une configuration et vérifie que le jeton brut ne se retrouve pas dans
 le fichier serveur. Les tests PostgreSQL `tests.smoke_remote_ai` et
 `tests.smoke_remote_pipeline` exigent une base dédiée dont le nom se termine par

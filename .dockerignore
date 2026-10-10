@@ -2,6 +2,7 @@
 .env
 .env.*
 private-data
+out
 docker-compose.override.yml
 **/node_modules
 **/.next

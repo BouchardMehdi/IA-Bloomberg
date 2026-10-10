@@ -18,13 +18,19 @@ La migration Alembic est appliquée automatiquement au démarrage du backend. La
 ## Site sur VPS et IA sur votre PC
 
 Les lanceurs Windows `Configurer-IA.bat`, `Demarrer-IA.bat`, `Arreter-IA.bat` et
-`Etat-IA.bat` pilotent un worker local séparé. Le VPS héberge le site et les
+`Etat-IA.bat` pilotent désormais un worker **portable sans Docker**. Le VPS héberge le site et les
 collectes ; le PC récupère les tâches par HTTPS et utilise Ollama sans port public.
 Quand le PC est éteint, les analyses attendent dans une file persistante.
 
 Suivre [la procédure VPS + IA locale](docs/HYBRID_DEPLOYMENT.md) pour configurer
 le domaine, les comptes, les sauvegardes et les deux machines. Le Compose production
 est distinct et ne modifie pas la configuration locale existante.
+
+Pour la clé USB : lancer **`Preparer-Cle-USB.bat` sur le PC personnel**, puis
+copier uniquement **`out/Market-AI-Portable`** en entier. Sur l'autre PC, ni Docker
+ni Python ne sont nécessaires. Les modèles sont inclus après préparation ;
+la configuration et le jeton restent réutilisables lors d'un changement de PC.
+Voir [le mode d'emploi portable](docs/PORTABLE_AI.md).
 
 ## Vérifications
 

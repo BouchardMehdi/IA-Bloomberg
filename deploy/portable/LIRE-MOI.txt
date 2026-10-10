@@ -1,0 +1,58 @@
+MARKET AI - IA PORTABLE POUR WINDOWS x64
+
+Ce dossier contient Ollama et le worker avec Python integre.
+Sur ce PC : ni Docker, ni Python, ni installation administrateur requis.
+Windows 10 22H2+ ou Windows 11 x64 ; programmes autorises par l'etablissement.
+Prevoir assez de RAM et d'espace pour le modele (8 Go RAM minimum conseille,
+16 Go preferable). Une cle 16 Go ou plus est conseillee ; utiliser exFAT/NTFS.
+
+PREMIERE UTILISATION
+1. Copier le dossier ENTIER sur le disque du PC (conseille pour la vitesse).
+2. Lancer Configurer-IA.bat et saisir l'adresse HTTPS de votre site VPS.
+3. Reporter le contenu de config/vps-worker.txt dans private-data/vps.env sur
+   le VPS et recreer backend/scheduler avec sh deploy/vps.sh up.
+4. Lancer Demarrer-IA.bat. Fermer la fenetre ne stoppe pas l'IA.
+5. Lancer Etat-IA.bat pour suivre les messages.
+6. Lancer Arreter-IA.bat AVANT de copier/debrancher/deplacer le dossier.
+
+CHANGEMENT DE PC
+Copier tout ce dossier, y compris config et data/models. Ne pas reconfigurer :
+le meme jeton reste associe au VPS. Les etats de processus d'un ancien PC sont
+ignores. Ne pas faire tourner plusieurs copies avec le meme jeton volontairement.
+Si vous copiez un dossier non configure, faire les etapes 2 et 3 une seule fois.
+
+MODELES
+La preparation sur le PC personnel telecharge normalement le modele.
+S'il manque, Demarrer-IA.bat le telecharge en arriere-plan (plusieurs Go).
+Preparer-Modele.bat permet de le telecharger sans configurer de VPS et sans
+lancer le worker. Les modeles restent dans data/models, meme apres l'arret.
+
+CONNEXIONS
+Le worker contacte votre VPS en HTTPS sortant. Ollama ecoute seulement sur
+127.0.0.1:11435. Il n'utilise pas un autre Ollama deja installe sur le PC.
+Le PC doit rester allume, eveille et connecte a Internet pour traiter les taches.
+Le site et les collectes du VPS restent actifs quand cette IA est arretee.
+Docker reste utilise pour les services du VPS, pas sur ce PC.
+
+FICHIERS
+runtime/worker : worker.exe et ses dependances, ne pas separer les fichiers.
+runtime/ollama : Ollama autonome et ses bibliotheques.
+config/worker.json : jeton prive, conserver avec vous, ne pas partager.
+config/vps-worker.txt : empreinte du jeton, pour le VPS uniquement.
+data/models : poids du modele, transportables sans nouveau telechargement.
+data/logs : journaux du worker et d'Ollama, sans affichage du jeton.
+versions.json : versions et empreinte du worker pour retrouver la distribution.
+
+Ollama peut aussi creer ses fichiers techniques dans le profil Windows
+(.ollama, notamment ses cles locales). Aucun service, registre ou PATH n'est
+configure par ces lanceurs. Le modele et le jeton Market AI restent ici.
+Si l'etablissement bloque les executables, demander son autorisation ; ce
+dossier ne contourne pas ses restrictions. Le dossier ne contient pas le site,
+PostgreSQL, Redis, les exports WLS, les sauvegardes ni les secrets du VPS.
+
+EN CAS D'ECHEC
+Lire Etat-IA.bat et data/logs. Si le port 11435 est pris, arreter l'autre copie
+portable avec son propre Arreter-IA.bat. Aucun processus inconnu n'est tue.
+Si la connexion au VPS est refusee, verifier domaine/certificat, empreinte
+AI_WORKER_TOKEN_SHA256 et meme version du prompt/modele sur les deux machines.
+Un contact du worker ne prouve pas la reussite de chaque analyse.
