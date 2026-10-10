@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Pagination } from "../components/ui";
 import { useEffect, useState } from "react";
 
 const api = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
@@ -20,6 +21,7 @@ type Snapshot = { loaded: boolean; items: Row[]; total: number; security_count: 
 const input = "w-full rounded-lg border border-white/15 bg-slate-950 p-2 text-sm text-white";
 
 export function WlsCandidates({ instruments, onRefresh }: { instruments: Instrument[]; onRefresh: () => Promise<void> }) {
+  const [loading, setLoading] = useState(true);
   const [data, setData] = useState<Snapshot | null>(null);
   const [search, setSearch] = useState("");
   const [query, setQuery] = useState("");
@@ -33,12 +35,12 @@ export function WlsCandidates({ instruments, onRefresh }: { instruments: Instrum
   const [batch, setBatch] = useState("");
   useEffect(() => {
     const controller = new AbortController();
-    fetch(`${api}/market/wls-candidates?search=${encodeURIComponent(query)}&offset=${offset}&limit=50`,
+    fetch(`${api}/market/wls-candidates?search=${encodeURIComponent(query)}&offset=${offset}&limit=10`,
       { signal: controller.signal, cache: "no-store" }).then(async (response) => {
         if (!response.ok) throw new Error("Liste WLS indisponible.");
         return response.json() as Promise<Snapshot>;
-      }).then((payload) => { setData(payload); setError(""); })
-      .catch((e) => { if (!controller.signal.aborted) setError(String(e.message)); });
+      }).then((payload) => { setData(payload); setLoading(false); setError(""); })
+      .catch((e) => { if (!controller.signal.aborted) { setError(String(e.message)); setLoading(false); } });
     return () => controller.abort();
   }, [query, offset, revision]);
 
@@ -67,17 +69,17 @@ export function WlsCandidates({ instruments, onRefresh }: { instruments: Instrum
       <p className="mt-2 text-sm text-amber-300">{data.notice}</p>
       <p className="mt-2 text-xs text-slate-400">{data.source_filename} · {data.source_sheet} · lecture du {new Date(data.observed_at).toLocaleString("fr-FR")}. Date de composition : {data.composition_as_of ?? "inconnue"}.</p>
       <p className="mt-1 text-xs text-slate-400">{data.origin}</p>
-      <form className="mt-4 flex gap-3" onSubmit={(e) => { e.preventDefault(); setOffset(0); setQuery(search.trim()); }}>
+      <form className="mt-4 flex gap-3" onSubmit={(e) => { e.preventDefault(); setLoading(true); setData(null); setOffset(0); setQuery(search.trim()); setRevision(r => r + 1); }}>
         <input aria-label="Rechercher un identifiant Bloomberg" className={input} value={search} maxLength={100}
           onChange={(e) => setSearch(e.target.value)} placeholder="Ex. AAPL US Equity ou 005930" />
         <button className="text-signal underline">Rechercher</button>
       </form>
       <p className="mt-3 text-sm">{data.total} résultat(s)</p>
-      <div className="mt-3 overflow-x-auto"><table className="w-full text-left text-sm">
+      <div id="wls-results" className="mt-3 overflow-x-auto"><table className="responsive-table w-full text-left text-sm">
         <thead><tr><th className="p-2">Identifiant Bloomberg</th><th>Cellule source</th><th>Correspondance de cotation</th></tr></thead>
         <tbody>{data.items.map((row) => <tr key={row.bloomberg_identifier} className="border-t border-white/10">
-          <td className="p-2">{row.bloomberg_identifier}</td><td>{row.source_cell}</td>
-          <td>{row.identity_observation ? <details className="mb-2"><summary>OpenFIGI : {row.identity_observation.status}</summary>
+          <td data-label="Identifiant Bloomberg" className="p-2"><div>{row.bloomberg_identifier}</div></td><td data-label="Cellule source"><div>{row.source_cell}</div></td>
+          <td data-label="Correspondance de cotation"><div>{row.identity_observation ? <details className="mb-2"><summary>OpenFIGI : {row.identity_observation.status}</summary>
             {row.identity_observation.data?.records?.map((record, index) => <p key={`${record.figi}-${index}`}>{record.name} · {record.figi} · {record.securityType}</p>)}
             <p className="text-xs">Consultation du {new Date(row.identity_observation.observed_at).toLocaleString("fr-FR")}, pas une date de publication.</p>
             <a className="text-signal underline" href="https://www.openfigi.com/api/documentation" target="_blank" rel="noreferrer">Source et méthode OpenFIGI</a>
@@ -87,14 +89,11 @@ export function WlsCandidates({ instruments, onRefresh }: { instruments: Instrum
             {row.listing_mapping.instrument.symbol} · {row.listing_mapping.instrument.exchange} · {row.mapping_status === "conflict" ? "identité modifiée, à revoir" : "déclarée"}</summary>
             <p>{row.listing_mapping.note}</p><a className="text-signal underline" href={row.listing_mapping.source_url} target="_blank" rel="noreferrer">Source de correspondance du {row.listing_mapping.as_of}</a>
           </details> : <><button className="text-signal underline" onClick={() => {
-            setSelected(row); setInstrumentId(row.suggested_instrument?.id ?? "");
+            setSelected(row); setInstrumentId(row.suggested_instrument?.id ?? ""); requestAnimationFrame(() => document.getElementById("wls-mapping")?.scrollIntoView({ behavior: "smooth" }));
           }}>Documenter la correspondance</button>
             {row.suggested_instrument ? <span className="block text-xs">Identifiant Bloomberg déjà déclaré sur {row.suggested_instrument.symbol} · {row.suggested_instrument.exchange} ; preuve à fournir.</span> : null}</>}
-          </td></tr>)}</tbody></table></div>
-      <div className="mt-4 flex gap-4 text-sm text-signal">
-        <button disabled={offset === 0} className="disabled:opacity-40" onClick={() => setOffset(Math.max(0, offset - 50))}>Précédent</button>
-        <button disabled={offset + 50 >= data.total} className="disabled:opacity-40" onClick={() => setOffset(offset + 50)}>Suivant</button>
-      </div>
+          </div></td></tr>)}</tbody></table></div>
+      <Pagination page={offset / 10} pageSize={10} total={data.total} busy={loading} onChange={p => { setLoading(true); setData(null); setOffset(p * 10); }} label="titres WLS" targetId="wls-results" />
       <p className="mt-3 text-sm"><Link className="text-signal underline" href="/international">Ajouter une cotation internationale documentée</Link></p>
       <details className="mt-4 text-sm"><summary>Historique des fichiers WLS</summary>
         <p>Chaque fichier reste une liste déclarée. Les différences entre exports ne prouvent pas les dates d’entrée ou de sortie de l’indice.</p>
@@ -119,7 +118,7 @@ export function WlsCandidates({ instruments, onRefresh }: { instruments: Instrum
         }}>Importer le lot</button>
       </details>
     </>}
-    {selected ? <form key={selected.bloomberg_identifier} className="mt-5 grid gap-3 rounded-lg border border-white/15 p-4" onSubmit={async (event) => {
+    {selected ? <form id="wls-mapping" key={selected.bloomberg_identifier} className="mt-5 grid gap-3 rounded-lg border border-white/15 p-4" onSubmit={async (event) => {
       event.preventDefault(); const form = new FormData(event.currentTarget);
       setBusy(true); setError("");
       try {
@@ -136,7 +135,7 @@ export function WlsCandidates({ instruments, onRefresh }: { instruments: Instrum
       finally { setBusy(false); }
     }}>
       <h3 className="text-white">Rapprocher {selected.bloomberg_identifier}</h3>
-      <label className="text-sm">Cotation suivie<select className={input} value={instrumentId} required onChange={(e) => setInstrumentId(e.target.value)}>
+      <label className="text-sm">Cotation suivie<select aria-label="Cotation suivie" className={input} value={instrumentId} required onChange={(e) => setInstrumentId(e.target.value)}>
         <option value="">Choisir le titre et le marché exacts</option>{instruments.map((i) => <option key={i.id} value={i.id}>{i.symbol} · {i.exchange} · {i.name}</option>)}
       </select></label>
       <label className="text-sm">URL de preuve de correspondance<input className={input} type="url" name="source_url" required /></label>

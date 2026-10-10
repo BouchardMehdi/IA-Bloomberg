@@ -1,5 +1,6 @@
 "use client";
 
+import { Pagination, usePagination } from "../components/ui";
 import { useEffect, useState } from "react";
 
 const api = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
@@ -24,6 +25,7 @@ export function PortfolioHistory({ portfolioId, revision }: { portfolioId: strin
     return () => controller.abort();
   }, [portfolioId, refresh, revision]);
   const points = data?.items ?? [];
+  const paged = usePagination(points.slice().reverse(), 10, portfolioId);
   const valid = points.filter(p => p.status === "available" && p.return_pct !== null);
   const values = valid.map(p => Number(p.return_pct));
   const min = Math.min(0, ...values) - 0.5, max = Math.max(0, ...values) + 0.5;
@@ -60,13 +62,13 @@ export function PortfolioHistory({ portfolioId, revision }: { portfolioId: strin
       <text x="755" y="225" textAnchor="end" fill="#94a3b8" fontSize="12">{points[points.length - 1]?.date}</text>
     </svg> : <p className="mt-4 text-sm">Aucun instantané complet et récent à tracer.</p>}
     {valid.length === 1 && <p className="text-xs text-slate-400">Un seul jour observé : la courbe se construira avec les prochains jours.</p>}
-    <details className="mt-3 text-sm"><summary className="cursor-pointer text-signal">Valeurs et preuves quotidiennes ({points.length})</summary>
-      <ul className="mt-2 space-y-3">{points.slice().reverse().map(p => <li key={p.id} className="border-t border-white/10 pt-2">
+    <details id="daily-evidence" className="mt-3 text-sm"><summary className="cursor-pointer text-signal">Valeurs et preuves quotidiennes ({points.length})</summary>
+      <ul className="mt-2 space-y-3">{paged.items.map(p => <li key={p.id} className="border-t border-white/10 pt-2">
         {p.date} · {dollars(p.total_value)} · {p.status === "available" ? `${p.return_pct} %` : p.status === "stale" ? "Données anciennes, exclu de la courbe" : "Valorisation incomplète"}
         <span className="block text-xs text-slate-500">Observé le {new Date(p.observed_at).toLocaleString("fr-FR")}</span>
         {p.positions.map((h, i) => <span key={i} className="block text-xs">{h.quantity} {h.symbol} · {h.exchange} · {h.source_url && <a className="underline" href={h.source_url} target="_blank" rel="noreferrer">cours du {h.quote_date}</a>}
           {h.usd_valuation.conversion?.fx_source_url && <> · <a className="underline" href={h.usd_valuation.conversion.fx_source_url} target="_blank" rel="noreferrer">taux du {h.usd_valuation.conversion.fx_date}</a></>}</span>)}
-      </li>)}</ul></details>
+      </li>)}</ul><Pagination page={paged.page} pageSize={10} total={paged.total} onChange={paged.onChange} label="jours observés" targetId="daily-evidence" /></details>
     {data?.limited && <p className="text-xs text-amber-300">Affichage limité aux 365 derniers jours observés ; historique complet conservé.</p>}
   </section>;
 }

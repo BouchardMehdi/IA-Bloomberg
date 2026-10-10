@@ -1,5 +1,6 @@
 "use client";
 
+import { Pagination } from "../components/ui";
 import { useEffect, useState } from "react";
 import { UsdQuoteDetails, type UsdQuote } from "../usd-quote";
 
@@ -32,7 +33,7 @@ export function ResearchRanking({ onSelect }: { onSelect: (id: string) => void }
   }
   useEffect(() => {
     const controller = new AbortController();
-    fetch(`${api}/market/research-ranking?limit=20&offset=${offset}`, { cache: "no-store", signal: controller.signal })
+    fetch(`${api}/market/research-ranking?limit=5&offset=${offset}`, { cache: "no-store", signal: controller.signal })
       .then(async (response) => {
         if (!response.ok) throw new Error("Impossible de charger le classement.");
         return response.json() as Promise<Ranking>;
@@ -76,10 +77,7 @@ export function ResearchRanking({ onSelect }: { onSelect: (id: string) => void }
         <details className="mt-4 text-sm"><summary className="cursor-pointer text-white">Points et risques à vérifier</summary><ul className="mt-2 list-disc space-y-2 pl-5">{item.checks.map((check) => <li key={check}>{check}</li>)}</ul></details>
         <button onClick={() => onSelect(item.instrument.id)} className="mt-4 text-sm text-signal underline">Ouvrir la fiche documentaire</button>
       </article>)}</div>
-      <div className="mt-5 flex gap-5 text-sm text-signal">
-        <button disabled={!offset || loading} onClick={() => reload(Math.max(0, offset - 20))} className="disabled:opacity-40">Titres précédents</button>
-        <button disabled={result.next_offset === null || loading} onClick={() => reload(result.next_offset ?? offset)} className="disabled:opacity-40">Titres suivants</button>
-      </div>
+      <Pagination page={offset / 5} pageSize={5} total={result.total_tracked} busy={loading} onChange={p => reload(p * 5)} label="titres à examiner" targetId="ranking-title" />
     </> : null}
   </section>;
 }

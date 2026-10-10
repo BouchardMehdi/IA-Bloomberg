@@ -31,3 +31,81 @@ body {
   color: #111827;
   background: #c8ff61;
 }
+
+@layer components {
+  .app-shell { @apply min-h-screen; }
+  .app-sidebar { @apply fixed inset-y-0 left-0 z-40 hidden w-60 flex-col overflow-y-auto border-r border-white/[0.07] bg-[#0d131d] p-5 lg:flex; }
+  .app-brand { @apply flex items-center gap-3 text-xl font-semibold tracking-tight text-white; }
+  .app-brand small { @apply mt-1 block text-[11px] font-normal tracking-normal text-slate-500; }
+  .brand-mark { @apply relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-signal text-lg font-bold text-ink; }
+  .brand-mark > span { @apply absolute right-1 top-0 text-xs; }
+  .brand-mark.small { @apply h-8 w-8 rounded-lg text-sm; }
+  .app-nav-link { @apply flex min-h-12 items-center gap-3 rounded-xl px-3 py-3 text-sm text-slate-300 transition hover:bg-white/5 hover:text-white; }
+  .app-nav-link.is-active { @apply bg-signal/[0.08] text-signal; }
+  .app-workspace { @apply min-w-0 lg:ml-60; }
+  .app-topbar { @apply sticky top-0 z-30 flex h-16 items-center gap-2 border-b border-white/[0.07] bg-[#0c121d]/95 px-4 backdrop-blur-lg sm:px-8; }
+  .mobile-navigation { @apply fixed left-0 right-0 top-16 z-40 grid max-h-[calc(100dvh-4rem)] grid-cols-2 gap-1 overflow-y-auto border-b border-white/10 bg-[#111927] p-3 shadow-2xl; }
+  .mobile-navigation[hidden] { display: none; }
+  .app-footer { @apply mx-auto flex max-w-6xl flex-wrap justify-between gap-3 px-5 pb-7 pt-12 text-xs text-slate-500 sm:px-8; }
+  .page-header { @apply mb-7 flex flex-col justify-between gap-5 sm:flex-row sm:items-start; }
+  .eyebrow { @apply mb-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-signal; }
+  .page-header h1 { @apply font-display text-3xl font-semibold tracking-tight text-white sm:text-4xl; }
+  .page-description { @apply mt-3 max-w-2xl text-sm leading-6 text-slate-400; }
+  .guide-panel { @apply mb-6 rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3; }
+  .guide-panel > summary { @apply cursor-pointer text-sm font-medium text-slate-300; }
+  .section-switch { @apply mb-6 flex flex-wrap gap-1 rounded-xl border border-white/10 bg-black/10 p-1.5; }
+  .section-switch button { @apply min-h-10 flex-1 rounded-lg px-3 py-2 text-sm font-medium text-slate-400 transition hover:bg-white/5 hover:text-white sm:flex-none; }
+  .section-switch button.is-active { @apply bg-white/10 text-white shadow-sm; }
+  .pagination { @apply mt-5 flex flex-col items-center justify-between gap-3 border-t border-white/10 pt-4 text-xs text-slate-400 sm:flex-row; }
+  .pagination button { @apply flex min-h-11 items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-sm text-slate-200 transition hover:border-signal/40 hover:text-signal disabled:cursor-not-allowed disabled:opacity-40; }
+  .page-number { @apply min-w-10 text-center text-xs tabular-nums text-slate-500; }
+  .skip-link { @apply fixed left-4 top-3 z-50 -translate-y-24 rounded-lg bg-signal px-4 py-3 text-sm font-semibold text-ink focus:translate-y-0; }
+}
+
+/* Shared defaults keep existing research panels readable at every viewport. */
+body { font-size: 15px; line-height: 1.55; }
+main { min-width: 0; }
+main > section { background-color: rgba(255, 255, 255, 0.018); }
+h1, h2, h3, h4, p, li, blockquote, summary, label { overflow-wrap: anywhere; }
+input:not([type="checkbox"]):not([type="radio"]), select, textarea { min-width: 0; max-width: 100%; min-height: 44px; font-size: 16px; }
+input, select, textarea { accent-color: #c8ff61; }
+label { min-width: 0; }
+form > label { display: block; }
+form.flex > label { flex: 1 1 150px; }
+button, summary, a { -webkit-tap-highlight-color: transparent; }
+button:not(:disabled), summary { cursor: pointer; }
+:where(a, button, input, select, textarea, summary):focus-visible { outline: 2px solid #c8ff61; outline-offset: 4px; }
+summary { min-height: 32px; }
+main .text-slate-500, .app-sidebar .text-slate-500, .app-footer { color: #94a3b8; }
+details > summary { list-style-position: inside; }
+details[open] > summary { margin-bottom: 0.5rem; }
+.overflow-x-auto { max-width: 100%; overscroll-behavior-x: contain; }
+table { border-collapse: collapse; }
+th { font-weight: 500; }
+th, td { padding: 12px; vertical-align: top; }
+thead { background: rgba(255,255,255,0.025); }
+[id] { scroll-margin-top: 88px; }
+@media (max-width: 639px) {
+  main { padding-left: 16px !important; padding-right: 16px !important; padding-top: 24px !important; }
+  main section, main article { padding-left: 16px; padding-right: 16px; }
+  form.flex { flex-direction: column; align-items: stretch; }
+  form.flex > label { flex: auto; width: 100%; }
+  form.flex > button { width: 100%; }
+  .overview-stat { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; }
+  .overview-stat .stat-value { grid-column: 2; grid-row: 1 / 3; margin: 0; align-self: center; }
+  .overview-stat .stat-note { grid-column: 1; margin: 0; font-size: 12px; }
+  .portfolio-metrics > div { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; }
+  .portfolio-metrics > div > p { margin: 0; }
+  .portfolio-metrics > div > p:last-child { white-space: nowrap; font-size: 16px; }
+  .pagination button { padding-left: 12px; padding-right: 12px; }
+  .pagination button span { font-size: 12px; }
+  table.responsive-table, .responsive-table tbody, .responsive-table tr, .responsive-table td { display: block; width: 100%; }
+  .responsive-table thead { display: none; }
+  .responsive-table tr { padding: 12px 0; }
+  .responsive-table td { display: grid; grid-template-columns: minmax(100px, 0.4fr) minmax(0, 1fr); gap: 12px; padding: 7px 0; }
+  .responsive-table td::before { content: attr(data-label); color: #94a3b8; font-size: 12px; }
+  .responsive-table td > * { min-width: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; animation: none !important; transition: none !important; }
+}

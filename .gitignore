@@ -9,6 +9,7 @@ __pycache__/
 htmlcov/
 node_modules/
 .next/
+.ui-check/
 out/
 coverage/
 !frontend/app/coverage/

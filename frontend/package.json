@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "check:ui": "node scripts/check-ui.mjs"
   },
   "dependencies": {
     "next": "16.3.8",
@@ -20,6 +21,7 @@
     "autoprefixer": "10.4.21",
     "eslint": "9.39.5",
     "eslint-config-next": "16.3.8",
+    "playwright": "1.64.0",
     "postcss": "8.5.28",
     "tailwindcss": "3.4.17",
     "typescript": "5.8.2"

@@ -1,5 +1,6 @@
 "use client";
 
+import { Pagination } from "../components/ui";
 import { useEffect, useRef, useState } from "react";
 
 const api = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
@@ -27,7 +28,7 @@ export function FinancialResults({ instrumentId }: { instrumentId: string }) {
   const controller = useRef<AbortController | null>(null);
   useEffect(() => {
     const request = new AbortController(); controller.current = request;
-    fetch(`${api}/market/instruments/${instrumentId}/financials`, { cache: "no-store", signal: request.signal })
+    fetch(`${api}/market/instruments/${instrumentId}/financials?limit=10`, { cache: "no-store", signal: request.signal })
       .then(async (response) => { if (!response.ok) throw new Error("Données financières indisponibles."); return response.json() as Promise<Results>; })
       .then((result) => { if (!request.signal.aborted) setData(result); })
       .catch((e: Error) => { if (!request.signal.aborted) setError(e.message); });
@@ -47,7 +48,7 @@ export function FinancialResults({ instrumentId }: { instrumentId: string }) {
           failed: `Collecte échouée (${result.error ?? "erreur"}). L’historique est conservé.`, unsupported_identity: "Aucun CIK vérifié disponible." };
         setMessage(labels[result.status] ?? result.status);
       }
-      const response = await fetch(`${api}/market/instruments/${instrumentId}/financials?offset=${page}`, { cache: "no-store", signal });
+      const response = await fetch(`${api}/market/instruments/${instrumentId}/financials?limit=10&offset=${page}`, { cache: "no-store", signal });
       if (!response.ok) throw new Error("Données financières indisponibles.");
       const result = await response.json() as Results;
       if (!signal?.aborted) { setData(result); setOffset(page); }
@@ -67,16 +68,16 @@ export function FinancialResults({ instrumentId }: { instrumentId: string }) {
       {!data.items.length ? <p className="text-sm">Aucune observation sur cette page. Cela ne prouve ni l’absence de résultats ni un montant nul.</p> : null}
       {!data.collection.coverage_current && data.collection.supported ? <p className="my-3 text-xs text-amber-300">La nouvelle couverture trésorerie et dette n’a pas encore été consultée. Utilise le bouton de collecte ou attends le passage automatique.</p> : null}
       {data.collection.status === "success" ? <p className="my-3 text-xs">Mesures absentes de l’historique conservé : {data.supported_metrics.filter((metric) => !data.available_metrics.includes(metric)).map((metric) => data.metric_labels[metric] ?? metric).join(", ") || "aucune des mesures prises en charge"}.</p> : null}
-      <details className="mt-4"><summary className="cursor-pointer text-white">Observations détaillées ({data.items.length} sur cette page)</summary>
-        <div className="mt-3 overflow-x-auto"><table className="w-full text-left text-sm"><thead><tr className="text-slate-400"><th className="p-2">Mesure et définition</th><th className="p-2">Valeur et unité</th><th className="p-2">Période exacte</th><th className="p-2">Dépôt et preuve</th></tr></thead><tbody>{data.items.map((fact) => <tr key={fact.id} className="border-t border-white/10 align-top">
-          <td className="p-2">{data.metric_labels[fact.metric] ?? fact.metric}<span className="mt-1 block max-w-72 break-words text-xs text-slate-400">{fact.taxonomy}:{fact.concept}</span></td>
-          <td className="whitespace-nowrap p-2">{amount(fact.value)} {fact.unit}</td>
-          <td className="whitespace-nowrap p-2">{fact.start ? `${fact.start} → ${fact.end}` : `Solde au ${fact.end}`}</td>
-          <td className="p-2"><a href={fact.source_url} target="_blank" rel="noreferrer" className="text-signal underline">{fact.form} · déposé le {fact.filed}</a><p className="mt-1 text-xs">Accession : {fact.accession}</p><p className="mt-1 text-xs text-slate-400">Contexte du dépôt : {fact.fiscal_year ?? "année inconnue"} / {fact.filing_period ?? "période inconnue"}. Consultation : {new Date(fact.observed_at).toLocaleString("fr-FR")}.</p>
+      <details id="financial-observations" className="mt-4"><summary className="cursor-pointer text-white">Observations détaillées ({data.items.length} sur cette page)</summary>
+        <div className="mt-3 overflow-x-auto"><table className="responsive-table w-full text-left text-sm"><thead><tr className="text-slate-400"><th className="p-2">Mesure et définition</th><th className="p-2">Valeur et unité</th><th className="p-2">Période exacte</th><th className="p-2">Dépôt et preuve</th></tr></thead><tbody>{data.items.map((fact) => <tr key={fact.id} className="border-t border-white/10 align-top">
+          <td data-label="Mesure et définition" className="p-2"><div>{data.metric_labels[fact.metric] ?? fact.metric}<span className="mt-1 block max-w-72 break-words text-xs text-slate-400">{fact.taxonomy}:{fact.concept}</span></div></td>
+          <td data-label="Valeur et unité" className="p-2"><div>{amount(fact.value)} {fact.unit}</div></td>
+          <td data-label="Période exacte" className="p-2"><div>{fact.start ? `${fact.start} → ${fact.end}` : `Solde au ${fact.end}`}</div></td>
+          <td data-label="Dépôt et preuve" className="p-2"><div><a href={fact.source_url} target="_blank" rel="noreferrer" className="text-signal underline">{fact.form} · déposé le {fact.filed}</a><p className="mt-1 text-xs">Accession : {fact.accession}</p><p className="mt-1 text-xs text-slate-400">Contexte du dépôt : {fact.fiscal_year ?? "année inconnue"} / {fact.filing_period ?? "période inconnue"}. Consultation : {new Date(fact.observed_at).toLocaleString("fr-FR")}.</p>
             {fact.comparison ? <details className="mt-2 text-xs"><summary className="cursor-pointer text-amber-300">Écart aux estimations non calculé</summary><ul className="mt-2 list-disc space-y-1 pl-4">{fact.comparison.reasons.map((reason) => <li key={reason}>{reason}</li>)}</ul></details> : null}
-          </td>
+          </div></td>
         </tr>)}</tbody></table></div>
-        <div className="mt-4 flex gap-5 text-sm text-signal"><button disabled={busy || !offset} onClick={() => void refresh(Math.max(0, offset - 50))} className="disabled:opacity-40">Précédent</button><button disabled={busy || data.next_offset === null} onClick={() => void refresh(data.next_offset ?? offset)} className="disabled:opacity-40">Suivant</button></div>
+        <Pagination page={offset / 10} pageSize={10} hasNext={data.next_offset !== null} busy={busy} onChange={p => void refresh(p * 10)} label="observations financières" targetId="financial-observations" />
       </details>
     </> : !error ? <p role="status" className="text-sm">Chargement…</p> : null}
   </section>;

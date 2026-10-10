@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { PageHeader, Guide, SectionSwitch, Pagination } from "../components/ui";
 import { useEffect, useState } from "react";
 import { UsdQuoteDetails, type UsdQuote } from "../usd-quote";
 import { ResearchRanking } from "./research-ranking";
@@ -30,6 +31,7 @@ const date = (value: string) => new Date(value).toLocaleString("fr-FR");
 const basis: Record<string, string> = { security_mention: "Mention de ce titre et de sa cotation", issuer_mention: "Mention de l’émetteur", issuer_document: "Document de l’émetteur — rôle dans le fait à vérifier" };
 
 export default function AnalysisPage() {
+  const [section, setSection] = useState("ranking");
   const [instruments, setInstruments] = useState<Instrument[]>([]);
   const [selected, setSelected] = useState("");
   const [offset, setOffset] = useState(0);
@@ -48,7 +50,7 @@ export default function AnalysisPage() {
   useEffect(() => {
     if (!selected) return;
     const controller = new AbortController();
-    read<Research>(`/instruments/${selected}/research?offset=${offset}`, controller.signal)
+    read<Research>(`/instruments/${selected}/research?limit=10&offset=${offset}`, controller.signal)
       .then((data) => { setResult(data); setLoading(false); })
       .catch((e: Error) => { if (!controller.signal.aborted) { setError(e.message); setLoading(false); } });
     return () => controller.abort();
@@ -62,32 +64,37 @@ export default function AnalysisPage() {
       try { const data = await read<{ items: Instrument[] }>("/instruments"); setInstruments(data.items); }
       catch { setError("Impossible de charger la liste des titres."); return; }
     }
+    setSection("overview");
     navigate(id, 0);
-    document.getElementById("research-details")?.scrollIntoView({ behavior: "smooth" });
+    requestAnimationFrame(() => document.getElementById("research-details")?.scrollIntoView({ behavior: "smooth" }));
   }
   return <main className="mx-auto max-w-5xl px-5 py-8 text-slate-300">
-    <header className="mb-6"><h1 className="font-display text-3xl text-white">Analyses des titres suivis</h1>
-      <nav className="mt-3 flex gap-5 text-sm text-signal underline"><Link href="/">Veille</Link><Link href="/portfolio">Titres et portefeuille simulé</Link></nav>
-    </header>
-    <p className="mb-5 text-sm leading-6">Les fiches rapprochent les documents et faits sourcés des titres suivis. Un lien avec l’émetteur ne prouve pas un effet sur une classe d’action. Les points à examiner sont des questions, pas des prévisions.</p>
-    <p className="mb-5 text-sm"><Link href="/calendar" className="text-signal underline">Calendrier, estimations et résultats sourcés →</Link></p>
-    <ResearchRanking onSelect={(id) => { void selectRanked(id); }} />
+    <PageHeader title="Analyser un titre" description="Repérez les dossiers à étudier, puis consultez les faits, les résultats et les données de valorisation." />
+    <Guide><p>Le classement donne une priorité de recherche, pas un signal d’achat. Une mention de l’émetteur ne prouve pas un impact sur ce titre. Les sources et les données manquantes restent visibles dans chaque dossier.</p></Guide>
+    <SectionSwitch label="Sections de l’analyse" value={section} onChange={setSection} options={[
+      { value: "ranking", label: "À examiner" }, { value: "overview", label: "Synthèse" },
+      { value: "results", label: "Résultats" }, { value: "valuation", label: "Valorisation" }, { value: "news", label: "Documents et faits" },
+    ]} />
+    {section === "ranking" && <ResearchRanking onSelect={(id) => { void selectRanked(id); }} />}
     {error ? <p role="alert" className="text-rose-300">{error}</p> : null}
-    {!loading && !instruments.length && !error ? <p>Ajoute un titre dans <Link href="/portfolio" className="text-signal underline">le portefeuille</Link> pour consulter ses documents. La liste WLS reste à fournir.</p> : null}
-    {instruments.length ? <label id="research-details" className="block">Titre suivi<select value={selected} onChange={(e) => navigate(e.target.value, 0)} className="mt-2 block w-full rounded border border-white/20 bg-slate-950 p-3">{instruments.map((i) => <option key={i.id} value={i.id}>{i.symbol} · {i.exchange} · {i.name}</option>)}</select></label> : null}
-    {loading ? <p role="status" className="mt-5">Chargement…</p> : null}
-    {selected ? <Opportunity key={`opportunity-${selected}-${revision}`} instrumentId={selected} /> : null}
-    {selected ? <CompanyPublications key={selected} instrumentId={selected} onCollected={() => navigate(selected, 0)} /> : null}
-    {selected ? <FinancialResults key={`financial-${selected}`} instrumentId={selected} /> : null}
-    {selected ? <FinancialTrends key={`trends-${selected}-${revision}`} instrumentId={selected} /> : null}
-    {selected ? <Valuation key={`valuation-${selected}-${revision}`} instrumentId={selected} /> : null}
-    {result ? <>
+    {!loading && !instruments.length && !error ? <p>Ajoute un titre dans <Link href="/portfolio" className="text-signal underline">le portefeuille</Link> pour consulter ses documents.</p> : null}
+    {section !== "ranking" && instruments.length ? <label id="research-details" className="block">Titre suivi<select aria-label="Titre suivi" value={selected} onChange={(e) => navigate(e.target.value, 0)} className="mt-2 block w-full rounded border border-white/20 bg-slate-950 p-3">{instruments.map((i) => <option key={i.id} value={i.id}>{i.symbol} · {i.exchange} · {i.name}</option>)}</select></label> : null}
+    {section !== "ranking" && loading ? <p role="status" className="mt-5">Chargement…</p> : null}
+    {selected && section === "overview" ? <Opportunity key={`opportunity-${selected}-${revision}`} instrumentId={selected} /> : null}
+    {selected && section === "news" ? <CompanyPublications key={selected} instrumentId={selected} onCollected={() => navigate(selected, 0)} /> : null}
+    {selected && section === "results" ? <FinancialResults key={`financial-${selected}`} instrumentId={selected} /> : null}
+    {selected && section === "results" ? <FinancialTrends key={`trends-${selected}-${revision}`} instrumentId={selected} /> : null}
+    {selected && section === "valuation" ? <Valuation key={`valuation-${selected}-${revision}`} instrumentId={selected} /> : null}
+    {result && section === "overview" ? <>
       <section className="my-6 rounded-xl border border-white/10 p-5">
-        <p className="text-sm text-amber-300">{result.instrument.wls_eligibility.status === "verified" ? "Titre présent dans l’export WLS importé." : "Éligibilité WLS non vérifiée : nouveaux achats simulés bloqués."}</p>
+        <p className="text-sm text-amber-300">{result.instrument.wls_eligibility.status === "verified" ? "Titre présent dans l’export WLS importé." : "WLS non vérifié : achats bloqués en mode strict. Le mode provisoire exige une cotation résolue dans la liste déclarée."}</p>
         {result.instrument.latest_price ? <p className="mt-3">Clôture locale : {result.instrument.latest_price.close} × {result.instrument.quote_multiplier} {result.instrument.currency} · séance du {result.instrument.latest_price.date} · <a className="text-signal underline" href={result.instrument.latest_price.source_url} target="_blank" rel="noreferrer">Source du cours</a></p> : <p className="mt-3">Cours indisponible.</p>}
         <div className="mt-2 text-sm"><UsdQuoteDetails quote={result.instrument.usd_valuation} /></div>
         <p className="mt-3 text-sm">{result.notice}</p>
       </section>
+    </> : null}
+    {result && section === "news" ? <>
+      <h2 id="research-news" className="mb-4 mt-6 text-xl text-white">Documents et faits associés</h2>
       {!result.items.length ? <p>Aucun document daté ou fait associé sur cette page. Cela ne prouve pas l’absence de nouvelles.</p> : null}
       {result.items.map((card) => <article key={card.event_id} className="mb-5 rounded-xl border border-white/10 p-5">
         <p className="text-xs uppercase text-signal">{card.kind === "extracted_fact" ? "Fait extrait à vérifier" : "Publication documentaire"}</p>
@@ -101,7 +108,7 @@ export default function AnalysisPage() {
         <p className="mt-4 text-sm">Impact : {card.impact}</p><p className="mt-2 text-sm">Horizon : {card.horizon}</p>
         <details className="mt-3 text-sm"><summary className="cursor-pointer text-white">Points et risques à examiner</summary><ul className="mt-2 list-disc space-y-2 pl-5">{card.checks.map((check) => <li key={check}>{check}</li>)}</ul></details>
       </article>)}
-      <div className="flex gap-5 text-signal"><button disabled={!offset || loading} onClick={() => navigate(selected, Math.max(0, offset - 20))} className="disabled:opacity-40">Précédent</button><button disabled={result.next_offset === null || loading} onClick={() => navigate(selected, result.next_offset ?? offset)} className="disabled:opacity-40">Suivant</button></div>
+      <Pagination page={offset / 10} pageSize={10} hasNext={result.next_offset !== null} busy={loading} onChange={(p) => navigate(selected, p * 10)} label="documents et faits" targetId="research-news" />
     </> : null}
   </main>;
 }

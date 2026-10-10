@@ -290,3 +290,9 @@ préparer les preuves de valorisation et importer des observations complètes en
 Elle permet aussi de raccorder une cotation internationale à Alpha Vantage avec
 une [correspondance fournisseur explicite et sourcée](docs/PRICE_PROVIDERS.md),
 sans nouvelle clé ni suffixe deviné, dans le quota partagé existant.
+
+L’[interface et sa navigation](docs/FRONTEND.md) donnent accès aux six pages depuis
+un menu commun, adapté au mobile. L’analyse et le portefeuille sont organisés en
+sections ; les longues listes sont paginées, les tableaux principaux deviennent
+des cartes sur téléphone. Les contrôles navigateur se lancent avec
+`npm run check:ui` depuis `frontend` et utilisent uniquement des données de test.

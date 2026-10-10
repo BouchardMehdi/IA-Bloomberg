@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { EntityDetails, type EntityResolution } from "./entity-details";
 import Link from "next/link";
+import { PageHeader, Pagination } from "./components/ui";
 
 type ApiState = "checking" | "online" | "offline";
 
@@ -114,6 +115,11 @@ export default function Home() {
   const [articles, setArticles] = useState<ArticlePage | null>(null);
   const [events, setEvents] = useState<EventPage | null>(null);
   const [latestRun, setLatestRun] = useState<CollectionRun | null>(null);
+  const [articleOffset, setArticleOffset] = useState(0);
+  const [eventOffset, setEventOffset] = useState(0);
+  const [articleError, setArticleError] = useState(false);
+  const [eventError, setEventError] = useState(false);
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
 
   useEffect(() => {
     const controller = new AbortController();
@@ -124,17 +130,6 @@ export default function Home() {
       .catch((error: unknown) => {
         if (error instanceof DOMException && error.name === "AbortError") return;
         setApiState("offline");
-      });
-
-    fetch(`${apiUrl}/articles?limit=6`, { signal: controller.signal })
-      .then((response) => {
-        if (!response.ok) throw new Error("Articles unavailable");
-        return response.json() as Promise<ArticlePage>;
-      })
-      .then(setArticles)
-      .catch((error: unknown) => {
-        if (error instanceof DOMException && error.name === "AbortError") return;
-        setArticles(null);
       });
 
     fetch(`${apiUrl}/collection-runs?limit=1`, { signal: controller.signal })
@@ -148,19 +143,25 @@ export default function Home() {
         setLatestRun(null);
       });
 
-    fetch(`${apiUrl}/events?limit=5`, { signal: controller.signal })
-      .then((response) => {
-        if (!response.ok) throw new Error("Events unavailable");
-        return response.json() as Promise<EventPage>;
-      })
-      .then(setEvents)
-      .catch((error: unknown) => {
-        if (error instanceof DOMException && error.name === "AbortError") return;
-        setEvents(null);
-      });
-
     return () => controller.abort();
   }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch(`${apiUrl}/articles?limit=6&offset=${articleOffset}`, { signal: controller.signal })
+      .then(async r => { if (!r.ok) throw new Error(); return r.json() as Promise<ArticlePage>; })
+      .then(d => { if (!controller.signal.aborted) { setArticles(d); setArticleError(false); } })
+      .catch(() => { if (!controller.signal.aborted) setArticleError(true); });
+    return () => controller.abort();
+  }, [apiUrl, articleOffset]);
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch(`${apiUrl}/events?limit=6&offset=${eventOffset}`, { signal: controller.signal })
+      .then(async r => { if (!r.ok) throw new Error(); return r.json() as Promise<EventPage>; })
+      .then(d => { if (!controller.signal.aborted) { setEvents(d); setEventError(false); } })
+      .catch(() => { if (!controller.signal.aborted) setEventError(true); });
+    return () => controller.abort();
+  }, [apiUrl, eventOffset]);
 
   const pillars = [
     {
@@ -168,22 +169,18 @@ export default function Home() {
       value: "3",
       note: "BCE · Fed · SEC",
     },
-    { label: "Articles", value: String(articles?.total ?? 0), note: "Entrées dédupliquées" },
+    { label: "Documents", value: articles ? String(articles.total) : "—", note: "Collectés, sans doublons" },
     {
       label: "Événements",
-      value: String(events?.total ?? 0),
+      value: events ? String(events.total) : "—",
       note: "Détectés et traçables",
     },
   ];
 
   return (
-    <main className="min-h-screen px-5 py-6 md:px-10 md:py-10">
+    <main className="px-5 py-8 md:px-8">
       <div className="mx-auto max-w-6xl">
-        <header className="flex items-center justify-between border-b border-white/10 pb-5">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-signal">Market AI</p>
-            <h1 className="mt-1 font-display text-xl font-medium text-white">Centre de veille</h1>
-          </div>
+        <PageHeader title="Votre veille financière" description="Retrouvez les publications officielles et les faits extraits, puis ouvrez l’analyse d’un titre." eyebrow="Comprendre les marchés">
           <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs text-slate-300">
             <span
               className={`h-2 w-2 rounded-full ${
@@ -194,22 +191,14 @@ export default function Home() {
                     : "animate-pulse bg-amber-300"
               }`}
             />
-            API {apiState === "checking" ? "vérification" : apiState === "online" ? "active" : "indisponible"}
+            {apiState === "checking" ? "Connexion en cours" : apiState === "online" ? "Service connecté" : "Service indisponible"}
           </div>
-        </header>
+        </PageHeader>
 
-        <div className="mt-5 flex gap-5"><Link href="/portfolio" className="text-sm text-signal underline">Cours et portefeuille simulé →</Link><Link href="/analysis" className="text-sm text-signal underline">Analyses des titres →</Link></div>
-        <section className="grid gap-8 py-16 lg:grid-cols-[1.4fr_0.6fr] lg:items-end">
-          <div>
-            <p className="mb-4 text-sm text-slate-400">Fondation · Version 0.1</p>
-            <h2 className="max-w-3xl font-display text-4xl font-medium leading-tight text-white md:text-6xl">
-              Comprendre ce qui compte sur les marchés.
-            </h2>
-            <p className="mt-6 max-w-2xl text-base leading-7 text-slate-400 md:text-lg">
-              Une veille financière qui transforme des sources vérifiables en événements structurés,
-              sans perdre leur provenance.
-            </p>
-          </div>
+        <section className="mb-6 grid gap-3 sm:grid-cols-3" aria-label="Accès rapides">
+          {[["/analysis", "Analyser un titre", "Résultats, risques et valorisation"], ["/calendar", "Consulter les prochaines dates", "Calendrier et résultats sourcés"], ["/portfolio", "Suivre mon portefeuille", "Capital et performance simulée"]].map(([href, title, description]) => <Link key={href} href={href} className="rounded-xl border border-white/10 bg-white/[0.025] p-4 transition hover:border-signal/40"><span className="text-sm font-medium text-white">{title} <span className="text-signal" aria-hidden="true">↗</span></span><span className="mt-2 block text-xs text-slate-400">{description}</span></Link>)}
+        </section>
+        <section className="mb-6">
           <aside className="rounded-2xl border border-signal/20 bg-signal/5 p-5">
             <p className="text-xs uppercase tracking-[0.2em] text-signal">État du système</p>
             <div className="mt-3 flex items-center gap-2">
@@ -219,7 +208,7 @@ export default function Home() {
                     ? "bg-rose-400"
                     : latestRun?.status === "running"
                       ? "animate-pulse bg-amber-300"
-                      : "bg-emerald-400"
+                      : latestRun ? "bg-emerald-400" : "bg-slate-500"
                 }`}
               />
               <p className="font-display text-2xl text-white">
@@ -227,7 +216,7 @@ export default function Home() {
                   ? "Collecte en erreur"
                   : latestRun?.status === "running"
                     ? "Collecte en cours"
-                    : "Pipeline opérationnel"}
+                    : latestRun?.status === "success" ? "Dernière collecte réussie" : "Aucune collecte observée"}
               </p>
             </div>
             {latestRun ? (
@@ -247,36 +236,33 @@ export default function Home() {
               </div>
             ) : (
               <p className="mt-2 text-sm leading-6 text-slate-400">
-                Le scheduler attend sa première exécution enregistrée.
+                Aucun historique de collecte disponible pour le moment.
               </p>
             )}
           </aside>
         </section>
 
-        <section className="grid gap-4 md:grid-cols-3">
+        <section className="grid gap-3 sm:grid-cols-3 sm:gap-4">
           {pillars.map((item) => (
-            <article key={item.label} className="rounded-2xl border border-white/10 bg-white/[0.035] p-5">
+            <article key={item.label} className="overview-stat rounded-2xl border border-white/10 bg-white/[0.035] p-5">
               <div className="flex items-start justify-between">
                 <p className="text-sm text-slate-400">{item.label}</p>
-                <span className="rounded-full bg-white/5 px-2 py-1 text-[10px] uppercase tracking-wider text-slate-500">
-                  initial
-                </span>
               </div>
-              <p className="mt-8 font-display text-4xl text-white">{item.value}</p>
-              <p className="mt-2 text-sm text-slate-500">{item.note}</p>
+              <p className="stat-value mt-4 font-display text-3xl text-white">{item.value}</p>
+              <p className="stat-note mt-2 text-sm text-slate-500">{item.note}</p>
             </article>
           ))}
         </section>
 
-        <section className="mt-16">
+        <section className="mt-8" id="events-list">
           <div className="mb-6 flex items-end justify-between gap-4">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-signal">
                 Événements sourcés
               </p>
-              <h3 className="mt-2 font-display text-2xl text-white">Derniers événements</h3>
+              <h2 className="mt-2 font-display text-2xl text-white">Derniers événements</h2>
             </div>
-            <span className="text-xs text-slate-500">{events?.total ?? 0} événement(s)</span>
+            <span className="text-xs text-slate-500">{events?.total ?? "—"} événement(s)</span>
           </div>
 
           {events?.items.length ? (
@@ -374,20 +360,21 @@ export default function Home() {
             </div>
           ) : (
             <div className="rounded-2xl border border-dashed border-white/15 px-6 py-10 text-center text-sm text-slate-400">
-              Aucun événement extrait pour le moment.
+              {eventError ? "Les événements n’ont pas pu être chargés. Réessaie en rechargeant la page." : !events ? "Chargement des événements…" : "Aucun événement extrait pour le moment."}
             </div>
           )}
+          {events && <Pagination page={eventOffset / 6} pageSize={6} total={events.total} label="événements" onChange={p => { setEvents(null); setEventOffset(p * 6); document.getElementById("events-list")?.scrollIntoView({ behavior: "smooth" }); }} />}
         </section>
 
-        <section className="mt-16">
+        <section className="mt-8" id="articles-list">
           <div className="mb-6 flex items-end justify-between gap-4">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-signal">
                 Sources primaires
               </p>
-              <h3 className="mt-2 font-display text-2xl text-white">Dernières publications</h3>
+              <h2 className="mt-2 font-display text-2xl text-white">Dernières publications</h2>
             </div>
-            <span className="text-xs text-slate-500">{articles?.total ?? 0} article(s)</span>
+            <span className="text-xs text-slate-500">{articles?.total ?? "—"} article(s)</span>
           </div>
 
           {articles?.items.length ? (
@@ -410,6 +397,7 @@ export default function Home() {
                           : "Extrait RSS disponible"}
                     </p>
                     <time className="mt-1 block text-xs text-slate-500">
+                      {article.published_at ? "Publié le " : "Consulté le "}
                       {new Intl.DateTimeFormat("fr-FR", {
                         dateStyle: "medium",
                         timeStyle: "short",
@@ -434,17 +422,15 @@ export default function Home() {
             </div>
           ) : (
             <div className="rounded-2xl border border-dashed border-white/15 px-6 py-10 text-center">
-              <p className="text-sm text-slate-400">Aucun article collecté pour le moment.</p>
-              <code className="mt-3 inline-block rounded bg-black/20 px-3 py-2 text-xs text-slate-500">
-                docker compose exec backend python -m app.cli.collect_ecb
-              </code>
+              <p className="text-sm text-slate-400">{articleError ? "Les publications n’ont pas pu être chargées. Réessaie en rechargeant la page." : !articles ? "Chargement des publications…" : "Aucune publication collectée pour le moment."}</p>
             </div>
           )}
+          {articles && <Pagination page={articleOffset / 6} pageSize={6} total={articles.total} label="publications" onChange={p => { setArticles(null); setArticleOffset(p * 6); document.getElementById("articles-list")?.scrollIntoView({ behavior: "smooth" }); }} />}
         </section>
 
         <footer className="mt-20 flex flex-col gap-2 border-t border-white/10 py-6 text-xs text-slate-500 sm:flex-row sm:justify-between">
-          <span>Article ≠ Event</span>
-          <span>Sources traçables · Mémoire PostgreSQL</span>
+          <span>Une publication est un document. Un événement est un fait extrait à vérifier.</span>
+          <Link href="/coverage" className="text-signal">Vérifier la qualité des données →</Link>
         </footer>
       </div>
     </main>

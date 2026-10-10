@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { PageHeader, Pagination, usePagination } from "../components/ui";
 import { useEffect, useState } from "react";
 
 const api = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
@@ -56,28 +57,29 @@ export default function CoveragePage() {
   }, [selected, revision]);
   const rows = data?.items.filter(r => (!filter || r.missing.includes(filter)) &&
     `${r.symbol} ${r.exchange} ${r.name}`.toLowerCase().includes(search.toLowerCase())) ?? [];
+  const paged = usePagination(rows, 10, `${filter}|${search}`);
   return <main className="mx-auto max-w-6xl px-5 py-8 text-slate-300">
-    <header className="flex flex-wrap items-center justify-between gap-3"><h1 className="font-display text-3xl text-white">Couverture des données</h1>
-      <nav className="flex gap-4 text-sm text-signal underline"><Link href="/portfolio">Portefeuille</Link><Link href="/analysis">Analyse</Link><Link href="/international">International</Link></nav></header>
+    <PageHeader title="Qualité des données" description="Identifiez ce qui manque pour analyser un titre ou valoriser votre simulation. Cliquez sur un compteur pour filtrer les titres." />
     <p className="mt-4 text-sm">{data?.notice ?? "Chargement…"}</p>
     {error && <p role="alert" className="mt-4 rounded-lg border border-amber-300/30 p-3 text-amber-300">{error}</p>}
     {notice && <p role="status" className="mt-4 text-signal">{notice}</p>}
     <section className="mt-6 rounded-2xl border border-white/10 p-5">
       <div className="flex flex-wrap justify-between gap-3"><h2 className="text-xl text-white">{data?.watched_count ?? "—"} titres suivis</h2><button className="text-sm text-signal underline" onClick={() => { setError(""); setRevision(v => v + 1); }}>Actualiser</button></div>
       <p className="mt-2 text-xs text-slate-500">Observation : {data ? new Date(data.observed_at).toLocaleString("fr-FR") : "—"}. Les compteurs peuvent se recouper.</p>
-      <div className="mt-4 grid gap-3 sm:grid-cols-3">{Object.entries(data?.counts ?? {}).map(([k, n]) => <button key={k} className={`rounded-xl border p-3 text-left ${filter === k ? "border-signal" : "border-white/10"}`} onClick={() => setFilter(filter === k ? "" : k)}><span className="block text-xs text-slate-400">{labels[k] ?? k}</span><span className="text-2xl text-white">{n}</span></button>)}</div>
+      <div className="mt-4 grid grid-cols-2 gap-3 xl:grid-cols-3">{Object.entries(data?.counts ?? {}).map(([k, n]) => <button key={k} className={`rounded-xl border p-3 text-left ${filter === k ? "border-signal" : "border-white/10"}`} onClick={() => setFilter(filter === k ? "" : k)}><span className="block text-xs text-slate-400">{labels[k] ?? k}</span><span className="text-2xl text-white">{n}</span></button>)}</div>
       {data?.price_collection.items.map(p => <p key={p.provider} className="mt-3 text-xs text-amber-300">{p.provider} : {p.remaining_today} requêtes restantes aujourd’hui (UTC){p.blocked_until ? ` · suspendu jusqu’au ${new Date(p.blocked_until).toLocaleString("fr-FR")}` : ""}.</p>)}
-      <div className="mt-5 grid gap-3 sm:grid-cols-2"><label className="text-xs">Rechercher<input className={input} value={search} onChange={e => setSearch(e.target.value)} /></label><label className="text-xs">Données à compléter<select className={input} value={filter} onChange={e => setFilter(e.target.value)}><option value="">Tous les titres</option>{Object.entries(labels).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></label></div>
-      <ul className="mt-4 space-y-3">{rows.map(r => <li key={r.instrument_id} className="rounded-xl border border-white/10 p-4">
+      <div className="mt-5 grid gap-3 sm:grid-cols-2"><label className="text-xs">Rechercher<input className={input} value={search} onChange={e => setSearch(e.target.value)} /></label><label className="text-xs">Données à compléter<select aria-label="Données à compléter" className={input} value={filter} onChange={e => setFilter(e.target.value)}><option value="">Tous les titres</option>{Object.entries(labels).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></label></div>
+      <ul id="coverage-results" className="mt-4 space-y-3">{paged.items.map(r => <li key={r.instrument_id} className="rounded-xl border border-white/10 p-4">
         <h3 className="text-lg text-white">{r.symbol} · {r.exchange} <span className="text-sm text-slate-400">{r.name}</span></h3>
         <p className="mt-2 text-xs text-amber-300">{r.missing.map(k => labels[k] ?? k).join(" · ") || "Aucun blocage détecté dans cette couverture"}</p>
         {r.price && <a className="mt-2 block text-xs underline" href={r.price.source_url} target="_blank" rel="noreferrer">Dernier cours : {r.price.date}</a>}
         {r.collection_error && <p className="mt-2 text-xs">Collecte : {r.collection_error}{r.retry_at ? ` · reprise au plus tôt ${new Date(r.retry_at).toLocaleString("fr-FR")}` : ""}</p>}
         <details className="mt-2 text-xs"><summary className="cursor-pointer">Blocages de valorisation</summary><ul className="mt-2 list-inside list-disc">{r.valuation.reasons.map(v => <li key={v}>{v}</li>)}</ul></details>
-        <button className="mt-3 text-sm text-signal underline" onClick={() => { if (selected !== r.instrument_id) setPreparation(null); setSelected(r.instrument_id); }}>Préparer les preuves de valorisation</button>
+        <button className="mt-3 text-sm text-signal underline" onClick={() => { if (selected !== r.instrument_id) setPreparation(null); setSelected(r.instrument_id); requestAnimationFrame(() => document.getElementById("valuation-preparation")?.scrollIntoView({ behavior: "smooth" })); }}>Préparer les preuves de valorisation</button>
       </li>)}</ul>{!rows.length && <p className="mt-4 text-sm">Aucun titre pour ce filtre.</p>}
+      <Pagination page={paged.page} pageSize={10} total={paged.total} onChange={paged.onChange} label="titres" targetId="coverage-results" />
     </section>
-    {selected && <section className="mt-6 rounded-2xl border border-white/10 p-5"><h2 className="text-xl text-white">Préparation : {instruments.find(i => i.id === selected)?.symbol}</h2>
+    {selected && <section id="valuation-preparation" className="mt-6 rounded-2xl border border-white/10 p-5"><h2 className="text-xl text-white">Préparation : {instruments.find(i => i.id === selected)?.symbol}</h2>
       <p className="mt-3 text-sm">{preparation?.notice ?? "Chargement…"}</p><ul className="mt-3 list-inside list-disc text-sm">{preparation?.required.map(v => <li key={v}>{v}</li>)}</ul>
       <h3 className="mt-4 text-white">Candidats documentaires SEC de l’émetteur</h3>
       {preparation && !preparation.issuer_candidates.length && <p className="mt-2 text-sm text-slate-400">Aucun candidat annuel dans la couverture disponible. Aucun BPA inventé.</p>}
@@ -97,7 +99,7 @@ export default function CoveragePage() {
           setNotice("Correspondance enregistrée. La collecte automatique la prendra en compte au prochain cycle, selon le quota disponible."); setRevision(v => v + 1);
         } catch (e) { setError(e instanceof Error ? e.message : "Erreur."); } finally { setBusy(false); }
       }}>
-        <label className="text-xs">Cotation<select className={input} value={mappingInstrument} onChange={e => setMappingInstrument(e.target.value)} required><option value="">Choisir</option>{instruments.filter(i => !["NYSE", "Nasdaq"].includes(i.exchange)).map(i => <option key={i.id} value={i.id}>{i.symbol} · {i.exchange} · {i.currency} · unité {i.quote_multiplier}</option>)}</select></label>
+        <label className="text-xs">Cotation<select aria-label="Cotation" className={input} value={mappingInstrument} onChange={e => setMappingInstrument(e.target.value)} required><option value="">Choisir</option>{instruments.filter(i => !["NYSE", "Nasdaq"].includes(i.exchange)).map(i => <option key={i.id} value={i.id}>{i.symbol} · {i.exchange} · {i.currency} · unité {i.quote_multiplier}</option>)}</select></label>
         <label className="text-xs">Symbole Alpha Vantage exact<input name="provider_symbol" className={input} required maxLength={50} /></label>
         <label className="text-xs">URL de la preuve<input name="source_url" type="url" className={input} required /></label>
         <label className="text-xs">Publication (heure locale)<input name="published_at" type="datetime-local" className={input} required /></label>
