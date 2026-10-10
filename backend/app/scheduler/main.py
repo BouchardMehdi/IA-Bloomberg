@@ -14,6 +14,7 @@ from app.market.earnings_calendar import EarningsCalendarClient
 from app.market.ecb_fx import EcbFxClient
 from app.market.provider_registry import configured_price_providers
 from app.semantic.ollama import OllamaSemanticClient
+from app.semantic.client import configured_semantic_client
 from app.services.company_publications import CompanyPublicationService
 from app.services.document_content import DocumentContentService
 from app.services.earnings import EarningsService
@@ -193,11 +194,7 @@ async def serve() -> None:
     if settings.ai_analysis_enabled:
         tasks.append(
             run_semantic_analyzer(
-                OllamaSemanticClient(
-                    settings.ollama_base_url,
-                    settings.ollama_model,
-                    timeout_seconds=settings.ollama_timeout_seconds,
-                ),
+                configured_semantic_client(settings),
                 settings.ai_analysis_interval_minutes,
                 settings.ai_analysis_batch_size,
                 settings.scheduler_run_on_start,

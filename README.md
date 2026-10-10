@@ -15,6 +15,17 @@ Market AI transforme des sources économiques et financières en événements st
 
 La migration Alembic est appliquée automatiquement au démarrage du backend. La documentation interactive de l'API est disponible sur <http://localhost:8000/docs>.
 
+## Site sur VPS et IA sur votre PC
+
+Les lanceurs Windows `Configurer-IA.bat`, `Demarrer-IA.bat`, `Arreter-IA.bat` et
+`Etat-IA.bat` pilotent un worker local séparé. Le VPS héberge le site et les
+collectes ; le PC récupère les tâches par HTTPS et utilise Ollama sans port public.
+Quand le PC est éteint, les analyses attendent dans une file persistante.
+
+Suivre [la procédure VPS + IA locale](docs/HYBRID_DEPLOYMENT.md) pour configurer
+le domaine, les comptes, les sauvegardes et les deux machines. Le Compose production
+est distinct et ne modifie pas la configuration locale existante.
+
 ## Vérifications
 
 ```bash

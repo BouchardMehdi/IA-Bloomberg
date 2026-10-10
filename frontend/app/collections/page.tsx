@@ -9,6 +9,7 @@ type Collection = { id: string; name: string; url?: string; status: string; last
   next_eligible_at: string | null; cadence_minutes: number; error_code: string | null; notice: string;
   price_date?: string | null; price_stale?: boolean; reference_date?: string | null };
 type Health = { generated_at: string; scheduler: { last_seen_at: string | null; status: string }; items: Collection[]; total: number; notice: string };
+type AiStatus = { enabled: boolean; mode: string; worker_status: string; last_seen_at: string | null; counts: Record<string, number> };
 const statuses: Record<string, string> = { healthy: "Collecte récente", failed: "Échec à examiner", stale: "Consultation ancienne",
   running: "En cours", interrupted: "Tentative possiblement interrompue", disabled: "Désactivée", pending: "Pas encore consultée" };
 const date = (value: string | null | undefined) => value ? new Date(value).toLocaleString("fr-FR") : "Non disponible";
@@ -16,6 +17,15 @@ const date = (value: string | null | undefined) => value ? new Date(value).toLoc
 export default function CollectionsPage() {
   const [family, setFamily] = useState("sources"), [page, setPage] = useState(0), [revision, setRevision] = useState(0);
   const [data, setData] = useState<Health | null>(null), [error, setError] = useState("");
+  const [ai, setAi] = useState<AiStatus | null>(null), [aiError, setAiError] = useState("");
+  useEffect(() => {
+    let active = true;
+    const refresh = () => jsonRequest<AiStatus>("/workspace/ai-status")
+      .then(d => { if (active) { setAi(d); setAiError(""); } })
+      .catch(() => { if (active) setAiError("État de l’IA indisponible."); });
+    void refresh(); const timer = setInterval(refresh, 30000);
+    return () => { active = false; clearInterval(timer); };
+  }, [revision]);
   useEffect(() => {
     let active = true;
     const refresh = () => jsonRequest<Health>(`/workspace/collection-health?family=${family}&limit=20&offset=${page * 20}`)
@@ -25,6 +35,16 @@ export default function CollectionsPage() {
   }, [family, page, revision]);
   return <main className="mx-auto max-w-6xl px-5 py-8 text-slate-300">
     <PageHeader title="Suivi des collectes" description="Comprenez ce qui a été récupéré, ce qui attend et pourquoi certaines données manquent." />
+    <section aria-label="État de l’IA" className="mb-5 rounded-xl border border-white/10 p-4 text-sm">
+      <h2 className="mb-2 text-base text-white">Analyse par l’IA</h2>
+      {aiError ? <p role="status">{aiError}</p> : !ai ? <p>Vérification de l’IA…</p> : <>
+        <p>{!ai.enabled ? "Analyse automatique désactivée." : ai.mode !== "remote" ? "Analyse sur l’installation locale." : ai.worker_status === "recent" ? "PC d’analyse connecté récemment." : "Connexion du PC d’analyse non confirmée. Les tâches restent conservées sur le serveur."}</p>
+        {ai.mode === "remote" && <>
+          <p className="mt-2">En attente : {ai.counts?.pending ?? 0} · En cours ou en attente de reprise : {ai.counts?.leased ?? 0} · Terminées : {ai.counts?.success ?? 0} · En échec : {ai.counts?.failed ?? 0}</p>
+          <p className="mt-2 text-slate-400">Dernier contact : {date(ai.last_seen_at)}. Ouvrez Demarrer-IA.bat sur le PC pour reprendre. La collecte et le site restent disponibles quand ce PC est éteint.</p>
+        </>}
+      </>}
+    </section>
     <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
       <SectionSwitch value={family} onChange={v => { setFamily(v); setPage(0); setData(null); }} label="Familles de collectes"
         options={[{ value: "sources", label: "Documents et résultats" }, { value: "market", label: "Cours et calendrier" }, { value: "fx", label: "Taux de change" }]} />

@@ -2,6 +2,10 @@
 
 Le déploiement cible un VPS Linux avec Docker Compose.
 
+Pour le site sur VPS avec **IA sur le PC Windows**, utiliser la procédure
+[VPS + IA locale](HYBRID_DEPLOYMENT.md), son Compose autonome et ses lanceurs.
+La procédure historique ci-dessous concerne une installation sur une seule machine.
+
 1. Installer Docker et le plugin Compose.
 2. Cloner le dépôt.
 3. Copier `.env.example` vers `.env` et remplacer tous les secrets.

@@ -1,4 +1,5 @@
 from functools import lru_cache
+from typing import Literal
 
 from pydantic import Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -38,6 +39,9 @@ class Settings(BaseSettings):
     document_max_bytes: int = Field(default=2_000_000, ge=10_000, le=10_000_000)
     document_max_chars: int = Field(default=60_000, ge=1000, le=200_000)
     ai_analysis_enabled: bool = False
+    ai_execution_mode: Literal["inline", "remote"] = "inline"
+    ai_worker_token_sha256: SecretStr = SecretStr("")
+    ai_remote_wait_seconds: int = Field(default=900, ge=30, le=7200)
     ai_analysis_interval_minutes: int = Field(default=5, ge=1, le=1440)
     ai_analysis_batch_size: int = Field(default=3, ge=1, le=50)
     ai_passage_chars: int = Field(default=3000, ge=500, le=6000)
@@ -57,6 +61,10 @@ class Settings(BaseSettings):
     def production_access(self):
         if self.environment == "production" and (not self.auth_enabled or not self.auth_cookie_secure):
             raise ValueError("Production requires AUTH_ENABLED=true and AUTH_COOKIE_SECURE=true.")
+        if self.ai_execution_mode == "remote":
+            digest = self.ai_worker_token_sha256.get_secret_value()
+            if len(digest) != 64 or any(c not in "0123456789abcdef" for c in digest):
+                raise ValueError("Remote AI requires a valid AI_WORKER_TOKEN_SHA256.")
         return self
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")

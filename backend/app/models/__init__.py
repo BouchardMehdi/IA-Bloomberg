@@ -1,4 +1,5 @@
 from app.models.analysis_run import AnalysisRun
+from app.models.ai_task import AiTask, AiWorkerState
 from app.models.article import Article
 from app.models.collection_run import CollectionRun
 from app.models.company import Company, EventCompany

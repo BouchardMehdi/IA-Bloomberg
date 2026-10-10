@@ -16,6 +16,14 @@ router = APIRouter()
 Db = Annotated[object, Depends(get_db_session)]
 
 
+@router.get("/ai-status")
+async def ai_status(session: Db):
+    from app.core.config import get_settings
+    from app.services.remote_ai import RemoteAiService
+    settings = get_settings()
+    return await RemoteAiService(session).status(settings.ai_analysis_enabled, settings.ai_execution_mode)
+
+
 @router.get("/collection-health")
 async def collection_health(session: Db, family: Literal["sources", "market", "fx"] = "sources",
     limit: int = Query(20, ge=1, le=50), offset: int = Query(0, ge=0, le=100000)):

@@ -56,6 +56,7 @@ function payload(url) {
     next_offset: offset + limit < items.length ? offset + limit : null });
   if (path === "/health/live") return { status: "ok" };
   if (path === "/auth/me") return { auth_enabled: false, user: null };
+  if (path === "/workspace/ai-status") return { enabled: true, mode: "remote", worker_status: "unconfirmed", last_seen_at: null, counts: {pending:3,leased:1,success:12,failed:0} };
   if (path === "/workspace/collection-health") return { generated_at: stamp, scheduler: { last_seen_at: stamp, status: "recent" }, ...paged(mode === "empty" ? [] : many(24, i => ({id:`collect-${i}`,name:`Source officielle ${i}`,status:i===0?"failed":"healthy",last_attempt_at:stamp,last_success_at:stamp,last_publication_at:stamp,last_observed_at:stamp,next_eligible_at:stamp,cadence_minutes:30,error_code:i===0?"sec_http_error":null,notice:"Reprise au plus tôt, sans garantie.",url:source}))), notice:"État technique de test." };
   if (path === "/workspace/briefing") return { day:"2026-10-10",generated_at:stamp,...paged(mode === "empty" ? [] : many(25,i=>({id:`brief-${i}`,kind:"publication",title:`Nouveauté ${i}`,message:"Observation à examiner.",detected_at:stamp,published_at:stamp,url:source,page:"/analysis",held:false}))),counts:{publication:25},research:[],upcoming:[],financials:[],reviews:[],limited:false,notice:"Journée UTC, sans signal d’achat.",holdings_notice:"Positions actuelles." };
   if (path === "/workspace/journal") return {items:[],total:0,notice:"Hypothèses déclarées, pas des ordres."};

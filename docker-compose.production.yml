@@ -1,0 +1,65 @@
+# Run alone with --env-file private-data/vps.env; never merge the local override.
+name: market-ai-vps
+x-server-environment: &server-environment
+  DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-market_ai}:${POSTGRES_PASSWORD:?Set a strong database password}@postgres:5432/${POSTGRES_DB:-market_ai}
+  ENVIRONMENT: production
+  AUTH_ENABLED: 'true'
+  AUTH_COOKIE_SECURE: 'true'
+  BACKEND_CORS_ORIGINS: https://${SITE_DOMAIN:?Set the public domain}
+  AI_ANALYSIS_ENABLED: 'true'
+  AI_EXECUTION_MODE: remote
+  AI_WORKER_TOKEN_SHA256: ${AI_WORKER_TOKEN_SHA256:?Set the worker token SHA256}
+  AI_REMOTE_WAIT_SECONDS: ${AI_REMOTE_WAIT_SECONDS:-900}
+  OLLAMA_BASE_URL: http://disabled.invalid
+  ACME_EMAIL: ${ACME_EMAIL:?Set the TLS contact email}
+  BACKUP_RECIPIENT: ${BACKUP_RECIPIENT:-}
+services:
+  postgres:
+    extends: {file: docker-compose.yml, service: postgres}
+  redis:
+    extends: {file: docker-compose.yml, service: redis}
+  backend:
+    extends: {file: docker-compose.yml, service: backend}
+    environment: *server-environment
+    ports: !reset []
+  scheduler:
+    extends: {file: docker-compose.yml, service: scheduler}
+    environment: *server-environment
+  frontend:
+    extends: {file: docker-compose.yml, service: frontend}
+    ports: !reset []
+    build:
+      args:
+        NEXT_PUBLIC_API_URL: /api/v1
+    environment:
+      NEXT_PUBLIC_API_URL: /api/v1
+  reverse-proxy:
+    extends: {file: docker-compose.yml, service: reverse-proxy}
+    environment:
+      SITE_DOMAIN: ${SITE_DOMAIN:?Set the public domain}
+      ACME_EMAIL: ${ACME_EMAIL:?Set the TLS contact email}
+    volumes:
+      - ./deploy/Caddyfile.production:/etc/caddy/Caddyfile:ro
+  backup:
+    build: ./deploy/backup
+    profiles: [backup]
+    environment:
+      PGHOST: postgres
+      PGDATABASE: ${POSTGRES_DB:-market_ai}
+      PGUSER: ${POSTGRES_USER:-market_ai}
+      PGPASSWORD: ${POSTGRES_PASSWORD:?Set a strong database password}
+      BACKUP_RECIPIENT: ${BACKUP_RECIPIENT:-}
+      BACKUP_INTERVAL_SECONDS: ${BACKUP_INTERVAL_SECONDS:-86400}
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-14}
+    volumes:
+      - ./private-data/backups:/backups
+    tmpfs:
+      - /tmp:size=1g,mode=1777
+    depends_on:
+      postgres: {condition: service_healthy}
+    restart: unless-stopped
+volumes:
+  postgres_data:
+  redis_data:
+  caddy_data:
+  caddy_config:
