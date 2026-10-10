@@ -21,6 +21,9 @@ class PaperPortfolio(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     allowed_symbols: Mapped[list] = mapped_column(JSONB, nullable=False)
     starts_on: Mapped[date | None] = mapped_column(Date)
     ends_on: Mapped[date | None] = mapped_column(Date)
+    wls_policy: Mapped[str] = mapped_column(
+        String(30), nullable=False, default="verified", server_default="verified"
+    )
 
 
 class PaperPosition(UUIDPrimaryKeyMixin, Base):
@@ -55,3 +58,4 @@ class PaperTrade(UUIDPrimaryKeyMixin, Base):
     quote_source_url: Mapped[str] = mapped_column(String(512), nullable=False)
     executed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     conversion: Mapped[dict | None] = mapped_column(JSONB)
+    universe_evidence: Mapped[dict | None] = mapped_column(JSONB)

@@ -23,6 +23,7 @@ class PortfolioCreate(BaseModel):
     allowed_symbols: list[str] = Field(default_factory=list, max_length=100)
     starts_on: date | None = None
     ends_on: date | None = None
+    wls_policy: Literal["verified", "declared_partial"] = "verified"
 
     @field_validator("allowed_symbols")
     @classmethod

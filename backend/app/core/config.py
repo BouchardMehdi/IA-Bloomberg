@@ -26,6 +26,8 @@ class Settings(BaseSettings):
     earnings_calendar_enabled: bool = True
     company_publications_enabled: bool = True
     financial_results_enabled: bool = True
+    wls_identity_enabled: bool = True
+    wls_auto_watch_limit: int = Field(default=20, ge=0, le=100)
     market_max_price_age_days: int = Field(default=7, ge=1, le=30)
     market_max_fx_age_days: int = Field(default=7, ge=1, le=30)
     fx_collection_enabled: bool = True

@@ -268,6 +268,14 @@ constitue pas une recommandation d'achat ni une prévision de rentabilité.
 La page <http://localhost:3000/portfolio> permet aussi de consulter la
 [liste WLS partielle fournie](docs/CHALLENGE.md), rechercher ses identifiants
 Bloomberg et documenter leurs correspondances avec des cotations suivies.
-La date de composition reste inconnue ; cette préparation ne débloque pas les
-achats simulés. Le fichier privé reste hors Git et se charge avec la commande
+La date de composition reste inconnue ; cette préparation ne débloque pas le
+mode strict. Le fichier privé reste hors Git et se charge avec la commande
 `app.cli.import_wls_candidates` décrite dans la documentation.
+
+L'[identification automatique WLS](docs/WLS_AUTOMATION.md) enrichit désormais les
+titres avec OpenFIGI, sans nouvelle clé ni appel LLM, et prépare une liste de
+suivi US bornée. Une nouvelle simulation peut utiliser le mode provisoire sur la
+liste déclarée une fois la cotation résolue ; les portefeuilles existants restent
+stricts. Les sources, inconnues et preuves sont conservées. La composition WLS
+n'est pas datée artificiellement et les données financières absentes restent
+indisponibles.

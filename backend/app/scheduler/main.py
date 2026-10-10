@@ -25,6 +25,7 @@ from app.services.fx_collection import FxCollectionService
 from app.services.ingestion import ArticleIngestionService
 from app.services.market_data import MarketDataService
 from app.services.semantic_analysis import SemanticAnalysisService
+from app.services.wls_automation import WlsAutomationService
 
 logging.basicConfig(level=get_settings().log_level)
 logger = logging.getLogger(__name__)
@@ -174,6 +175,8 @@ async def serve() -> None:
     ]
     if settings.document_collection_enabled:
         tasks.append(run_document_fetcher())
+    if settings.wls_identity_enabled:
+        tasks.append(run_wls_identity_collector())
     if settings.company_publications_enabled:
         tasks.append(run_company_publication_collector())
     if settings.financial_results_enabled:
@@ -196,6 +199,20 @@ async def serve() -> None:
     else:
         logger.info("Semantic analyzer disabled")
     await asyncio.gather(*tasks)
+
+
+async def run_wls_identity_collector() -> None:
+    if not get_settings().scheduler_run_on_start:
+        await asyncio.sleep(5)
+    while True:
+        try:
+            async with async_session_factory() as session:
+                stats = await WlsAutomationService(session).collect()
+            if stats["attempted"]:
+                logger.info("WLS identity collection completed: %s", stats)
+        except Exception:
+            logger.exception("WLS identity collection failed; reservation retained")
+        await asyncio.sleep(5)
 
 
 async def run_document_fetcher() -> None:

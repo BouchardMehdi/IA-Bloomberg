@@ -15,7 +15,7 @@ from app.schemas.earnings import EarningsInput
 from app.schemas.international import FxRateCreate, InternationalInstrumentCreate, LocalPriceCreate
 from app.schemas.market import InstrumentCreate, PaperOrder, PortfolioCreate
 from app.schemas.valuation import ValuationInput
-from app.schemas.wls_candidates import CandidateMapping
+from app.schemas.wls_candidates import CandidateMapping, CandidateMappingBatch
 from app.services.company_publications import CompanyPublicationService
 from app.services.earnings import EarningsService
 from app.services.financial_results import FinancialResultsService
@@ -28,6 +28,7 @@ from app.services.opportunity import OpportunityService
 from app.services.paper_portfolio import PaperPortfolioService
 from app.services.research_ranking import ResearchRankingService
 from app.services.valuation import ValuationService
+from app.services.wls_automation import WlsAutomationService
 from app.services.wls_candidates import WlsCandidateService
 
 router = APIRouter()
@@ -66,6 +67,18 @@ async def map_wls_candidate(request: CandidateMapping, session: Db):
     except ValueError as exc:
         await session.rollback()
         raise HTTPException(400, str(exc)) from None
+
+
+@router.post("/wls-candidates/collect")
+async def collect_wls_identities(session: Db):
+    if not get_settings().wls_identity_enabled:
+        raise HTTPException(400, "Collecte OpenFIGI désactivée.")
+    return market_response(await WlsAutomationService(session).collect())
+
+
+@router.post("/wls-candidates/mappings/batch")
+async def batch_wls_mappings(request: CandidateMappingBatch, session: Db):
+    return market_response(await WlsCandidateService(session).map_batch(request))
 
 
 @router.get("/instruments/{instrument_id}/publications/collection")

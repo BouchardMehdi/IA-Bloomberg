@@ -10,8 +10,10 @@ from app.models.market import DailyPrice, FxCollectionRun, FxRate, MarketFetchRu
 from app.models.portfolio import PaperPortfolio, PaperPosition, PaperTrade
 from app.models.source import Source
 from app.models.valuation import ValuationObservation
+from app.models.wls_identity import WlsIdentityObservation
 
 __all__ = [
+    "WlsIdentityObservation",
     "ValuationObservation",
     "AnalysisPassage",
     "Article",

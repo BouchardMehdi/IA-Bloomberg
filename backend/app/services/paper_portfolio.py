@@ -14,6 +14,7 @@ from app.models.portfolio import PaperPortfolio, PaperPosition, PaperTrade
 from app.schemas.market import PaperOrder, PortfolioCreate
 from app.services.market_data import MarketDataService
 from app.services.usd_valuation import UsdValuationService
+from app.services.wls_automation import WlsAutomationService
 
 
 class PaperPortfolioService:
@@ -122,6 +123,7 @@ class PaperPortfolioService:
             "allowed_symbols": portfolio.allowed_symbols,
             "starts_on": portfolio.starts_on,
             "ends_on": portfolio.ends_on,
+            "wls_policy": portfolio.wls_policy,
             "total_value": total if all_priced else None,
             "total_pnl": total - portfolio.initial_capital if all_priced else None,
             "return_pct": money((total / portfolio.initial_capital - 1) * 100)
@@ -151,6 +153,7 @@ class PaperPortfolioService:
             "quote_source_url": trade.quote_source_url,
             "executed_at": trade.executed_at,
             "conversion": trade.conversion,
+            "universe_evidence": trade.universe_evidence,
         }
 
     async def order(self, portfolio_id: UUID, request: PaperOrder) -> dict:
@@ -188,9 +191,26 @@ class PaperPortfolioService:
         instrument = await self.session.get(MarketInstrument, request.instrument_id)
         if instrument is None:
             raise LookupError("Titre introuvable.")
+        universe_evidence = None
         if request.side == "buy":
             universe = await self.session.get(EntityRegistry, "wls_universe")
-            if eligibility(instrument, universe)["status"] != "verified":
+            membership = eligibility(instrument, universe)
+            if membership["status"] == "verified":
+                universe_evidence = membership | {
+                    "policy": "verified",
+                    "source_hash": universe.content_hash,
+                }
+            elif portfolio.wls_policy == "declared_partial":
+                preparation = (await WlsAutomationService(self.session).assessments([instrument]))[
+                    str(instrument.id)
+                ]
+                if preparation["status"] != "matched":
+                    raise ValueError(
+                        "Achat provisoire refusé : correspondance de cotation "
+                        "ou classification d'action ordinaire non résolue."
+                    )
+                universe_evidence = preparation["evidence"] | {"policy": "declared_partial"}
+            else:
                 raise ValueError("Achat refusé : action non vérifiée dans l'export officiel WLS.")
         today = datetime.now(UTC).date()
         if (portfolio.starts_on and today < portfolio.starts_on) or (
@@ -258,6 +278,7 @@ class PaperPortfolioService:
             quote_date=quote.session_date,
             quote_source_url=quote.source_url,
             executed_at=datetime.now(UTC),
+            universe_evidence=universe_evidence,
             conversion=valuation["conversion"]
             if instrument.currency != "USD" or instrument.quote_multiplier != 1
             else None,

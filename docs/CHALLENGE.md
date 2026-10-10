@@ -99,8 +99,8 @@ docker compose exec backend python -m app.cli.import_wls_candidates --file /tmp/
 
 L'import valide le manifeste et conserve le hash, la provenance déclarée et les
 cellules sources. Une reprise du même fichier conserve les correspondances déjà
-saisies. Un autre hash est refusé pour préserver cet instantané ; le remplacement
-par une nouvelle composition et son historique restent à implémenter. L'URN
+saisies. Un autre hash archive l'ancien instantané avec ses correspondances avant
+de charger le nouveau fichier. Les observations restent distinctes par hash. L'URN
 SHA-256 interne identifie le fichier local, sans prétendre être une URL officielle.
 
 `GET /api/v1/market/wls-candidates` accepte `search`, `offset` et `limit` (maximum
@@ -116,7 +116,10 @@ est signalée en conflit. La saisie ne certifie pas le contenu des preuves.
 Ces correspondances préparent la normalisation. Elles ne modifient ni les
 identités suivies, ni les collecteurs, ni l'éligibilité des achats simulés. La date
 de la preuve de correspondance ne devient jamais la date de composition WLS.
-L'import d'éligibilité ci-dessous exige encore une composition datée et sa source.
+L'import d'éligibilité stricte ci-dessous exige encore une composition datée et sa
+source. À la demande de l'utilisateur de poursuivre sans informations
+supplémentaires, un [mode provisoire distinct](WLS_AUTOMATION.md) est disponible
+sur les cotations résolues automatiquement par OpenFIGI. Il ne certifie pas le WLS.
 
 Ne pas reconstruire WLS depuis la SEC ni depuis une liste publique approximative.
 L'import utilise un export que l'utilisateur est autorisé à exploiter, normalisé
@@ -150,7 +153,8 @@ le compteur affiche réellement les lignes importées, sans prétendre atteindre
 
 Un achat simulé exige une ligne correspondante par **ticker et marché** avec une
 classification d'action. Un CIK partagé ne transfère jamais l'éligibilité d'un titre
-à un autre. Sans export, les nouveaux achats sont bloqués. Les ventes de titres
+à un autre. Sans export daté, le mode strict bloque les nouveaux achats. Le mode
+provisoire est soumis aux preuves techniques décrites ci-dessus. Les ventes de titres
 déjà détenus restent possibles pour réduire une ancienne position ; elles ne
 peuvent créer de position courte. Les reprises d'ordres déjà enregistrés ne créent
 pas de nouvelle opération.

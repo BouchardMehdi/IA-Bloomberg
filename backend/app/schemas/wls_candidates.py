@@ -67,3 +67,8 @@ class CandidateMapping(SourcedObservation):
         if len(self.note.strip()) < 20:
             raise ValueError("Documenter la correspondance entre le titre et sa cotation.")
         return self
+
+
+class CandidateMappingBatch(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    items: list[CandidateMapping] = Field(min_length=1, max_length=100)

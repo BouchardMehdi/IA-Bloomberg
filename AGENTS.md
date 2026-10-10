@@ -115,6 +115,15 @@ préserver la conversion initiale de chaque opération. Ne pas inventer de taux,
 CIK, MIC ou mapping Bloomberg ; l'ISIN ne prouve pas la cotation ou le WLS.
 Voir docs/INTERNATIONAL_MARKET.md.
 
+L'utilisateur demande le 10 octobre 2026 de poursuivre avec sa liste WLS partielle
+sans les informations manquantes. OpenFIGI peut enrichir les identités, sans
+certifier le WLS ni fournir de cours. Les nouvelles simulations peuvent choisir
+`declared_partial` après preuve technique du titre et de sa cotation ; les anciens
+portefeuilles restent stricts. Ne jamais convertir ce mode en éligibilité WLS
+vérifiée, dater artificiellement le fichier ou créer d'ordre automatiquement.
+Conserver les preuves de chaque achat et l'historique des exports. Voir
+docs/WLS_AUTOMATION.md.
+
 Les taux de référence BCE sont collectés automatiquement depuis le XML officiel.
 Conserver la date de référence, les valeurs EUR utilisées et le calcul vers USD.
 Ne pas les présenter comme des taux d'exécution Bloomberg. Les saisies manuelles

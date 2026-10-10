@@ -9,6 +9,7 @@ from sqlalchemy.dialects.postgresql import insert
 from app.models.entity_registry import EntityRegistry
 from app.models.market import MarketInstrument
 from app.schemas.wls_candidates import CandidateManifest, CandidateMapping
+from app.services.wls_automation import WlsAutomationService, assess_listing
 
 REGISTRY = "wls_candidates"
 
@@ -32,7 +33,7 @@ class WlsCandidateService:
         self.session = session
 
     async def load(self, manifest: CandidateManifest):
-        # One immutable snapshot per source hash. Replays preserve manual mappings.
+        # Replays preserve manual mappings; replacements archive the complete old snapshot.
         values = manifest.model_dump(mode="json")
         statement = (
             insert(EntityRegistry)
@@ -47,11 +48,49 @@ class WlsCandidateService:
             .returning(EntityRegistry.name)
         )
         inserted = (await self.session.execute(statement)).scalar_one_or_none() is not None
-        existing = await self.session.get(EntityRegistry, REGISTRY)
-        if existing.content_hash != manifest.source_sha256:
-            raise ValueError(
-                "Une autre liste est déjà chargée ; conserver cet instantané séparément."
+        existing = (
+            await self.session.execute(
+                select(EntityRegistry)
+                .where(EntityRegistry.name == REGISTRY)
+                .with_for_update()
+                .execution_options(populate_existing=True)
             )
+        ).scalar_one()
+        if existing.content_hash != manifest.source_sha256:
+            archive_name = "wls_archive_" + existing.content_hash[:32]
+            await self.session.execute(
+                insert(EntityRegistry)
+                .values(
+                    name=archive_name,
+                    source_url=existing.source_url,
+                    observed_at=existing.observed_at,
+                    content_hash=existing.content_hash,
+                    records=copy.deepcopy(existing.records),
+                )
+                .on_conflict_do_update(
+                    index_elements=[EntityRegistry.name],
+                    set_={
+                        "source_url": existing.source_url,
+                        "observed_at": existing.observed_at,
+                        "records": copy.deepcopy(existing.records),
+                    },
+                    where=EntityRegistry.content_hash == existing.content_hash,
+                )
+            )
+            archived = await self.session.get(EntityRegistry, archive_name)
+            if archived.content_hash != existing.content_hash:
+                raise ValueError("Conflit d'identifiant d'archive : import interrompu.")
+            # Reactivating an already seen file restores its declarations.
+            restored = await self.session.get(
+                EntityRegistry, "wls_archive_" + manifest.source_sha256[:32]
+            )
+            if restored is not None and restored.content_hash != manifest.source_sha256:
+                raise ValueError("Conflit d'identifiant d'archive : import interrompu.")
+            existing.records = copy.deepcopy(restored.records) if restored else [values]
+            existing.content_hash = manifest.source_sha256
+            existing.source_url = f"urn:sha256:{manifest.source_sha256}"
+            existing.observed_at = datetime.now(UTC)
+            inserted = True
         await self.session.commit()
         return {"inserted": inserted, "security_count": len(existing.records[0]["records"])}
 
@@ -64,6 +103,8 @@ class WlsCandidateService:
         by_id = {str(i.id): i for i in instruments}
         by_bloomberg = {i.bloomberg_symbol: i for i in instruments if i.bloomberg_symbol}
         rows = manifest["records"]
+        observations = await WlsAutomationService(self.session).latest(registry.content_hash)
+        automatic = {str(i.id): assess_listing(i, manifest, observations) for i in instruments}
         filtered = [r for r in rows if search.casefold() in r["bloomberg_identifier"].casefold()]
         items = []
         for row in filtered[offset : offset + limit]:
@@ -71,11 +112,27 @@ class WlsCandidateService:
             instrument = by_id.get(mapping["instrument"]["id"]) if mapping else None
             valid = bool(mapping and mapping_matches(mapping, instrument))
             suggestion = by_bloomberg.get(row["bloomberg_identifier"])
+            identity = observations.get((row["bloomberg_identifier"], "identity"))
             items.append(
                 {
                     **row,
                     "mapping_status": "declared" if valid else "conflict" if mapping else "missing",
                     "suggested_instrument": listing_identity(suggestion) if suggestion else None,
+                    "identity_observation": {
+                        "status": identity.status,
+                        "observed_at": identity.observed_at,
+                        "source_url": "https://api.openfigi.com/v3/mapping",
+                        "query": identity.query,
+                        "data": identity.data,
+                    }
+                    if identity
+                    else None,
+                    "automatic_mappings": [
+                        a["evidence"]
+                        for a in automatic.values()
+                        if a["status"] == "matched"
+                        and a["evidence"]["bloomberg_identifier"] == row["bloomberg_identifier"]
+                    ],
                 }
             )
         mapped_count = sum(
@@ -87,6 +144,24 @@ class WlsCandidateService:
             )
             for r in rows
         )
+        archives = (
+            (
+                await self.session.execute(
+                    select(EntityRegistry)
+                    .where(EntityRegistry.name.startswith("wls_archive_"))
+                    .order_by(EntityRegistry.observed_at.desc())
+                    .limit(11)
+                )
+            )
+            .scalars()
+            .all()
+        )
+        identity_statuses = {}
+        for (_, key), observation in observations.items():
+            if key == "identity":
+                identity_statuses[observation.status] = (
+                    identity_statuses.get(observation.status, 0) + 1
+                )
         return {
             "loaded": True,
             "source_filename": manifest["source_filename"],
@@ -98,13 +173,26 @@ class WlsCandidateService:
             "partial": True,
             "security_count": len(rows),
             "mapped_count": mapped_count,
+            "automatic_mapped_count": sum(a["status"] == "matched" for a in automatic.values()),
+            "identity_statuses": identity_statuses,
+            "archive_history": [
+                {
+                    "source_hash": a.content_hash,
+                    "source_filename": a.records[0]["source_filename"],
+                    "observed_at": a.observed_at,
+                    "security_count": len(a.records[0]["records"]),
+                }
+                for a in archives[:10]
+            ],
+            "archive_history_limited": len(archives) > 10,
             "total": len(filtered),
             "offset": offset,
             "limit": limit,
             "items": items,
             "notice": "Liste WLS partielle déclarée. Date de composition inconnue. "
             "Les correspondances restent déclarées, sans certification automatique des preuves. "
-            "Cette préparation ne donne pas d'éligibilité aux achats simulés. "
+            "Le mode strict exige un export daté. Le mode provisoire permet une simulation "
+            "sur la liste déclarée après résolution de la cotation et du type d'action. "
             "Un titre absent n'est pas nécessairement exclu du WLS.",
         }
 
@@ -154,3 +242,22 @@ class WlsCandidateService:
         registry.records = [manifest]
         await self.session.commit()
         return {"inserted": True}
+
+    async def map_batch(self, request):
+        results = []
+        for item in request.items:
+            try:
+                result = await self.map_listing(item)
+                results.append(
+                    {"bloomberg_identifier": item.bloomberg_identifier, "status": "saved", **result}
+                )
+            except (ValueError, LookupError) as exc:
+                await self.session.rollback()
+                results.append(
+                    {
+                        "bloomberg_identifier": item.bloomberg_identifier,
+                        "status": "rejected",
+                        "reason": str(exc),
+                    }
+                )
+        return {"items": results, "saved": sum(r["status"] == "saved" for r in results)}

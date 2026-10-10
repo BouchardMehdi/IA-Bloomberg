@@ -14,6 +14,7 @@ from app.models.entity_registry import EntityRegistry
 from app.models.market import DailyPrice, MarketFetchRun, MarketInstrument
 from app.schemas.market import InstrumentCreate
 from app.services.usd_valuation import UsdValuationService
+from app.services.wls_automation import WlsAutomationService
 
 
 class MarketDataService:
@@ -133,6 +134,7 @@ class MarketDataService:
         if instrument_id is not None:
             query = query.where(MarketInstrument.id == instrument_id)
         instruments = (await self.session.execute(query)).scalars().all()
+        preparations = await WlsAutomationService(self.session).assessments(instruments)
         items = []
         for instrument in instruments:
             price = await self.latest_price(instrument.id)
@@ -186,6 +188,7 @@ class MarketDataService:
                     "error_code": run.error_code if run else None,
                     "retry_at": run.retry_at if run else None,
                     "wls_eligibility": eligibility(instrument, universe),
+                    "wls_preparation": preparations[str(instrument.id)],
                 }
             )
         return {
