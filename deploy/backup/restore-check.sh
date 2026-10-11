@@ -18,5 +18,5 @@ pg_restore --list "$temp/database.dump" > /dev/null
 # No --clean, no dropdb: refuses an existing target, including previous tests.
 createdb "$RESTORE_DATABASE"
 pg_restore --dbname="$RESTORE_DATABASE" --no-owner --no-privileges --exit-on-error "$temp/database.dump"
-PGDATABASE="$RESTORE_DATABASE" psql -v ON_ERROR_STOP=1 -c 'SELECT version_num FROM alembic_version' -c 'SELECT count(*) AS articles FROM articles' -c 'SELECT count(*) AS portfolios FROM paper_portfolios'
+PGDATABASE="$RESTORE_DATABASE" psql -v ON_ERROR_STOP=1 -c 'SELECT version_num FROM alembic_version' -c 'SELECT count(*) AS articles FROM articles' -c 'SELECT count(*) AS portfolios FROM paper_portfolios' -c 'SELECT count(*) AS accounts FROM workspace_users'
 echo "Restore check completed; test database retained: $RESTORE_DATABASE"

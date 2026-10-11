@@ -1,2 +1,6 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# These scripts run in Linux containers or are streamed over SSH from Windows.
+deploy/backup/*.sh text eol=lf
+Sauvegardes-VPS.bat text eol=crlf

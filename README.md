@@ -32,6 +32,10 @@ Suivre [la procédure VPS + IA locale](docs/HYBRID_DEPLOYMENT.md) pour configure
 le domaine, les comptes, les sauvegardes et les deux machines. Le Compose production
 est distinct et ne modifie pas la configuration locale existante.
 
+Pour activer les sauvegardes chiffrées du VPS, récupérer une copie et vérifier sa
+restauration sur le PC personnel : lancer **`Sauvegardes-VPS.bat`** avec Docker
+Desktop démarré. Voir [le mode d'emploi des sauvegardes VPS](docs/VPS_BACKUPS.md).
+
 Pour la clé USB : lancer **`Preparer-Cle-USB.bat` sur le PC personnel**, puis
 copier uniquement **`out/Market-AI-Portable`** en entier. Sur l'autre PC, ni Docker
 ni Python ne sont nécessaires. Les modèles sont inclus après préparation ;

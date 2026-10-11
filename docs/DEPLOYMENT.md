@@ -83,6 +83,11 @@ Pas de récupération par email, de SSO ou de second facteur dans cette version.
 
 ## Sauvegardes PostgreSQL chiffrées
 
+Pour le VPS avec accès SSH par mot de passe, utiliser de préférence
+[l'assistant Windows et la restauration locale isolée](VPS_BACKUPS.md).
+Il garde la clé privée hors VPS. Les commandes Compose combinées ci-dessous
+concernent l'installation de développement locale.
+
 Le fichier optionnel `docker-compose.backup.yml` ajoute une sauvegarde quotidienne
 avec rétention de 14 jours, réglables. Il n'est pas activé par le Compose principal
 et nécessite **votre destinataire public age**. L'archive PostgreSQL custom utilise
@@ -91,8 +96,10 @@ et nécessite **votre destinataire public age**. L'archive PostgreSQL custom uti
 le disque hôte ; le dump transitoire reste dans le tmpfs du conteneur (1 Go).
 
 Sur le VPS, le service est déjà défini dans le Compose de production : l'activer
-avec `sh deploy/vps.sh backup` et utiliser `docker compose --profile backup` pour
-les commandes ci-dessous, sans les deux options `-f` qui visent le développement.
+avec `sh deploy/vps.sh backup` après configuration de la clé publique et consulter
+ses logs avec `docker compose --profile backup logs --tail=50 backup`.
+Tester sa restauration sur le PC avec l'assistant, sans envoyer la clé privée
+au serveur.
 
 Construire l'image et générer une clé dans un dossier privé existant :
 
@@ -129,12 +136,16 @@ existante et ne contient ni suppression de base ni option `--clean`.
 
 Remplacer l'archive et le chemin absolu de la clé privée :
 
+Cette commande vise la base de développement locale. Pour une archive du VPS,
+utiliser `Manage-VpsBackups.ps1 -Action Verify` comme décrit dans
+[VPS_BACKUPS.md](VPS_BACKUPS.md).
+
 ```powershell
 docker compose -f docker-compose.yml -f docker-compose.backup.yml run --rm --no-deps -e RESTORE_DATABASE=market_ai_restore_check -v "C:/chemin/backup-identity.key:/run/secrets/backup_identity:ro" --entrypoint /bin/sh backup /opt/backup/restore-check.sh /backups/market-DATE.dump.age
 ```
 
 La base de vérification est conservée pour inspection. Le script affiche la
-version de migration et les compteurs d'articles/portefeuilles. Une migration vers
+version de migration et les compteurs d'articles/portefeuilles/comptes. Une migration vers
 un serveur de remplacement reste une opération explicite d'administration ; ce
 script ne bascule pas l'application. Les clés, la configuration et les fichiers
 privés WLS nécessitent leurs propres sauvegardes sécurisées ; ils ne sont pas

@@ -189,6 +189,13 @@ votre infrastructure. L'IA ne transmet aucun ordre réel.
 
 ## 7. Sauvegardes et mises à jour
 
+Depuis le PC Windows personnel, **`Sauvegardes-VPS.bat`** prépare la clé, active
+le service via SSH, télécharge une archive chiffrée et teste sa restauration dans
+un PostgreSQL temporaire local. Le mot de passe SSH reste interactif, la clé
+privée reste sur le PC. Suivre [le mode d'emploi](docs/VPS_BACKUPS.md).
+
+Pour une activation manuelle :
+
 Avec votre destinataire public age renseigné, activer la sauvegarde :
 
 ```sh

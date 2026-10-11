@@ -19,7 +19,9 @@ while :; do
     trap 'rm -rf "$temp"' EXIT HUP INT TERM
     if pg_dump --format=custom --no-owner --no-privileges --file="$temp/database.dump" &&
        age -r "$BACKUP_RECIPIENT" -o "$temp/database.age" "$temp/database.dump"; then
-        target="/backups/market-$stamp-$$.dump.age"
+        # Containers often share PID 1: add the mktemp nonce so a manual backup
+        # and the scheduled job never overwrite each other's archive/checksum.
+        target="/backups/market-$stamp-$$-${temp##*.}.dump.age"
         cp "$temp/database.age" "$target.partial"
         mv "$target.partial" "$target"
         sha256sum "$target" > "$target.sha256"
