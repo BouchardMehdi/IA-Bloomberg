@@ -13,6 +13,7 @@ try {
     $vpsFile = Join-Path $qaRoot 'private-data/hybrid/vps.env'
     $workerText = [IO.File]::ReadAllText($workerFile)
     $vpsText = [IO.File]::ReadAllText($vpsFile)
+    if (-not $vpsText.Contains('SITE_DOMAIN=worker-test.example.org') -or -not $vpsText.Contains('COMPOSE_FILE=docker-compose.production.yml')) { throw 'Production domain or Compose selection missing' }
     $token = [regex]::Match($workerText, '(?m)^AI_WORKER_TOKEN=([a-f0-9]{64})').Groups[1].Value
     if ($token.Length -ne 64 -or $vpsText.Contains($token)) { throw 'Raw token separation failed' }
     $sha = [Security.Cryptography.SHA256]::Create()

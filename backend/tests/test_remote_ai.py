@@ -18,6 +18,18 @@ from app.services.remote_ai import task_fingerprint
 from app.worker.main import api_url, deliver, execute_task
 
 
+def test_production_preflight_does_not_echo_invalid_environment_secrets(monkeypatch):
+    from app.cli import check_production
+    secret = "private-database-password-fixture"
+    def invalid_settings():
+        return Settings(_env_file=None, environment="production", auth_enabled=False,
+            database_url="postgresql://user:" + secret + "@localhost/db")
+    monkeypatch.setattr(check_production, "get_settings", invalid_settings)
+    with pytest.raises(ValueError, match="Invalid production settings") as error:
+        check_production.check()
+    assert secret not in str(error.value)
+
+
 def test_production_preflight_rejects_placeholder_contacts_weak_password_and_missing_backup(monkeypatch):
     from app.cli import check_production
     settings = SimpleNamespace(environment="production", ai_execution_mode="remote",

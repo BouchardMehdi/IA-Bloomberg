@@ -1,4 +1,4 @@
-# Run alone with --env-file private-data/vps.env; never merge the local override.
+# Selected by COMPOSE_FILE in the VPS .env. Host Nginx owns ports 80/443.
 name: market-ai-vps
 x-server-environment: &server-environment
   DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-market_ai}:${POSTGRES_PASSWORD:?Set a strong database password}@postgres:5432/${POSTGRES_DB:-market_ai}
@@ -13,6 +13,9 @@ x-server-environment: &server-environment
   OLLAMA_BASE_URL: http://disabled.invalid
   ACME_EMAIL: ${ACME_EMAIL:?Set the TLS contact email}
   BACKUP_RECIPIENT: ${BACKUP_RECIPIENT:-}
+  SITE_DOMAIN: ${SITE_DOMAIN:?Set the public domain}
+  VPS_FRONTEND_PORT: ${VPS_FRONTEND_PORT:-8088}
+  VPS_BACKEND_PORT: ${VPS_BACKEND_PORT:-3008}
 services:
   postgres:
     extends: {file: docker-compose.yml, service: postgres}
@@ -21,25 +24,25 @@ services:
   backend:
     extends: {file: docker-compose.yml, service: backend}
     environment: *server-environment
-    ports: !reset []
+    ports: !override
+      - "127.0.0.1:${VPS_BACKEND_PORT:-3008}:8000"
+    # Only this project's trusted network and host loopback can reach Uvicorn.
+    # Nginx replaces the forwarded client headers rather than accepting input.
+    command: [sh, -c, "python -m app.cli.check_production && alembic upgrade head && exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --proxy-headers --forwarded-allow-ips '*'"]
   scheduler:
     extends: {file: docker-compose.yml, service: scheduler}
     environment: *server-environment
+    command: [sh, -c, "python -m app.cli.check_production && exec python -m app.scheduler.main"]
   frontend:
     extends: {file: docker-compose.yml, service: frontend}
-    ports: !reset []
+    ports: !override
+      - "127.0.0.1:${VPS_FRONTEND_PORT:-8088}:3000"
     build:
       args:
         NEXT_PUBLIC_API_URL: /api/v1
     environment:
       NEXT_PUBLIC_API_URL: /api/v1
-  reverse-proxy:
-    extends: {file: docker-compose.yml, service: reverse-proxy}
-    environment:
-      SITE_DOMAIN: ${SITE_DOMAIN:?Set the public domain}
-      ACME_EMAIL: ${ACME_EMAIL:?Set the TLS contact email}
-    volumes:
-      - ./deploy/Caddyfile.production:/etc/caddy/Caddyfile:ro
+      NODE_ENV: production
   backup:
     build: ./deploy/backup
     profiles: [backup]
@@ -61,5 +64,3 @@ services:
 volumes:
   postgres_data:
   redis_data:
-  caddy_data:
-  caddy_config:

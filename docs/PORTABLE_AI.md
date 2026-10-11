@@ -60,8 +60,10 @@ Puis lancer `Preparer-Modele.bat` avant le transfert. Sans cela, le premier
 1. Lancer `Configurer-IA.bat` dans le dossier portable et saisir l'origine HTTPS
    du site, sans chemin (par exemple `https://market.votre-domaine.fr`).
 2. Reporter `AI_WORKER_TOKEN_SHA256` et `OLLAMA_MODEL` de `config/vps-worker.txt`
-   dans `private-data/vps.env` **sur le VPS**, puis recréer ses services avec
+   dans le `.env` de production **sur le VPS**, puis recréer ses services avec
    `sh deploy/vps.sh up`. Voir [installation VPS](HYBRID_DEPLOYMENT.md).
+   Le chemin historique `private-data/vps.env` reste accepté par ce helper pour
+   les anciennes installations ; suivre [deploy.md](../deploy.md) pour Nginx/Certbot.
 3. Conserver le jeton brut de `config/worker.json` uniquement avec le dossier
    portable. Il ne doit pas être transmis au VPS ni affiché dans les logs.
 

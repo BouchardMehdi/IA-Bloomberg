@@ -32,9 +32,10 @@ $workerText = "AI_SITE_URL=https://$($uri.Host)`nAI_WORKER_TOKEN=$token`nOLLAMA_
 & icacls $workerFile /inheritance:r /grant:r "*${ownerSid}:F" '*S-1-5-18:F' | Out-Null
 if ($LASTEXITCODE -ne 0) { throw 'Impossible de proteger le secret du worker.' }
 $vpsText = [IO.File]::ReadAllText((Join-Path $projectRoot '.env.production.example'))
-$vpsText = $vpsText.Replace('market.example.com', $uri.Host).Replace('REPLACE_WITH_RANDOM_HEX_PASSWORD', (New-HexSecret)).Replace('REPLACE_WITH_SHA256_FROM_CONFIGURER', $digest)
+$vpsText = [regex]::Replace($vpsText, '(?m)^SITE_DOMAIN=.*$', ('SITE_DOMAIN=' + $uri.Host))
+$vpsText = $vpsText.Replace('REPLACE_WITH_RANDOM_HEX_PASSWORD', (New-HexSecret)).Replace('REPLACE_WITH_SHA256_FROM_CONFIGURER', $digest)
 [IO.File]::WriteAllText($vpsFile, $vpsText, $utf8)
 Write-Host 'Configuration creee sans modifier .env et sans afficher les secrets.'
 Write-Host 'Local : private-data/worker.env (ne pas envoyer ce fichier au VPS).'
 Write-Host 'VPS : private-data/hybrid/vps.env (completer email, contact SEC, cle fournisseur et sauvegardes).'
-Write-Host 'Sur le VPS, placer ce dernier fichier dans private-data/vps.env, permissions 600.'
+Write-Host 'Sur le VPS, placer ce dernier fichier dans .env, permissions 600. Voir deploy.md.'

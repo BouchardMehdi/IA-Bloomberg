@@ -1,5 +1,9 @@
 # Site sur VPS, IA sur PC Windows
 
+Le déploiement Nginx/Certbot et les commandes complètes se trouvent dans
+[deploy.md](../deploy.md). Le VPS utilise son Nginx existant ; aucun Caddy de
+production n'est lancé. Le `.env` serveur sélectionne le Compose de production.
+
 Le VPS héberge Next.js, FastAPI, les collectes, PostgreSQL et Redis. Le PC exécute
 uniquement le worker et Ollama. Il contacte le VPS en **HTTPS sortant** : aucune
 redirection de port, aucun accès PostgreSQL/Redis depuis le PC, aucun Ollama public.
@@ -8,8 +12,8 @@ des URL à télécharger. Le VPS valide le schéma et les citations avant intég
 
 ```mermaid
 flowchart LR
-  Browser[Navigateur] -->|HTTPS| Caddy[Caddy sur VPS]
-  Caddy --> Site[Site et API]
+  Browser[Navigateur] -->|HTTPS| Nginx[Nginx et Certbot du VPS]
+  Nginx -->|ports localhost| Site[Site et API]
   Collect[Collectes sur VPS] --> DB[(PostgreSQL)]
   Site --> DB
   Scheduler[Analyse sur VPS] --> Queue[(Tâches persistantes)]
@@ -57,11 +61,11 @@ remplacer son empreinte sur le VPS et le jeton sur le PC puis recréer les servi
 ## 2. Installer sur le VPS
 
 Cloner le dépôt, créer `private-data`, transférer **seulement** le fichier serveur
-vers `private-data/vps.env`, puis depuis le dépôt :
+vers `.env` à la racine du dépôt sur le VPS, puis depuis le dépôt :
 
 ```sh
 chmod 700 private-data
-chmod 600 private-data/vps.env
+chmod 600 .env
 sh deploy/vps.sh up
 sh deploy/vps.sh admin administrateur
 sh deploy/vps.sh status
@@ -73,12 +77,12 @@ et les contacts d'exemple sont refusés par le contrôle préalable.
 
 Le fichier **autonome** `docker-compose.production.yml` sélectionne les services
 web sans Ollama. Il ignore volontairement `docker-compose.override.yml` local et
-utilise des volumes propres au projet `market-ai-vps`. Seul Caddy publie 80/443 ;
-les ports 3000/8000, PostgreSQL et Redis restent internes. Le DNS A/AAAA doit pointer
-correctement vers le VPS et 80/443 être accessibles pour le certificat HTTPS.
-Les mécanismes utilisés sont décrits dans la documentation officielle
-[Docker Compose](https://docs.docker.com/reference/compose-file/merge/) et
-[HTTPS automatique Caddy](https://caddyserver.com/docs/automatic-https).
+utilise des volumes propres au projet `market-ai-vps`. Le frontend et le backend
+publient seulement `127.0.0.1:8088` et `127.0.0.1:3008` par défaut ; PostgreSQL et
+Redis restent internes. Le Nginx de l'hôte reçoit 80/443. Suivre [deploy.md](../deploy.md)
+pour générer ce seul virtual host (`sh deploy/vps.sh nginx`), l'activer et lancer
+Certbot après propagation du DNS. L'ancien `private-data/vps.env` reste accepté
+par le helper, mais les commandes Compose simples utilisent le `.env` à la racine.
 
 Les données du Docker local **ne sont pas transférées automatiquement**. Les volumes
 production commencent vides. Pour retrouver les données existantes, prévoir une
@@ -89,7 +93,7 @@ privés autorisés (exports WLS, imports) ; ne pas écraser une base existante.
 
 Réutiliser la procédure [sauvegarde et restauration](DEPLOYMENT.md#sauvegardes-postgresql-chiffrées)
 pour générer une clé age sur une machine de confiance. Conserver la clé privée
-hors du VPS, renseigner **le destinataire public** dans `private-data/vps.env`, puis :
+hors du VPS, renseigner **le destinataire public** dans le `.env` du VPS, puis :
 
 ```sh
 sh deploy/vps.sh backup
@@ -155,7 +159,7 @@ Après mise à jour du dépôt : `sh deploy/vps.sh up` reconstruit et applique l
 Reconstruire aussi la distribution portable dans un nouveau dossier sur le PC,
 puis transférer `config` et `data/models` après arrêt, et relancer `Demarrer-IA.bat`.
 `sh deploy/vps.sh stop` arrête le projet sans supprimer les volumes.
-Ne pas lancer le Compose local sur le VPS ni copier `.env` ou l'override du PC.
+Ne pas lancer le Compose local sur le VPS ni copier le `.env` ou l'override du PC.
 
 ## Vérifications réalisées et reproductibles
 

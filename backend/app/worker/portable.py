@@ -71,7 +71,7 @@ def configure(root, site=None):
     write_json(path, {"site_url": site, "token": token, "model": MODEL})
     digest = hashlib.sha256(token.encode()).hexdigest()
     (root / "config/vps-worker.txt").write_text(
-        "# Empreinte a reporter dans private-data/vps.env sur le VPS, puis relancer ses services.\n"
+        "# Empreinte a reporter dans le .env de production sur le VPS, puis relancer ses services.\n"
         f"AI_WORKER_TOKEN_SHA256={digest}\nOLLAMA_MODEL={MODEL}\n", encoding="utf-8")
     print("Configuration enregistree. Aucun secret affiche.")
     print("Reportez config/vps-worker.txt dans la configuration du VPS.")

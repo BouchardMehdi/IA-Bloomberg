@@ -9,7 +9,7 @@ Prevoir assez de RAM et d'espace pour le modele (8 Go RAM minimum conseille,
 PREMIERE UTILISATION
 1. Copier le dossier ENTIER sur le disque du PC (conseille pour la vitesse).
 2. Lancer Configurer-IA.bat et saisir l'adresse HTTPS de votre site VPS.
-3. Reporter le contenu de config/vps-worker.txt dans private-data/vps.env sur
+3. Reporter le contenu de config/vps-worker.txt dans le .env de production sur
    le VPS et recreer backend/scheduler avec sh deploy/vps.sh up.
 4. Lancer Demarrer-IA.bat. Fermer la fenetre ne stoppe pas l'IA.
 5. Lancer Etat-IA.bat pour suivre les messages.

@@ -1,0 +1,32 @@
+# Market AI only. Certbot adds HTTPS and the HTTP redirect to this virtual host.
+server {
+    listen 80;
+    server_name __SITE_DOMAIN__;
+
+    client_max_body_size 10m;
+
+    # No URI on proxy_pass: preserve /api/v1/... including worker routes.
+    location /api/ {
+        proxy_pass http://127.0.0.1:__BACKEND_PORT__;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Connection "";
+        proxy_read_timeout 120s;
+        proxy_redirect off;
+    }
+
+    location / {
+        proxy_pass http://127.0.0.1:__FRONTEND_PORT__;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Connection "";
+        proxy_read_timeout 120s;
+        proxy_redirect off;
+    }
+}

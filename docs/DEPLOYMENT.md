@@ -2,18 +2,11 @@
 
 Le déploiement cible un VPS Linux avec Docker Compose.
 
-Pour le site sur VPS avec **IA sur le PC Windows**, utiliser la procédure
-[VPS + IA locale](HYBRID_DEPLOYMENT.md), son Compose autonome et ses lanceurs.
-La procédure historique ci-dessous concerne une installation sur une seule machine.
-
-1. Installer Docker et le plugin Compose.
-2. Cloner le dépôt.
-3. Copier `.env.example` vers `.env` et remplacer tous les secrets.
-4. Adapter le domaine dans `deploy/Caddyfile` pour activer HTTPS automatique.
-5. Lancer `docker compose up -d --build`.
-6. Vérifier `docker compose ps` et `/api/v1/health/ready`.
-
-PostgreSQL et Redis n'exposent aucun port hôte. Seuls Caddy et, pour le développement initial, les ports 3000/8000 sont publiés. Sur un VPS, ces deux publications directes pourront être retirées afin que Caddy reste l'unique point d'entrée.
+Pour le site sur VPS avec **Nginx/Certbot et IA sur le PC Windows**, utiliser
+[deploy.md](../deploy.md), son Compose autonome sélectionné par le `.env` serveur,
+et les [lanceurs IA](PORTABLE_AI.md). PostgreSQL/Redis n'exposent aucun port.
+Seuls frontend/backend publient des ports localhost configurables ; Nginx est
+le point d'entrée public. Caddy reste uniquement une option du Compose local.
 
 Les ports directs 3000, 8000 et 11434 sont désormais limités à l'interface locale.
 Le proxy reste le point d'entrée réseau. Le frontend utilise `/api/v1` sur la même
@@ -63,7 +56,7 @@ les installations existantes. Avant d'exposer des données sur un réseau partag
    docker compose exec backend python -m app.cli.create_user administrateur
    ```
 
-2. Configurer le domaine HTTPS de Caddy et `BACKEND_CORS_ORIGINS` avec les origines
+2. Configurer HTTPS sur le reverse proxy (Nginx/Certbot sur le VPS) et `BACKEND_CORS_ORIGINS` avec les origines
    exactes autorisées (schéma + domaine + port, sans chemin).
 3. Dans `.env`, activer `AUTH_ENABLED=true`, `AUTH_COOKIE_SECURE=true` et
    `ENVIRONMENT=production`. La configuration production refuse de démarrer sans
@@ -96,6 +89,10 @@ et nécessite **votre destinataire public age**. L'archive PostgreSQL custom uti
 [pg_dump](https://www.postgresql.org/docs/16/app-pgdump.html) puis le chiffrement
 [age](https://github.com/FiloSottile/age). Aucune archive en clair n'est écrite sur
 le disque hôte ; le dump transitoire reste dans le tmpfs du conteneur (1 Go).
+
+Sur le VPS, le service est déjà défini dans le Compose de production : l'activer
+avec `sh deploy/vps.sh backup` et utiliser `docker compose --profile backup` pour
+les commandes ci-dessous, sans les deux options `-f` qui visent le développement.
 
 Construire l'image et générer une clé dans un dossier privé existant :
 

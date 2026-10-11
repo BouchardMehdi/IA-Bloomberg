@@ -17,6 +17,12 @@ La migration Alembic est appliquée automatiquement au démarrage du backend. La
 
 ## Site sur VPS et IA sur votre PC
 
+Pour le VPS **Nginx + Docker + Certbot**, suivre [deploy.md](deploy.md) : DNS
+Hostinger, ports localhost configurables, comptes et HTTPS. Sur le VPS seulement,
+copier `.env.production.example` vers `.env`, le compléter, puis lancer
+`docker compose up -d --build`. Son `COMPOSE_FILE` sélectionne la production sans
+Caddy ni Ollama ; le Nginx existant du VPS sert le sous-domaine du projet.
+
 Les lanceurs Windows `Configurer-IA.bat`, `Demarrer-IA.bat`, `Arreter-IA.bat` et
 `Etat-IA.bat` pilotent désormais un worker **portable sans Docker**. Le VPS héberge le site et les
 collectes ; le PC récupère les tâches par HTTPS et utilise Ollama sans port public.

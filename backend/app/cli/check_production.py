@@ -4,11 +4,18 @@ import os
 import re
 from urllib.parse import urlsplit
 
+from pydantic import ValidationError
+
 from app.core.config import get_settings
 
 
 def check(require_backup=False):
-    settings = get_settings()
+    try:
+        settings = get_settings()
+    except ValidationError:
+        # Pydantic's error rendering can include the entire environment input.
+        # Startup logs must not reveal database passwords or provider keys.
+        raise ValueError("Invalid production settings; verify authentication, worker hash and configured limits") from None
     if settings.environment != "production" or settings.ai_execution_mode != "remote":
         raise ValueError("Use the dedicated production Compose file")
     password = urlsplit(settings.database_url).password or ""
